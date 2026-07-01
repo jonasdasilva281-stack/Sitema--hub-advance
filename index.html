@@ -127,6 +127,7 @@ textarea.fi{resize:vertical;min-height:60px}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--g5);border-radius:4px}
 /* ── MOBILE ── */
 .sb-overlay{display:none}
+.mob-nav{display:none}
 @media(max-width:768px){
   :root{--sw:240px}
   .sb{transform:translateX(-100%);transition:transform .25s ease}
@@ -138,13 +139,28 @@ textarea.fi{resize:vertical;min-height:60px}
   .g2{grid-template-columns:1fr}
   .fr{grid-template-columns:1fr}
   .topbar{padding:0 1rem}
-  .content{padding:1rem}
+  .content{padding:.875rem .875rem 90px}
   .kv{font-size:22px}
   .pl-col{min-width:170px;max-width:170px}
+  .mbox{border-radius:20px 20px 0 0 !important;max-width:100vw !important;width:100% !important;position:fixed !important;bottom:0 !important;left:0 !important;right:0 !important;top:auto !important;max-height:90vh;overflow-y:auto}
+  .mo.open{align-items:flex-end !important}
+  .mob-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:#0C0C12;border-top:1px solid rgba(255,255,255,.08);z-index:90;padding:0 4px 4px;padding-bottom:calc(4px + env(safe-area-inset-bottom))}
+  .mob-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px 4px;cursor:pointer;border-radius:10px;transition:all .15s;-webkit-tap-highlight-color:transparent}
+  .mob-nav-item.on{background:rgba(0,179,122,.15)}
+  .mob-nav-item svg{width:20px;height:20px;stroke:rgba(255,255,255,.4);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke .15s}
+  .mob-nav-item.on svg{stroke:var(--g)}
+  .mob-nav-label{font-size:9.5px;color:rgba(255,255,255,.35);font-weight:500;transition:color .15s}
+  .mob-nav-item.on .mob-nav-label{color:var(--g)}
+  .mob-nav-badge{position:absolute;top:6px;right:calc(50% - 18px);background:var(--re);color:#fff;font-size:8.5px;font-weight:700;padding:1px 5px;border-radius:20px;min-width:14px;text-align:center}
+  .card{border-radius:12px}
 }
 @media(max-width:480px){
-  .g4,.g3{grid-template-columns:1fr 1fr}
+  .g4{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr 1fr}
   .topbar-actions .btn span{display:none}
+  .tb-title{font-size:14px}
+  .kv{font-size:20px}
+  .kl{font-size:9.5px}
 }
 /* logout button */
 .sb-logout{display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:8px;font-size:12px;color:rgba(255,255,255,.35);cursor:pointer;transition:all .15s;margin:0 .7rem .5rem;border:none;background:none;font-family:'Inter',sans-serif;width:calc(100% - 1.4rem)}
@@ -241,6 +257,31 @@ textarea.fi{resize:vertical;min-height:60px}
     </div>
   </div>
 </aside>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mob-nav" id="mob-nav">
+  <div class="mob-nav-item on" id="mn-overview" onclick="nav('overview',document.querySelector('.ni'));mobNav('overview')" style="position:relative">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    <span class="mob-nav-label">Início</span>
+  </div>
+  <div class="mob-nav-item" id="mn-pipeline" onclick="nav('pipeline',null);mobNav('pipeline')" style="position:relative">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="4" height="18" rx="1.5"/><rect x="10" y="7" width="4" height="14" rx="1.5"/><rect x="17" y="11" width="4" height="10" rx="1.5"/></svg>
+    <span class="mob-nav-label">Pipeline</span>
+    <span class="mob-nav-badge" id="mn-badge-leads" style="display:none">0</span>
+  </div>
+  <div class="mob-nav-item" id="mn-mentorados" onclick="nav('mentorados',null);mobNav('mentorados')" style="position:relative">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+    <span class="mob-nav-label">Mentoria</span>
+  </div>
+  <div class="mob-nav-item" id="mn-financeiro" onclick="nav('financeiro',null);mobNav('financeiro')">
+    <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    <span class="mob-nav-label">Finanças</span>
+  </div>
+  <div class="mob-nav-item" id="mn-agenda" onclick="nav('agenda',null);mobNav('agenda')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span class="mob-nav-label">Agenda</span>
+  </div>
+</nav>
 
 <main class="main">
   <header class="topbar">
@@ -2402,16 +2443,10 @@ function vrSearchCliente(q){ pgRenderDropdown('vr-dropdown','vr-cliente','vr-pro
    ⚙️  CONFIGURAÇÃO — edita aqui para ligar o Supabase
    ══════════════════════════════════════════════ */
 var CONFIG = {
-  // Password do painel (muda aqui)
   PASSWORD: 'advance2025',
-
-  // Supabase — preenche quando tiveres o projeto criado
-  // Vai a https://supabase.com → New Project → Settings → API
-  SUPABASE_URL: '',      // ex: 'https://xyzabc.supabase.co'
-  SUPABASE_KEY: '',      // ex: 'eyJhbGciOiJI...'
-  SUPABASE_TABLE: 'hub_advance_data',  // nome da tabela
-
-  // Nome do utilizador exibido na sidebar
+  SUPABASE_URL: 'https://jgrigjpnosogzqpbewdx.supabase.co',
+  SUPABASE_KEY: 'sb_publishable_zLh98VRheLdpxnak0PqxtQ_4x66kGs9',
+  SUPABASE_TABLE: 'hub_advance_data',
   USERNAME: 'Jonas'
 };
 /* ══════════════════════════════════════════════ */
@@ -2454,6 +2489,17 @@ function toggleSidebar(){
   var ov=document.getElementById('sb-overlay');
   var isOpen=sb.classList.toggle('open');
   ov.style.display=isOpen?'block':'none';
+}
+function mobNav(id){
+  var ids=['overview','pipeline','mentorados','financeiro','agenda'];
+  ids.forEach(function(x){
+    var el=document.getElementById('mn-'+x);
+    if(el) el.classList.toggle('on',x===id);
+  });
+  // Update leads badge
+  var lcount=DB.leads.filter(function(l){return !['fechado','perdido','standby'].includes(l.etapa);}).length;
+  var b=document.getElementById('mn-badge-leads');
+  if(b){b.textContent=lcount;b.style.display=lcount>0?'block':'none';}
 }
 
 /* ── DATABASE LAYER ──
