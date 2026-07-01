@@ -2,7 +2,13 @@
 <html lang="pt">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hub Advance">
+<meta name="theme-color" content="#0C0C12">
+<link rel="manifest" id="pwa-manifest">
 <title>Hub Advance — Gestão Completa</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
@@ -198,9 +204,48 @@ textarea.fi{resize:vertical;min-height:60px}
 .filter-btn.on{background:var(--bk);color:var(--wh);border-color:var(--bk);box-shadow:none}
 .timeline-item{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--g6)}
 .timeline-dot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0}
+
+/* ── PWA / APP FEEL ── */
+* { -webkit-tap-highlight-color: transparent; }
+body { -webkit-overflow-scrolling: touch; overscroll-behavior: none; }
+@media(max-width:768px){
+  body { background: #0C0C12; }
+  .main { background: #EEEEF4; border-radius: 0; min-height: 100dvh; }
+  .topbar { padding-top: env(safe-area-inset-top); height: calc(56px + env(safe-area-inset-top)); position: sticky; top: 0; }
+  .content { padding: .875rem .875rem calc(80px + env(safe-area-inset-bottom)); }
+  .mob-nav { padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
+  .card { box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .btn { min-height: 38px; }
+  input.fi, select.fi, textarea.fi { font-size: 16px !important; } /* prevent zoom on iOS */
+  .mbox { padding-bottom: calc(1.5rem + env(safe-area-inset-bottom)) !important; }
+}
+/* Splash / loading */
+#pwa-splash { display:none; position:fixed; inset:0; background:#0C0C12; z-index:99999; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+#pwa-splash.show { display:flex; }
+#pwa-splash .pulse { width:64px; height:64px; border-radius:16px; background:linear-gradient(135deg,#00B37A,#009B6A); animation:pwa-pulse 1.2s ease-in-out infinite; }
+@keyframes pwa-pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(.92);opacity:.7} }
+#pwa-splash p { font-family:'Inter',sans-serif; font-size:13px; color:rgba(255,255,255,.4); letter-spacing:.06em; text-transform:uppercase; }
+/* Install banner */
+#pwa-install-banner { display:none; position:fixed; bottom:calc(70px + env(safe-area-inset-bottom)); left:1rem; right:1rem; background:#0C0C12; border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:14px 16px; z-index:80; align-items:center; gap:12px; box-shadow:0 8px 32px rgba(0,0,0,.4); }
+#pwa-install-banner.show { display:flex; }
+#pwa-install-banner p { flex:1; font-size:13px; color:rgba(255,255,255,.85); margin:0; }
+#pwa-install-banner button { padding:8px 16px; border-radius:8px; border:none; font-size:12px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; }
 </style>
 </head>
 <body>
+
+<!-- PWA SPLASH -->
+<div id="pwa-splash" class="show">
+  <div class="pulse"></div>
+  <p>Hub Advance</p>
+</div>
+
+<!-- PWA INSTALL BANNER (Android Chrome) -->
+<div id="pwa-install-banner">
+  <p>Instala o Hub Advance no teu telemóvel</p>
+  <button onclick="pwaDismiss()" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.5)">Não</button>
+  <button onclick="pwaInstall()" style="background:var(--g);color:#fff">Instalar</button>
+</div>
 
 <!-- LOGIN SCREEN -->
 <div id="login-screen" style="position:fixed;inset:0;background:#0C0C12;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px">
@@ -2398,24 +2443,30 @@ function pgBuildClientes(){
 }
 
 function pgRenderDropdown(dropId, inputId, prodId, valorId, query){
-  const drop=document.getElementById(dropId);
-  const clientes=pgBuildClientes();
-  const q=(query||'').toLowerCase().trim();
-  const filtered=clientes.filter(function(c){return !q||c.nome.toLowerCase().includes(q)||c.produto.toLowerCase().includes(q);});
+  var drop=document.getElementById(dropId);
+  var clientes=pgBuildClientes();
+  var q=(query||'').toLowerCase().trim();
+  var filtered=!q ? clientes : clientes.filter(function(c){ return c.nome.toLowerCase().includes(q)||(c.produto||'').toLowerCase().includes(q); });
+  window._pgDropData=filtered;
+  window._pgDropCtx={inputId:inputId,dropId:dropId,prodId:prodId,valorId:valorId};
   if(!filtered.length){
-    drop.innerHTML='<div class="pg-drop-empty">Nenhum resultado</div>';
+    drop.innerHTML='<div class="pg-drop-empty">Nenhum lead ou mentorado encontrado</div>';
     drop.style.display='block';
     return;
   }
-  drop.innerHTML=filtered.map(c=>`
-    <div class="pg-drop-item" onmousedown="pgSelectCliente('${inputId}','${dropId}','${prodId}','${valorId}',${JSON.stringify(c).replace(/'/g,"&#39;")})">
-      <div class="pg-drop-item-name">${c.nome}</div>
-      <div class="pg-drop-item-sub">
-        <span class="tag ${c.badgeCls}" style="font-size:9.5px;padding:1px 6px">${c.badge}</span>
-        <span>${c.sub.split(' · ').slice(1).join(' · ')}</span>
-      </div>
-    </div>`).join('');
+  var html='';
+  for(var i=0;i<filtered.length;i++){
+    var c=filtered[i];
+    var sub=(c.sub||'').split(' · ').slice(1).join(' · ');
+    html+='<div class="pg-drop-item" onmousedown="pgSelectByIdx('+i+')"><div class="pg-drop-item-name">'+c.nome+'</div><div class="pg-drop-item-sub"><span class="tag '+c.badgeCls+'" style="font-size:9.5px;padding:1px 6px">'+c.badge+'</span><span>'+sub+'</span></div></div>';
+  }
+  drop.innerHTML=html;
   drop.style.display='block';
+}
+function pgSelectByIdx(idx){
+  var c=(window._pgDropData||[])[idx]; if(!c) return;
+  var ctx=window._pgDropCtx||{};
+  pgSelectCliente(ctx.inputId,ctx.dropId,ctx.prodId,ctx.valorId,c);
 }
 
 function pgSelectCliente(inputId,dropId,prodId,valorId,clienteObj){
@@ -2578,8 +2629,45 @@ async function initApp(){
 }
 
 window.addEventListener('load',function(){
+  // Inject PWA manifest dynamically
+  var manifest={
+    name:'Hub Advance',short_name:'Hub Advance',
+    description:'Painel de gestão Hub Advance',
+    start_url:window.location.href,
+    display:'standalone',
+    background_color:'#0C0C12',
+    theme_color:'#0C0C12',
+    orientation:'portrait',
+    icons:[
+      {src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="100" fill="%230C0C12"/><rect x="156" y="156" width="200" height="200" rx="40" fill="%2300B37A"/></svg>',sizes:'512x512',type:'image/svg+xml'}
+    ]
+  };
+  var blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  document.getElementById('pwa-manifest').href=url;
+  // Hide splash after short delay
+  setTimeout(function(){
+    var s=document.getElementById('pwa-splash');
+    if(s){s.style.transition='opacity .4s';s.style.opacity='0';setTimeout(function(){s.style.display='none';},400);}
+  },800);
   checkAuth();
 });
+
+// PWA Install prompt
+var _pwaPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault(); _pwaPrompt=e;
+  var b=document.getElementById('pwa-install-banner');
+  if(b&&window.innerWidth<=768) b.classList.add('show');
+});
+function pwaInstall(){
+  if(_pwaPrompt){_pwaPrompt.prompt();_pwaPrompt.userChoice.then(function(){pwaDismiss();});}
+}
+function pwaDismiss(){
+  var b=document.getElementById('pwa-install-banner');
+  if(b) b.classList.remove('show');
+}
+window.addEventListener('appinstalled',function(){ pwaDismiss(); toast('✓ App instalada!'); });
 </script>
 
 <!-- MODAL VENDA RÁPIDA -->
