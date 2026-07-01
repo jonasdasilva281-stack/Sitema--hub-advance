@@ -705,7 +705,7 @@ textarea.fi{resize:vertical;min-height:60px}
   <div class="mh"><div class="mt">📦 Novo Produto</div><span class="mx" onclick="cm('produto')">✕</span></div>
   <div class="fg"><label class="fl">Nome</label><input class="fi" id="pd-nome"></div>
   <div class="fg"><label class="fl">Nome curto</label><input class="fi" id="pd-nomec"></div>
-  <div class="fr fg"><div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pd-valor"></div><div><label class="fl">Tipo</label><select class="fi" id="pd-tipo"><option value="unico">Único</option><option value="recorrente">Recorrente</option></select></div></div>
+  <div class="fr fg"><div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pd-valor-input"></div><div><label class="fl">Tipo</label><select class="fi" id="pd-tipo"><option value="unico">Único</option><option value="recorrente">Recorrente</option></select></div></div>
   <div class="fg"><label class="fl">Descrição</label><input class="fi" id="pd-desc"></div>
   <button class="btn bp" style="width:100%" onclick="saveProduto()">Criar</button>
 </div></div>
@@ -873,9 +873,7 @@ function saveLead(){
       if(!l.interacoes) l.interacoes=[];
       l.interacoes.push({id:Date.now(),tipo:'Mudança de etapa',nota:`${ETAPAS.find(e=>e.id===etapaAntiga)?.l||etapaAntiga} → ${ETAPAS.find(e=>e.id===etapa)?.l}`,data:new Date().toISOString()});
       if(etapa==='standby') l.standbyDate=todayISO();
-      if(etapa==='fechado' && !DB.mentorados.find(m=>m.nome===l.nome)){
-        DB.mentorados.push({id:uid(),nome:l.nome,produto:l.produto||'Acompanhamento €697',nicho:'',score:'B',semana:0,estado:'Ativo',notas:`Convertido do pipeline (origem: ${l.origem})`,origemLeadId:l.id});
-      }
+
     }
   } else {
     DB.leads.push({...data,id:uid(),createdAt:new Date().toISOString(),interacoes:[]});
@@ -900,11 +898,8 @@ function mudarEtapa(id,novaEtapa){
   if(novaEtapa==='standby') lead.standbyDate=todayISO();
   if(!lead.interacoes) lead.interacoes=[];
   lead.interacoes.push({id:Date.now(),tipo:'Mudança de etapa',nota:`${ETAPAS.find(e=>e.id===etapaAnterior)?.l||etapaAnterior} → ${ETAPAS.find(e=>e.id===novaEtapa)?.l}`,data:new Date().toISOString()});
-  if(novaEtapa==='fechado' && !DB.mentorados.find(m=>m.nome===lead.nome)){
-    DB.mentorados.push({id:uid(),nome:lead.nome,produto:lead.produto||'Acompanhamento €697',nicho:'',score:'B',semana:0,estado:'Ativo',notas:`Convertido do pipeline (origem: ${lead.origem})`,origemLeadId:lead.id});
-  }
   save();renderAll();
-  if(novaEtapa==='fechado'){ toast('🎉 '+lead.nome+' fechado!'); openVendaRapida(id); } else { toast('→ movido para '+ETAPAS.find(function(e){return e.id===novaEtapa;}).l); }
+  if(novaEtapa==='fechado'){ openVendaRapida(id); } else { toast('→ movido para '+ETAPAS.find(function(e){return e.id===novaEtapa;}).l); }
 }
 function openInteracao(leadId){
   document.getElementById('ia-leadid').value=leadId;
@@ -1590,10 +1585,11 @@ function finToggleMes(cid){
 /* ═══ PRODUTOS ═══ */
 function saveProduto(){
   const nome=document.getElementById('pd-nome').value.trim();
-  const valor=parseFloat(document.getElementById('pd-valor').value);
+  const valor=parseFloat(document.getElementById('pd-valor-input').value);
   if(!nome||!valor){toast('Preenche nome e valor','#C0392B');return;}
   DB.produtos.push({id:uid(),nome,nomeC:document.getElementById('pd-nomec').value||nome,valor,tipo:document.getElementById('pd-tipo').value,desc:document.getElementById('pd-desc').value});
-  ['pd-nome','pd-nomec','pd-valor','pd-desc'].forEach(id=>document.getElementById(id).value='');
+  ['pd-nome','pd-nomec','pd-desc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pd-valor-input').value='';
   save();cm('produto');renderAll();toast('✓ Produto criado');
 }
 function deleteProduto(id){ if(!confirm('Apagar?'))return; DB.produtos=DB.produtos.filter(p=>p.id!==id); save();renderAll(); }
@@ -2177,6 +2173,9 @@ function openVendaRapida(leadId){
   document.getElementById('vr-leadid').value=leadId;
   document.getElementById('vr-cliente').value=l.nome;
   document.getElementById('vr-sub').textContent=l.nome+' — '+( l.produto||'—');
+  // Update modal title to show flow
+  document.getElementById('vr-modal-title').textContent='💰 Registar pagamento';
+  document.getElementById('vr-modal-desc').textContent='Preenche como vai ser pago. Ao guardar, '+l.nome+' passa automaticamente para Mentorados.';
   document.getElementById('vr-data').value=todayISO();
   const parcSel=document.getElementById('vr-parcelas');
   if(parcSel) parcSel.innerHTML=Array.from({length:12},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'x'+(i===0?' (à vista)':'')+'</option>').join('');
@@ -2203,13 +2202,39 @@ function saveVendaRapida(){
   const forma=document.getElementById('vr-forma').value;
   const estado=document.getElementById('vr-estado').value;
   const dataInicio=document.getElementById('vr-data').value||todayISO();
+  const leadId=parseInt(document.getElementById('vr-leadid').value)||0;
   if(!cliente||!valor){toast('Preenche cliente e valor','#C0392B');return;}
   const vlParcela=parseFloat((valor/parcelas).toFixed(2));
   const datas=gerarDatas(dataInicio,parcelas);
   const grupoId=uid();
   datas.forEach(function(data,i){ DB.pagamentos.push({id:uid(),grupoId:grupoId,cliente:cliente,data:data,produto:produto,valor:vlParcela,valorTotal:valor,parcela:i+1,totalParcelas:parcelas,estado:i===0?estado:'Pendente',formaPagamento:forma}); });
+  var novoMentorado=false;
+  if(leadId){
+    var lead2=DB.leads.find(function(l){return l.id===leadId;});
+    if(lead2 && !DB.mentorados.find(function(m){return m.nome===lead2.nome;})){
+      DB.mentorados.push({
+        id:uid(),nome:lead2.nome,
+        produto:produto||lead2.produto||'',
+        nicho:lead2.nicho||'',
+        contacto:lead2.contacto||'',
+        score:'B',semana:0,estado:'Ativo',
+        tarefas:[],sessoes:[],
+        notas:'Convertido do pipeline em '+todayISO()+' · Origem: '+(lead2.origem||'—'),
+        origemLeadId:lead2.id
+      });
+      novoMentorado=true;
+    }
+  }
   save();cm('venda-rapida');renderAll();
-  toast(parcelas===1?'✓ Venda €'+valor.toFixed(0)+' registada':'✓ '+parcelas+'x de €'+vlParcela+' criadas');
+  if(novoMentorado){
+    toast('🎉 Pagamento registado · '+cliente+' é agora mentorado!');
+    setTimeout(function(){
+      var el=document.querySelector('.ni[onclick*="mentorados"]');
+      if(el) el.click();
+    },500);
+  } else {
+    toast(parcelas===1?'✓ Venda €'+valor.toFixed(0)+' registada':'✓ '+parcelas+'x de €'+vlParcela.toFixed(2)+' criadas');
+  }
 }
 
 /* ═══ PRÓXIMO CONTACTO (LEAD) ═══ */
@@ -2313,22 +2338,20 @@ function saveProxEncontro(){
 
 /* ═══ PESQUISA DE CLIENTE (PAGAMENTO) ═══ */
 function pgBuildClientes(){
-  const etapaLabel={novo:'Lead Novo',sdr:'SDR',closer:'Closer',followup:'Follow Up',standby:'Stand By',fechado:'Fechado'};
-  const list=[];
-  // Mentorados ativos primeiro
-  DB.mentorados.forEach(m=>{
-    const totalPago=DB.pagamentos.filter(p=>p.cliente===m.nome&&p.estado==='Pago').reduce((s,p)=>s+parseFloat(p.valor||0),0);
-    list.push({nome:m.nome,produto:m.produto,sub:'Mentorado · '+m.produto+(totalPago>0?' · €'+totalPago.toFixed(0)+' pago':''),badge:'Mentorado',badgeCls:'tg',tipo:'mentorado'});
+  var etapaLabel={novo:'Lead Novo',sdr:'SDR',closer:'Closer',followup:'Follow Up',standby:'Stand By',fechado:'Fechado'};
+  var list=[];
+  DB.mentorados.forEach(function(m){
+    var totalPago=DB.pagamentos.filter(function(p){return p.cliente===m.nome&&p.estado==='Pago';}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
+    var totalPend=DB.pagamentos.filter(function(p){return p.cliente===m.nome&&p.estado==='Pendente';}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
+    list.push({nome:m.nome,produto:m.produto||'',sub:'Mentorado · '+(m.produto||'—')+(totalPago>0?' · €'+totalPago.toFixed(0)+' recebido':'')+(totalPend>0?' · €'+totalPend.toFixed(0)+' pendente':''),badge:'Mentorado',badgeCls:'tg',tipo:'mentorado'});
   });
-  // Leads fechados
-  DB.leads.filter(l=>l.etapa==='fechado').forEach(l=>{
-    if(!list.find(x=>x.nome===l.nome))
-      list.push({nome:l.nome,produto:l.produto,sub:'Lead fechado · '+l.produto,badge:'Fechado',badgeCls:'tg',tipo:'lead'});
+  DB.leads.filter(function(l){return l.etapa==='fechado';}).forEach(function(l){
+    if(!list.find(function(x){return x.nome===l.nome;}))
+      list.push({nome:l.nome,produto:l.produto||'',sub:'Lead fechado · '+(l.produto||'—'),badge:'Fechado',badgeCls:'tg',tipo:'lead'});
   });
-  // Outros leads ativos (Closer / Follow Up mais relevantes)
-  DB.leads.filter(l=>['closer','followup','sdr','standby'].includes(l.etapa)).forEach(l=>{
-    if(!list.find(x=>x.nome===l.nome))
-      list.push({nome:l.nome,produto:l.produto,sub:(etapaLabel[l.etapa]||l.etapa)+' · '+l.produto,badge:etapaLabel[l.etapa]||l.etapa,badgeCls:l.etapa==='closer'||l.etapa==='followup'?'to':'tb',tipo:'lead'});
+  DB.leads.filter(function(l){return ['closer','followup','sdr','standby'].includes(l.etapa);}).forEach(function(l){
+    if(!list.find(function(x){return x.nome===l.nome;}))
+      list.push({nome:l.nome,produto:l.produto||'',sub:(etapaLabel[l.etapa]||l.etapa)+' · '+(l.produto||'—'),badge:etapaLabel[l.etapa]||l.etapa,badgeCls:l.etapa==='closer'||l.etapa==='followup'?'to':'tb',tipo:'lead'});
   });
   return list;
 }
@@ -2337,9 +2360,9 @@ function pgRenderDropdown(dropId, inputId, prodId, valorId, query){
   const drop=document.getElementById(dropId);
   const clientes=pgBuildClientes();
   const q=(query||'').toLowerCase().trim();
-  const filtered=q ? clientes.filter(c=>c.nome.toLowerCase().includes(q)) : clientes;
+  const filtered=clientes.filter(function(c){return !q||c.nome.toLowerCase().includes(q)||c.produto.toLowerCase().includes(q);});
   if(!filtered.length){
-    drop.innerHTML='<div class="pg-drop-empty">Nenhum lead ou mentorado encontrado</div>';
+    drop.innerHTML='<div class="pg-drop-empty">Nenhum resultado</div>';
     drop.style.display='block';
     return;
   }
@@ -2354,16 +2377,15 @@ function pgRenderDropdown(dropId, inputId, prodId, valorId, query){
   drop.style.display='block';
 }
 
-function pgSelectCliente(inputId, dropId, prodId, valorId, clienteObj){
+function pgSelectCliente(inputId,dropId,prodId,valorId,clienteObj){
   document.getElementById(inputId).value=clienteObj.nome;
   document.getElementById(dropId).style.display='none';
-  // auto-fill produto e valor
-  const prodSel=document.getElementById(prodId);
-  if(prodSel && clienteObj.produto){
-    const opt=Array.from(prodSel.options).find(o=>o.value===clienteObj.produto);
-    if(opt){ prodSel.value=clienteObj.produto; }
+  var prodSel=document.getElementById(prodId);
+  if(prodSel&&clienteObj.produto){
+    var opt=Array.from(prodSel.options).find(function(o){return o.value===clienteObj.produto;});
+    if(!opt) opt=Array.from(prodSel.options).find(function(o){return o.value.toLowerCase().includes((clienteObj.produto||'').split(' ')[0].toLowerCase());});
+    if(opt) prodSel.value=opt.value;
   }
-  // trigger valor auto-fill
   if(valorId==='pg-valor') autoValor();
   else if(valorId==='vr-valor') vrAutoValor();
 }
@@ -2517,10 +2539,13 @@ window.addEventListener('load',function(){
 <!-- MODAL VENDA RÁPIDA -->
 <div class="mo" id="modal-venda-rapida"><div class="mbox" style="max-width:430px">
   <div class="mh">
-    <div><div class="mt">🎉 Venda fechada!</div><div id="vr-sub" style="font-size:11px;color:var(--g4);margin-top:2px"></div></div>
+    <div>
+      <div class="mt" id="vr-modal-title">💰 Registar pagamento</div>
+      <div id="vr-sub" style="font-size:11px;color:var(--g4);margin-top:2px"></div>
+    </div>
     <span class="mx" onclick="cm('venda-rapida')">✕</span>
   </div>
-  <div class="al alg" style="margin-bottom:12px">Regista agora para aparecer no Financeiro e na Previsão.</div>
+  <div class="al alg" style="margin-bottom:12px" id="vr-modal-desc">Preenche como vai ser o pagamento. Ao guardar, o lead passa automaticamente para Mentorados.</div>
   <input type="hidden" id="vr-leadid">
   <div class="fg" style="position:relative">
     <label class="fl">Cliente <span style="font-size:10px;color:var(--g4);font-weight:400">— pré-preenchido do lead</span></label>
