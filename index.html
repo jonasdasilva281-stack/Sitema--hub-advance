@@ -676,9 +676,38 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
 
   <!-- EQUIPA -->
   <div class="panel" id="p-equipa">
-    <div class="g2">
-      <div class="card"><div class="ch"><div class="ct" id="eq-count">Equipa</div><button class="btn bp bsm" onclick="om('membro')">+</button></div><div id="eq-list"></div></div>
-      <div class="card"><div class="ch"><div class="ct">Tarefas</div><button class="btn bs bsm" onclick="om('tarefa')">+</button></div><div id="eq-tasks"></div></div>
+    <!-- Equipa -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="ch"><div class="ct" id="eq-count">Equipa</div><button class="btn bp bsm" onclick="om('membro')">+ Membro</button></div>
+      <div id="eq-list"></div>
+    </div>
+
+    <!-- Alertas de despesas mensais -->
+    <div id="eq-desp-alertas" style="margin-bottom:14px"></div>
+
+    <!-- Tarefas por âmbito -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div class="ct">📋 Tarefas &amp; Responsabilidades</div>
+        <button class="btn bp bsm" onclick="om('tarefa')">+ Tarefa</button>
+      </div>
+      <!-- Filtros -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        <select class="fi" id="tf-filtro-ambito" onchange="renderEquipa()" style="padding:5px 10px;font-size:12px;height:auto;width:auto">
+          <option value="">Todos os âmbitos</option>
+          <option value="empresa">🏢 Empresa</option>
+        </select>
+        <select class="fi" id="tf-filtro-resp" onchange="renderEquipa()" style="padding:5px 10px;font-size:12px;height:auto;width:auto">
+          <option value="">Todos</option>
+        </select>
+        <select class="fi" id="tf-filtro-prior" onchange="renderEquipa()" style="padding:5px 10px;font-size:12px;height:auto;width:auto">
+          <option value="">Todas prioridades</option>
+          <option value="Alta">🔴 Alta</option>
+          <option value="Média">🟡 Média</option>
+          <option value="Baixa">🟢 Baixa</option>
+        </select>
+      </div>
+      <div id="eq-tasks"></div>
     </div>
   </div>
 
@@ -912,9 +941,30 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
 <!-- MODAL TAREFA -->
 <div class="mo" id="modal-tarefa"><div class="mbox">
   <div class="mh"><div class="mt">✅ Nova Tarefa</div><span class="mx" onclick="cm('tarefa')">✕</span></div>
-  <div class="fg"><label class="fl">Tarefa</label><input class="fi" id="tf-nome"></div>
-  <div class="fr fg"><div><label class="fl">Responsável</label><select class="fi" id="tf-resp"></select></div><div><label class="fl">Prioridade</label><select class="fi" id="tf-prior"><option>Alta</option><option>Média</option><option>Baixa</option></select></div></div>
-  <div class="fg"><label class="fl">Prazo</label><input type="date" class="fi" id="tf-prazo"></div>
+  <div class="fg"><label class="fl">Descrição da tarefa</label><input class="fi" id="tf-nome" placeholder="O que precisa de ser feito..."></div>
+  <!-- Âmbito: empresa ou produto -->
+  <div class="fg">
+    <label class="fl">Âmbito</label>
+    <div style="display:flex;gap:6px;flex-wrap:wrap" id="tf-ambito-btns">
+      <button type="button" onclick="tfSetAmbito('empresa')" data-val="empresa" style="flex:1;padding:9px;border-radius:9px;border:1.5px solid var(--g);background:var(--gf);color:var(--g);font-size:12.5px;font-weight:500;cursor:pointer;font-family:Inter,sans-serif">🏢 Empresa</button>
+      <button type="button" onclick="tfSetAmbito('produto')" data-val="produto" style="flex:1;padding:9px;border-radius:9px;border:1.5px solid var(--g6);background:#fff;color:var(--g3);font-size:12.5px;font-weight:500;cursor:pointer;font-family:Inter,sans-serif">📦 Produto</button>
+    </div>
+    <input type="hidden" id="tf-ambito" value="empresa">
+  </div>
+  <!-- Produto (aparece só quando âmbito = produto) -->
+  <div class="fg" id="tf-produto-wrap" style="display:none">
+    <label class="fl">Produto</label>
+    <select class="fi" id="tf-produto-sel"></select>
+  </div>
+  <div class="fr fg">
+    <div><label class="fl">Responsável</label><select class="fi" id="tf-resp"></select></div>
+    <div><label class="fl">Prioridade</label><select class="fi" id="tf-prior"><option>Alta</option><option>Média</option><option>Baixa</option></select></div>
+  </div>
+  <div class="fr fg">
+    <div><label class="fl">Prazo</label><input type="date" class="fi" id="tf-prazo"></div>
+    <div><label class="fl">Projeto / Lead</label><select class="fi" id="tf-projeto"><option value="">— Nenhum —</option></select></div>
+  </div>
+  <div class="fg"><label class="fl">Notas</label><textarea class="fi" id="tf-notas" rows="2" placeholder="Detalhes adicionais..."></textarea></div>
   <button class="btn bp" style="width:100%" onclick="saveTarefa()">Adicionar</button>
 </div></div>
 
@@ -1000,6 +1050,15 @@ function fillSelects(){
   const respSel=document.getElementById('tf-resp');
   if(respSel) respSel.innerHTML=DB.equipa.map(m=>`<option>${m.nome}</option>`).join('');
   const allNames=[...DB.mentorados.map(m=>m.nome),...DB.leads.filter(l=>l.etapa!=='perdido').map(l=>l.nome),'Equipa'];
+  // preencher filtro âmbito por produto
+  var ambitoFiltro=document.getElementById('tf-filtro-ambito');
+  if(ambitoFiltro){
+    var curAmbito=ambitoFiltro.value;
+    var ambitoOpts='<option value="">Todos os âmbitos</option><option value="empresa">🏢 Empresa</option>';
+    DB.produtos.forEach(function(p){ ambitoOpts+='<option value="prod:'+p.nome+'">📦 '+p.nome+'</option>'; });
+    ambitoFiltro.innerHTML=ambitoOpts;
+    ambitoFiltro.value=curAmbito;
+  }
   const rnList=document.getElementById('rn-list'); if(rnList) rnList.innerHTML=allNames.map(n=>`<option value="${n}">`).join('');
   const pgNames=[...DB.mentorados.map(m=>m.nome),...DB.leads.filter(l=>l.etapa==='fechado').map(l=>l.nome)];
   const pgList=document.getElementById('pg-list'); if(pgList) pgList.innerHTML=pgNames.map(n=>`<option value="${n}">`).join('');
@@ -2125,31 +2184,214 @@ function saveMembro(){
   save();cm('membro');renderAll();toast('✓ Membro adicionado');
 }
 function deleteMembro(id){ if(!confirm('Remover?'))return; DB.equipa=DB.equipa.filter(m=>m.id!==id); save();renderAll(); }
+function tfSetAmbito(val){
+  document.getElementById('tf-ambito').value=val;
+  document.getElementById('tf-produto-wrap').style.display=val==='produto'?'block':'none';
+  document.querySelectorAll('#tf-ambito-btns button').forEach(function(b){
+    var on=b.dataset.val===val;
+    b.style.border='1.5px solid '+(on?'var(--g)':'var(--g6)');
+    b.style.background=on?'var(--gf)':'#fff';
+    b.style.color=on?'var(--g)':'var(--g3)';
+  });
+  // fill produto select
+  if(val==='produto'){
+    var ps=document.getElementById('tf-produto-sel');
+    ps.innerHTML=DB.produtos.map(function(p){return '<option value="'+p.nome+'">'+p.nome+'</option>';}).join('');
+  }
+}
 function saveTarefa(){
-  const nome=document.getElementById('tf-nome').value.trim();
+  var nome=document.getElementById('tf-nome').value.trim();
   if(!nome){toast('Descreve a tarefa','#C0392B');return;}
-  DB.tarefas.push({id:uid(),nome,resp:document.getElementById('tf-resp').value,prior:document.getElementById('tf-prior').value,prazo:document.getElementById('tf-prazo').value,done:false});
+  var ambito=document.getElementById('tf-ambito').value;
+  var produto=ambito==='produto'?document.getElementById('tf-produto-sel').value:'';
+  DB.tarefas.push({
+    id:uid(),nome,
+    ambito:ambito,
+    produto:produto,
+    resp:document.getElementById('tf-resp').value,
+    prior:document.getElementById('tf-prior').value,
+    prazo:document.getElementById('tf-prazo').value,
+    projeto:document.getElementById('tf-projeto').value||'',
+    notas:document.getElementById('tf-notas').value||'',
+    done:false,
+    criadoEm:todayISO()
+  });
   document.getElementById('tf-nome').value='';
+  document.getElementById('tf-notas').value='';
   save();cm('tarefa');renderAll();toast('✓ Tarefa adicionada');
 }
-function toggleTarefa(id){ const t=DB.tarefas.find(x=>x.id===id); if(t){t.done=!t.done;save();renderAll();} }
-function deleteTarefa(id){ DB.tarefas=DB.tarefas.filter(t=>t.id!==id); save();renderAll(); }
+function toggleTarefa(id){ var t=DB.tarefas.find(function(x){return x.id===id;}); if(t){t.done=!t.done;t.doneEm=t.done?todayISO():null;save();renderAll();} }
+function deleteTarefa(id){ if(!confirm('Apagar esta tarefa?'))return; DB.tarefas=DB.tarefas.filter(function(t){return t.id!==id;}); save();renderAll(); }
 function renderEquipa(){
-  document.getElementById('eq-count').textContent=`Equipa (${DB.equipa.length})`;
-  document.getElementById('eq-list').innerHTML = DB.equipa.map(m=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--g6)">
-      <div class="av" style="background:${m.cor}">${initials(m.nome)}</div>
-      <div style="flex:1"><div style="font-size:12px;font-weight:500">${m.nome}</div><div style="font-size:10px;color:var(--g4)">${m.funcao}</div></div>
-      <span class="tag tg">${m.tag}</span><button class="btn bd bsm" onclick="deleteMembro(${m.id})">×</button>
-    </div>`).join('');
-  document.getElementById('eq-tasks').innerHTML = DB.tarefas.length ? DB.tarefas.map(t=>{
-    const cls={Alta:'tr',Média:'ty',Baixa:'tg'}[t.prior]||'tgr';
-    return `<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--g6);align-items:flex-start;opacity:${t.done?.5:1}">
-      <input type="checkbox" ${t.done?'checked':''} style="margin-top:2px" onchange="toggleTarefa(${t.id})">
-      <div style="flex:1"><div style="font-size:12px;${t.done?'text-decoration:line-through':''}">${t.nome}</div><div style="font-size:10px;color:var(--g4)">${t.resp}</div></div>
-      <span class="tag ${cls}">${t.prior}</span><button class="btn bd bsm" onclick="deleteTarefa(${t.id})">×</button>
-    </div>`;
-  }).join('') : '<div class="empty">Sem tarefas</div>';
+  var equipa=DB.equipa;
+  document.getElementById('eq-count').textContent='Equipa ('+equipa.length+')';
+
+  // Equipa cards
+  document.getElementById('eq-list').innerHTML=equipa.length?equipa.map(function(m){
+    var nTarefas=DB.tarefas.filter(function(t){return t.resp===m.nome&&!t.done;}).length;
+    var nFeitas=DB.tarefas.filter(function(t){return t.resp===m.nome&&t.done;}).length;
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--g6)">'
+      +'<div class="av" style="background:'+m.cor+';width:38px;height:38px;font-size:13px">'+initials(m.nome)+'</div>'
+      +'<div style="flex:1">'
+        +'<div style="font-size:13px;font-weight:600">'+m.nome+'</div>'
+        +'<div style="font-size:10.5px;color:var(--g4)">'+m.funcao+'</div>'
+      +'</div>'
+      +'<div style="text-align:right">'
+        +(nTarefas?'<div style="font-size:11px;color:var(--re);font-weight:600">'+nTarefas+' pendente'+(nTarefas>1?'s':'')+'</div>':'')
+        +(nFeitas?'<div style="font-size:10px;color:var(--g)">'+nFeitas+' feita'+(nFeitas>1?'s':'')+'</div>':'')
+        +(!nTarefas&&!nFeitas?'<div style="font-size:10px;color:var(--g4)">sem tarefas</div>':'')
+      +'</div>'
+      +'<span class="tag tp" style="font-size:9.5px">'+m.tag+'</span>'
+      +'<button class="btn bd bsm" onclick="deleteMembro('+m.id+')">×</button>'
+    +'</div>';
+  }).join(''):'<div class="empty">Sem membros</div>';
+
+  // ── ALERTAS DESPESAS MENSAIS ──
+  var hoje=new Date(); var mesAtual=hoje.getMonth(); var anoAtual=hoje.getFullYear();
+  var despMensais=DB.despesas.filter(function(d){return d.recorrencia==='mensal';});
+  var alertasEl=document.getElementById('eq-desp-alertas');
+  if(alertasEl&&despMensais.length){
+    var totalMensal=despMensais.reduce(function(s,d){return s+parseFloat(d.valor||0);},0);
+    var html='<div class="card" style="border-left:3px solid var(--re)">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+        +'<div><div class="ct">🔁 Despesas Mensais Recorrentes</div><div class="cs">Renovam automaticamente todo o mês</div></div>'
+        +'<div style="text-align:right"><div style="font-size:18px;font-weight:700;color:var(--re)">-€'+totalMensal.toFixed(0)+'</div><div style="font-size:10px;color:var(--g4)">/mês</div></div>'
+      +'</div>';
+    despMensais.forEach(function(d){
+      // check if paid this month
+      var pagaMes=DB.pagamentos.filter(function(p){
+        if(!p.data)return false;
+        var dt=new Date(p.data+'T12:00:00');
+        return dt.getMonth()===mesAtual&&dt.getFullYear()===anoAtual&&p.cliente===d.desc&&p.estado==='Pago';
+      }).length>0;
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--g6)">'
+        +'<div style="width:8px;height:8px;border-radius:50%;background:'+(pagaMes?'var(--g)':'var(--re)')+';flex-shrink:0"></div>'
+        +'<div style="flex:1"><div style="font-size:12.5px;font-weight:500">'+d.desc+'</div>'
+          +(d.data?'<div style="font-size:10.5px;color:var(--g4)">Desde '+fmtDate(d.data)+'</div>':'')
+        +'</div>'
+        +'<span style="font-size:13px;font-weight:600;color:var(--re)">-€'+parseFloat(d.valor||0).toFixed(2)+'</span>'
+        +'<span class="tag '+(pagaMes?'tg':'tr')+'" style="font-size:9.5px">'+(pagaMes?'✓ Pago':'⚠ Pendente')+'</span>'
+        +'<button class="btn bd bsm" onclick="deleteDespesa('+d.id+')" style="font-size:10px">×</button>'
+      +'</div>';
+    });
+    html+='<div></div>'
+    +'</div>';
+    alertasEl.innerHTML=html;
+  } else if(alertasEl){
+    alertasEl.innerHTML='<div class="empty">Sem despesas mensais recorrentes ainda</div>';
+  }
+
+  // Preencher filtro de responsável
+  var filtroResp=document.getElementById('tf-filtro-resp');
+  if(filtroResp){
+    var selVal=filtroResp.value;
+    filtroResp.innerHTML='<option value="">Todos</option>'+equipa.map(function(m){return '<option value="'+m.nome+'">'+m.nome+'</option>';}).join('');
+    filtroResp.value=selVal;
+  }
+
+  // Preencher select no modal
+  var respSel=document.getElementById('tf-resp');
+  if(respSel) respSel.innerHTML=equipa.map(function(m){return '<option>'+m.nome+'</option>';}).join('');
+
+  // Preencher projeto no modal
+  var projSel=document.getElementById('tf-projeto');
+  if(projSel){
+    var projs=['<option value="">— Geral —</option>'];
+    DB.mentorados.forEach(function(m){ projs.push('<option value="'+m.nome+'">👤 '+m.nome+'</option>'); });
+    DB.leads.filter(function(l){return !['fechado','perdido'].includes(l.etapa);}).forEach(function(l){ projs.push('<option value="Lead: '+l.nome+'">🎯 Lead: '+l.nome+'</option>'); });
+    projSel.innerHTML=projs.join('');
+  }
+
+  // Filtrar tarefas
+  var filtResp=(document.getElementById('tf-filtro-resp')||{}).value||'';
+  var filtPrior=(document.getElementById('tf-filtro-prior')||{}).value||'';
+  var filtAmbito=(document.getElementById('tf-filtro-ambito')||{}).value||'';
+  var tarefas=DB.tarefas.slice();
+  if(filtResp) tarefas=tarefas.filter(function(t){return t.resp===filtResp;});
+  if(filtPrior) tarefas=tarefas.filter(function(t){return t.prior===filtPrior;});
+  if(filtAmbito==='empresa') tarefas=tarefas.filter(function(t){return t.ambito==='empresa'||!t.ambito;});
+  else if(filtAmbito&&filtAmbito.startsWith('prod:')){ var prodNome=filtAmbito.slice(5); tarefas=tarefas.filter(function(t){return t.produto===prodNome;}); }
+
+  // Separar pendentes e feitas
+  var pendentes=tarefas.filter(function(t){return !t.done;}).sort(function(a,b){
+    var ordem={Alta:0,Média:1,Baixa:2};
+    return (ordem[a.prior]||1)-(ordem[b.prior]||1)||(a.prazo||'').localeCompare(b.prazo||'');
+  });
+  var feitas=tarefas.filter(function(t){return t.done;}).sort(function(a,b){return (b.doneEm||'').localeCompare(a.doneEm||'');}).slice(0,5);
+
+  var priorCls={Alta:'tr',Média:'ty',Baixa:'tg'};
+  var priorIcon={Alta:'🔴',Média:'🟡',Baixa:'🟢'};
+
+  function tarefaHTML(t){
+    var hoje=todayISO();
+    var atrasado=t.prazo&&t.prazo<hoje&&!t.done;
+    var membro=DB.equipa.find(function(m){return m.nome===t.resp;})||{cor:'#888'};
+    var ambitoBadge=t.ambito==='produto'&&t.produto
+      ?'<span class="tag tp" style="font-size:9.5px">📦 '+t.produto+'</span>'
+      :'<span class="tag tgr" style="font-size:9.5px">🏢 Empresa</span>';
+    return '<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--g6);opacity:'+(t.done?.5:1)+'">'
+      +'<input type="checkbox" '+(t.done?'checked':'')+' style="margin-top:3px;cursor:pointer;accent-color:var(--g);width:17px;height:17px;flex-shrink:0" onchange="toggleTarefa('+t.id+')">'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">'+ambitoBadge
+          +(t.projeto?'<span style="font-size:10px;color:var(--pu)">📁 '+t.projeto+'</span>':'')
+        +'</div>'
+        +'<div style="font-size:13px;font-weight:500;'+(t.done?'text-decoration:line-through;color:var(--g4)':'')+'">'+t.nome+'</div>'
+        +(t.notas?'<div style="font-size:11px;color:var(--g4);margin-top:3px;line-height:1.4">'+t.notas+'</div>':'')
+        +'<div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">'
+          +'<div style="display:flex;align-items:center;gap:5px">'
+            +'<div class="av" style="background:'+membro.cor+';width:20px;height:20px;font-size:8px;flex-shrink:0">'+initials(t.resp||'?')+'</div>'
+            +'<span style="font-size:11px;color:var(--g3)">'+( t.resp||'—')+'</span>'
+          +'</div>'
+          +(t.prazo?'<span style="font-size:10.5px;color:'+(atrasado?'var(--re);font-weight:600':'var(--g4)')+'">📅 '+fmtDate(t.prazo)+(atrasado?' ⚠ Atrasado':'')+'</span>':'')
+        +'</div>'
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">'
+        +'<span class="tag '+(priorCls[t.prior]||'tgr')+'" style="font-size:9.5px">'+(priorIcon[t.prior]||'')+' '+t.prior+'</span>'
+        +'<button class="btn bd bsm" style="font-size:10px;padding:3px 8px" onclick="deleteTarefa('+t.id+')">×</button>'
+      +'</div>'
+    +'</div>';
+  }
+
+  // Group by ambito (empresa first, then by produto)
+  function sectionHeader(label,count,color){
+    return '<div style="display:flex;align-items:center;gap:8px;margin:14px 0 6px;padding-bottom:5px;border-bottom:2px solid '+(color||'var(--g6)')+'">'
+      +'<span style="font-size:11px;font-weight:700;color:'+(color||'var(--g3)')+';text-transform:uppercase;letter-spacing:.08em">'+label+'</span>'
+      +'<span style="font-size:11px;color:var(--g4)">('+count+')</span>'
+    +'</div>';
+  }
+
+  if(!pendentes.length&&!feitas.length){
+    document.getElementById('eq-tasks').innerHTML='<div class="empty" style="padding:2rem">Nenhuma tarefa ainda<br><span style="font-size:12px;color:var(--g4)">Clica em + Tarefa para começar</span></div>';
+  } else {
+    var html='';
+    // Pendentes agrupadas
+    if(pendentes.length){
+      var empPend=pendentes.filter(function(t){return !t.ambito||t.ambito==='empresa';});
+      var prodGrupos={};
+      pendentes.filter(function(t){return t.ambito==='produto';}).forEach(function(t){
+        var k=t.produto||'Sem produto';
+        if(!prodGrupos[k]) prodGrupos[k]=[];
+        prodGrupos[k].push(t);
+      });
+      if(empPend.length){
+        html+=sectionHeader('🏢 Empresa',empPend.length,'var(--bl)');
+        html+=empPend.map(tarefaHTML).join('');
+      }
+      Object.keys(prodGrupos).forEach(function(prod){
+        var grupo=prodGrupos[prod];
+        html+=sectionHeader('📦 '+prod,grupo.length,'var(--pu)');
+        html+=grupo.map(tarefaHTML).join('');
+      });
+    }
+    // Concluídas
+    if(feitas.length){
+      html+='<div style="margin-top:16px;padding-top:10px;border-top:2px dashed var(--g6)">';
+      html+='<div style="font-size:10px;font-weight:600;color:var(--g4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">✓ Concluídas recentemente ('+feitas.length+')</div>';
+      html+=feitas.map(tarefaHTML).join('');
+      html+='</div>';
+    }
+    document.getElementById('eq-tasks').innerHTML=html;
+  }
 }
 
 /* ═══ OVERVIEW ═══ */
