@@ -524,6 +524,17 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
         <div id="ov-agenda"></div>
       </div>
     </div>
+
+    <!-- Calendário de entradas e saídas -->
+    <div class="card" style="margin-top:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div>
+          <div class="ct">📆 Próximos compromissos</div>
+          <div class="cs">Entradas e saídas previstas nos próximos 30 dias</div>
+        </div>
+      </div>
+      <div id="ov-calendario"></div>
+    </div>
   </div>
 
   <!-- PIPELINE UNIFICADO -->
@@ -913,9 +924,28 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
 <!-- MODAL DESPESA -->
 <div class="mo" id="modal-despesa"><div class="mbox">
   <div class="mh"><div class="mt">📤 Registar Saída</div><span class="mx" onclick="cm('despesa')">✕</span></div>
-  <div class="fr fg"><div><label class="fl">Descrição</label><input class="fi" id="ds-desc"></div><div><label class="fl">Data</label><input type="date" class="fi" id="ds-data"></div></div>
-  <div class="fr fg"><div><label class="fl">Categoria</label><select class="fi" id="ds-categoria"><option>Tráfego pago</option><option>Ferramentas</option><option>Comissões</option><option>Plataforma</option><option>Marketing</option><option>Impostos</option><option>Outro</option></select></div><div><label class="fl">Valor (€)</label><input type="number" class="fi" id="ds-valor"></div></div>
-  <div class="fg"><label class="fl">Recorrência</label><select class="fi" id="ds-recorrencia"><option value="unica">Única</option><option value="mensal">Mensal</option></select></div>
+  <div class="fr fg">
+    <div><label class="fl">Descrição</label><input class="fi" id="ds-desc" placeholder="Ex: Canva, Tráfego Meta..."></div>
+    <div><label class="fl">Data início</label><input type="date" class="fi" id="ds-data"></div>
+  </div>
+  <div class="fr fg">
+    <div><label class="fl">Categoria</label><select class="fi" id="ds-categoria"><option>Tráfego pago</option><option>Ferramentas</option><option>Comissões</option><option>Plataforma</option><option>Marketing</option><option>Impostos</option><option>Outro</option></select></div>
+    <div><label class="fl">Recorrência</label><select class="fi" id="ds-recorrencia" onchange="dsToggleRecorr()"><option value="unica">Única</option><option value="mensal">Mensal</option></select></div>
+  </div>
+  <div class="fr fg">
+    <div><label class="fl">Valor total (€)</label><input type="number" class="fi" id="ds-valor" oninput="dsCalc()" placeholder="0.00"></div>
+    <div id="ds-parcelas-wrap" style="display:none"><label class="fl">Dividir em</label>
+      <select class="fi" id="ds-parcelas" onchange="dsCalc()">
+        <option value="1">Sem divisão</option>
+        <option value="2">2 meses</option>
+        <option value="3">3 meses</option>
+        <option value="4">4 meses</option>
+        <option value="6">6 meses</option>
+        <option value="12">12 meses</option>
+      </select>
+    </div>
+  </div>
+  <div id="ds-info" style="display:none" class="al algr" style="font-size:12px"></div>
   <button class="btn bd" style="width:100%" onclick="saveDespesa()">Registar Saída</button>
 </div></div>
 
@@ -1553,13 +1583,50 @@ function savePagamento(){
 }
 function marcarPago(id){ const p=DB.pagamentos.find(x=>x.id===id); if(p){p.estado='Pago';save();renderAll();toast('✓ Marcado como pago');} }
 function deletePagamento(id){ if(!confirm('Apagar?'))return; DB.pagamentos=DB.pagamentos.filter(x=>x.id!==id); save();renderAll(); }
+function dsToggleRecorr(){
+  var rec=document.getElementById('ds-recorrencia').value;
+  document.getElementById('ds-parcelas-wrap').style.display=rec==='mensal'?'block':'none';
+  dsCalc();
+}
+function dsCalc(){
+  var val=parseFloat(document.getElementById('ds-valor').value)||0;
+  var rec=document.getElementById('ds-recorrencia').value;
+  var parc=parseInt(document.getElementById('ds-parcelas').value)||1;
+  var info=document.getElementById('ds-info');
+  if(!val){info.style.display='none';return;}
+  if(rec==='mensal'&&parc>1){
+    info.innerHTML='Total: €'+val.toFixed(2)+' · '+parc+' meses de €'+(val/parc).toFixed(2)+'/mês';
+    info.style.display='block';
+  } else if(rec==='mensal'){
+    info.innerHTML='Despesa mensal recorrente de €'+val.toFixed(2)+'/mês';
+    info.style.display='block';
+  } else { info.style.display='none'; }
+}
 function saveDespesa(){
-  const desc=document.getElementById('ds-desc').value.trim();
-  const valor=parseFloat(document.getElementById('ds-valor').value);
-  if(!desc||!valor){toast('Preenche descrição e valor','#C0392B');return;}
-  DB.despesas.push({id:uid(),desc,data:document.getElementById('ds-data').value||todayISO(),categoria:document.getElementById('ds-categoria').value,valor,recorrencia:document.getElementById('ds-recorrencia').value});
-  document.getElementById('ds-desc').value='';document.getElementById('ds-valor').value='';
-  save();cm('despesa');renderAll();toast('✓ Saída registada');
+  var desc=document.getElementById('ds-desc').value.trim();
+  var valorTotal=parseFloat(document.getElementById('ds-valor').value);
+  var rec=document.getElementById('ds-recorrencia').value;
+  var parc=rec==='mensal'?parseInt(document.getElementById('ds-parcelas').value)||1:1;
+  var valorMensal=parc>1?parseFloat((valorTotal/parc).toFixed(2)):valorTotal;
+  if(!desc||!valorTotal){toast('Preenche descrição e valor','#C0392B');return;}
+  var dataInicio=document.getElementById('ds-data').value||todayISO();
+  var cat=document.getElementById('ds-categoria').value;
+  if(rec==='mensal'&&parc>1){
+    // criar uma despesa por mês
+    var datas=gerarDatas(dataInicio,parc);
+    datas.forEach(function(data){
+      DB.despesas.push({id:uid(),desc:desc,data:data,categoria:cat,valor:valorMensal,recorrencia:'unica',valorTotal:valorTotal,parcelas:parc});
+    });
+    toast('✓ '+parc+' saídas de €'+valorMensal.toFixed(2)+' criadas');
+  } else {
+    DB.despesas.push({id:uid(),desc:desc,data:dataInicio,categoria:cat,valor:valorTotal,recorrencia:rec});
+    toast('✓ Saída registada');
+  }
+  document.getElementById('ds-desc').value='';
+  document.getElementById('ds-valor').value='';
+  document.getElementById('ds-parcelas').value='1';
+  document.getElementById('ds-info').style.display='none';
+  save();cm('despesa');renderAll();
 }
 function deleteDespesa(id){ if(!confirm('Apagar?'))return; DB.despesas=DB.despesas.filter(x=>x.id!==id); save();renderAll(); }
 var _finPagFiltro='todos';
@@ -2536,6 +2603,8 @@ function renderOverview(){
       +'</div>';
   }).join(''):'<div class="empty">Nenhum mentorado ativo</div>';
 
+  renderCalendario();
+
   // Pipeline
   document.getElementById('ov-pipeline').innerHTML=ETAPAS.filter(function(e){return e.id!=='perdido';}).map(function(et){
     var n=DB.leads.filter(function(l){return l.etapa===et.id;}).length;
@@ -2558,6 +2627,101 @@ function renderOverview(){
       }).join('')+'</div>';
   }).join('');
   document.getElementById('ov-agenda').innerHTML=html||'<div class="empty">Sem reuniões</div>';
+}
+
+function renderCalendario(){
+  var hoje=new Date();
+  var limit=new Date(hoje); limit.setDate(limit.getDate()+30);
+  var hojeISO=todayISO();
+  var limitISO=limit.toISOString().split('T')[0];
+
+  // Entradas previstas
+  var entradas=DB.pagamentos.filter(function(p){
+    return p.data>=hojeISO&&p.data<=limitISO&&p.estado!=='Cancelado';
+  }).map(function(p){
+    return {data:p.data,tipo:'entrada',desc:p.cliente+(p.totalParcelas>1?' ('+p.parcela+'/'+p.totalParcelas+')':''),sub:p.produto,valor:parseFloat(p.valor||0),estado:p.estado,id:p.id};
+  });
+
+  // Saídas previstas
+  var saidas=DB.despesas.filter(function(d){
+    return d.data>=hojeISO&&d.data<=limitISO;
+  }).map(function(d){
+    return {data:d.data,tipo:'saida',desc:d.desc,sub:d.categoria,valor:parseFloat(d.valor||0)};
+  });
+  // Despesas mensais sem data específica no período
+  DB.despesas.filter(function(d){return d.recorrencia==='mensal'&&(!d.data||d.data<hojeISO);}).forEach(function(d){
+    // project to this month
+    var dt=new Date(hoje.getFullYear(),hoje.getMonth(),d.data?new Date(d.data+'T12:00:00').getDate():1);
+    var iso=dt.toISOString().split('T')[0];
+    if(iso>=hojeISO&&iso<=limitISO&&!saidas.find(function(s){return s.desc===d.desc&&s.data===iso;})){
+      saidas.push({data:iso,tipo:'saida',desc:d.desc+' 🔁',sub:d.categoria,valor:parseFloat(d.valor||0)});
+    }
+  });
+
+  // Reuniões agendadas
+  var reunioes=DB.reunioes.filter(function(r){return r.data>=hojeISO&&r.data<=limitISO;}).map(function(r){
+    return {data:r.data,tipo:'reuniao',desc:r.who,sub:r.tipo+(r.hora?' · '+r.hora:''),valor:0};
+  });
+
+  var todos=[...entradas,...saidas,...reunioes].sort(function(a,b){return a.data.localeCompare(b.data);});
+
+  if(!todos.length){
+    document.getElementById('ov-calendario').innerHTML='<div class="empty">Nenhum compromisso nos próximos 30 dias</div>';
+    return;
+  }
+
+  // Group by date
+  var porData={};
+  todos.forEach(function(item){
+    if(!porData[item.data]) porData[item.data]=[];
+    porData[item.data].push(item);
+  });
+
+  var mesesPT=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  var diasPT=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+  var html=Object.keys(porData).sort().map(function(data){
+    var dt=new Date(data+'T12:00:00');
+    var isHoje=data===hojeISO;
+    var isSemana=dt<=limit&&dt>=hoje;
+    var items=porData[data];
+    var totalEntradas=items.filter(function(i){return i.tipo==='entrada';}).reduce(function(s,i){return s+i.valor;},0);
+    var totalSaidas=items.filter(function(i){return i.tipo==='saida';}).reduce(function(s,i){return s+i.valor;},0);
+
+    return '<div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--g6)">'
+      // Data pill
+      +'<div style="min-width:52px;text-align:center;flex-shrink:0">'
+        +'<div style="background:'+(isHoje?'var(--g)':'var(--g7)')+';border-radius:10px;padding:6px 4px">'
+          +'<div style="font-size:9.5px;color:'+(isHoje?'rgba(255,255,255,.7)':'var(--g4)')+';font-weight:500">'+diasPT[dt.getDay()]+'</div>'
+          +'<div style="font-size:17px;font-weight:700;color:'+(isHoje?'#fff':'var(--bk)')+';line-height:1.2">'+dt.getDate()+'</div>'
+          +'<div style="font-size:9.5px;color:'+(isHoje?'rgba(255,255,255,.7)':'var(--g4)')+'">'+mesesPT[dt.getMonth()]+'</div>'
+        +'</div>'
+        // Saldo dia
+        +(totalEntradas||totalSaidas?'<div style="font-size:9px;margin-top:4px;font-weight:600;color:'+(totalEntradas>=totalSaidas?'var(--g)':'var(--re)')+'">'+( totalEntradas>0&&totalSaidas>0?'='+(totalEntradas-totalSaidas>=0?'+':'')+( totalEntradas-totalSaidas).toFixed(0):totalEntradas>0?'+'+totalEntradas.toFixed(0):'-'+totalSaidas.toFixed(0))+'</div>':'')
+      +'</div>'
+      // Items
+      +'<div style="flex:1">'
+        +items.map(function(item){
+          var cor=item.tipo==='entrada'?'var(--g)':item.tipo==='saida'?'var(--re)':'var(--bl)';
+          var icon=item.tipo==='entrada'?'↓':item.tipo==='saida'?'↑':'📅';
+          var isPago=item.estado==='Pago';
+          return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'
+            +'<div style="width:22px;height:22px;border-radius:6px;background:'+cor+'18;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:'+cor+';flex-shrink:0">'+icon+'</div>'
+            +'<div style="flex:1;min-width:0">'
+              +'<div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+item.desc+'</div>'
+              +'<div style="font-size:10px;color:var(--g4)">'+item.sub+'</div>'
+            +'</div>'
+            +(item.valor?'<div style="text-align:right;flex-shrink:0">'
+              +'<div style="font-size:12.5px;font-weight:700;color:'+cor+'">'+(item.tipo==='entrada'?'+':'-')+'€'+item.valor.toFixed(0)+'</div>'
+              +(item.tipo==='entrada'?'<div style="font-size:9px;color:'+(isPago?'var(--g)':'var(--ye)')+'">'+( isPago?'✓ Pago':'Pendente')+'</div>':'')
+            +'</div>':'')
+          +'</div>';
+        }).join('')
+      +'</div>'
+    +'</div>';
+  }).join('');
+
+  document.getElementById('ov-calendario').innerHTML=html;
 }
 
 function renderAll(){
