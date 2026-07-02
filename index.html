@@ -921,6 +921,26 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
   <button class="btn bp" style="width:100%" onclick="savePagamento()">Registar</button>
 </div></div>
 
+<!-- MODAL EDITAR PAGAMENTO -->
+<div class="mo" id="modal-editar-pag"><div class="mbox" style="max-width:400px">
+  <div class="mh"><div class="mt">✏️ Editar Pagamento</div><span class="mx" onclick="cm('editar-pag')">✕</span></div>
+  <input type="hidden" id="ep-id">
+  <div class="fg"><label class="fl">Cliente</label><input class="fi" id="ep-cliente"></div>
+  <div class="fg"><label class="fl">Produto</label><select class="fi" id="ep-produto"></select></div>
+  <div class="fr fg">
+    <div><label class="fl">Valor (€)</label><input type="number" class="fi" id="ep-valor"></div>
+    <div><label class="fl">Data</label><input type="date" class="fi" id="ep-data"></div>
+  </div>
+  <div class="fr fg">
+    <div><label class="fl">Forma</label><select class="fi" id="ep-forma"><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>Transferência Bancária</option><option>MB Way</option><option>PayPal</option><option>Dinheiro</option><option>Outro</option></select></div>
+    <div><label class="fl">Estado</label><select class="fi" id="ep-estado"><option value="Pago">Pago</option><option value="Pendente">Pendente</option></select></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:4px">
+    <button class="btn bp" style="flex:1" onclick="saveEditarPag()">Guardar</button>
+    <button class="btn bd" onclick="deleteEditarPag()">Apagar</button>
+  </div>
+</div></div>
+
 <!-- MODAL DESPESA -->
 <div class="mo" id="modal-despesa"><div class="mbox">
   <div class="mh"><div class="mt">📤 Registar Saída</div><span class="mx" onclick="cm('despesa')">✕</span></div>
@@ -954,8 +974,37 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
   <div class="mh"><div class="mt">📦 Novo Produto</div><span class="mx" onclick="cm('produto')">✕</span></div>
   <div class="fg"><label class="fl">Nome</label><input class="fi" id="pd-nome"></div>
   <div class="fg"><label class="fl">Nome curto</label><input class="fi" id="pd-nomec"></div>
-  <div class="fr fg"><div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pd-valor-input"></div><div><label class="fl">Tipo</label><select class="fi" id="pd-tipo"><option value="unico">Único</option><option value="recorrente">Recorrente</option></select></div></div>
-  <div class="fg"><label class="fl">Descrição</label><input class="fi" id="pd-desc"></div>
+  <div class="fr fg">
+    <div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pd-valor-input" placeholder="0.00"></div>
+    <div><label class="fl">Tipo de cobrança</label>
+      <select class="fi" id="pd-tipo" onchange="pdToggleTipo()">
+        <option value="unico">Único — pagamento único</option>
+        <option value="recorrente">Recorrente — mensalidade</option>
+        <option value="parcelado">Parcelado — em X vezes</option>
+      </select>
+    </div>
+  </div>
+  <!-- Parcelado: número de parcelas -->
+  <div class="fr fg" id="pd-parcelas-wrap" style="display:none">
+    <div><label class="fl">Nº de parcelas</label><input type="number" class="fi" id="pd-parcelas" min="2" max="24" placeholder="Ex: 12"></div>
+    <div><label class="fl">Valor/parcela</label><div class="fi" id="pd-parcela-calc" style="background:var(--g7);color:var(--g4);display:flex;align-items:center;font-size:13px">—</div></div>
+  </div>
+  <!-- Recorrente: até quando -->
+  <div class="fr fg" id="pd-recorr-wrap" style="display:none">
+    <div><label class="fl">Duração</label>
+      <select class="fi" id="pd-duracao">
+        <option value="">Sem limite</option>
+        <option value="1">1 mês</option>
+        <option value="3">3 meses</option>
+        <option value="6">6 meses</option>
+        <option value="12">12 meses</option>
+        <option value="24">24 meses</option>
+        <option value="custom">Personalizado</option>
+      </select>
+    </div>
+    <div id="pd-ate-wrap" style="display:none"><label class="fl">Até quando</label><input type="date" class="fi" id="pd-ate"></div>
+  </div>
+  <div class="fg"><label class="fl">Descrição</label><input class="fi" id="pd-desc" placeholder="O que está incluído..."></div>
   <button class="btn bp" style="width:100%" onclick="saveProduto()">Criar</button>
 </div></div>
 
@@ -1581,8 +1630,38 @@ function savePagamento(){
   document.getElementById('pg-cliente').value='';document.getElementById('pg-valor').value='';
   save();cm('pagamento');renderAll();toast(parcelas===1?'✓ Pagamento registado':`✓ ${parcelas} parcelas criadas`);
 }
-function marcarPago(id){ const p=DB.pagamentos.find(x=>x.id===id); if(p){p.estado='Pago';save();renderAll();toast('✓ Marcado como pago');} }
-function deletePagamento(id){ if(!confirm('Apagar?'))return; DB.pagamentos=DB.pagamentos.filter(x=>x.id!==id); save();renderAll(); }
+function marcarPago(id){ var p=DB.pagamentos.find(function(x){return x.id===id;}); if(p){p.estado='Pago';save();renderAll();toast('✓ Marcado como pago');} }
+function deletePagamento(id){ if(!confirm('Apagar?'))return; DB.pagamentos=DB.pagamentos.filter(function(x){return x.id!==id;}); save();renderAll(); }
+function openEditarPag(id){
+  var p=DB.pagamentos.find(function(x){return x.id===id;}); if(!p) return;
+  document.getElementById('ep-id').value=id;
+  document.getElementById('ep-cliente').value=p.cliente||'';
+  document.getElementById('ep-data').value=p.data||'';
+  document.getElementById('ep-valor').value=p.valor||'';
+  document.getElementById('ep-estado').value=p.estado||'Pendente';
+  document.getElementById('ep-forma').value=p.formaPagamento||'MB Way';
+  var ps=document.getElementById('ep-produto');
+  ps.innerHTML=DB.produtos.map(function(pr){return '<option value="'+pr.nome+'">'+pr.nome+'</option>';}).join('');
+  ps.value=p.produto||'';
+  document.getElementById('modal-editar-pag').classList.add('open');
+}
+function saveEditarPag(){
+  var id=parseInt(document.getElementById('ep-id').value);
+  var p=DB.pagamentos.find(function(x){return x.id===id;}); if(!p) return;
+  p.cliente=document.getElementById('ep-cliente').value.trim();
+  p.data=document.getElementById('ep-data').value;
+  p.valor=parseFloat(document.getElementById('ep-valor').value);
+  p.estado=document.getElementById('ep-estado').value;
+  p.formaPagamento=document.getElementById('ep-forma').value;
+  p.produto=document.getElementById('ep-produto').value;
+  save();cm('editar-pag');renderAll();toast('✓ Pagamento atualizado');
+}
+function deleteEditarPag(){
+  var id=parseInt(document.getElementById('ep-id').value);
+  if(!confirm('Apagar este pagamento?'))return;
+  DB.pagamentos=DB.pagamentos.filter(function(x){return x.id!==id;});
+  save();cm('editar-pag');renderAll();toast('Pagamento removido','#C0392B');
+}
 function dsToggleRecorr(){
   var rec=document.getElementById('ds-recorrencia').value;
   document.getElementById('ds-parcelas-wrap').style.display=rec==='mensal'?'block':'none';
@@ -1724,6 +1803,7 @@ function renderFinanceiro(){
             +'<span class="tag '+(isPago?'tg':'ty')+'" style="min-width:60px;justify-content:center">'+p.estado+'</span>'
             +'<div style="display:flex;gap:4px">'
               +(isPago?'':'<button class="btn bg bsm" style="font-size:10px" onclick="marcarPago('+p.id+')">✓ Pago</button>')
+              +'<button class="btn bs bsm" style="font-size:10px" onclick="openEditarPag('+p.id+')">✏️</button>'
               +'<button class="btn bd bsm" style="font-size:10px" onclick="deletePagamento('+p.id+')">×</button>'
             +'</div>'
           +'</div>';
@@ -1899,23 +1979,71 @@ function finToggleMes(cid){
 }
 
 /* ═══ PRODUTOS ═══ */
+function pdToggleTipo(){
+  var tipo=document.getElementById('pd-tipo').value;
+  document.getElementById('pd-parcelas-wrap').style.display=tipo==='parcelado'?'grid':'none';
+  document.getElementById('pd-recorr-wrap').style.display=tipo==='recorrente'?'grid':'none';
+}
+function pdCalcParcela(){
+  var val=parseFloat(document.getElementById('pd-valor-input').value)||0;
+  var parc=parseInt(document.getElementById('pd-parcelas').value)||1;
+  var el=document.getElementById('pd-parcela-calc');
+  if(el&&val&&parc>1) el.textContent='€'+(val/parc).toFixed(2)+'/mês';
+  else if(el) el.textContent='—';
+}
 function saveProduto(){
-  const nome=document.getElementById('pd-nome').value.trim();
-  const valor=parseFloat(document.getElementById('pd-valor-input').value);
+  var nome=document.getElementById('pd-nome').value.trim();
+  var valor=parseFloat(document.getElementById('pd-valor-input').value);
   if(!nome||!valor){toast('Preenche nome e valor','#C0392B');return;}
-  DB.produtos.push({id:uid(),nome,nomeC:document.getElementById('pd-nomec').value||nome,valor,tipo:document.getElementById('pd-tipo').value,desc:document.getElementById('pd-desc').value});
-  ['pd-nome','pd-nomec','pd-desc'].forEach(id=>document.getElementById(id).value='');
+  var tipo=document.getElementById('pd-tipo').value;
+  var parcelas=tipo==='parcelado'?parseInt(document.getElementById('pd-parcelas').value)||1:null;
+  var duracao=tipo==='recorrente'?document.getElementById('pd-duracao').value:'';
+  var ate=duracao==='custom'?document.getElementById('pd-ate').value:null;
+  DB.produtos.push({
+    id:uid(),nome,
+    nomeC:document.getElementById('pd-nomec').value||nome,
+    valor,tipo,parcelas,duracao,ate,
+    desc:document.getElementById('pd-desc').value
+  });
+  ['pd-nome','pd-nomec','pd-desc'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('pd-valor-input').value='';
+  document.getElementById('pd-parcelas').value='';
   save();cm('produto');renderAll();toast('✓ Produto criado');
 }
 function deleteProduto(id){ if(!confirm('Apagar?'))return; DB.produtos=DB.produtos.filter(p=>p.id!==id); save();renderAll(); }
 function renderProdutos(){
-  document.getElementById('produtos-grid').innerHTML = DB.produtos.map(p=>`
-    <div class="card"><div class="ch"><div style="font-size:12px;font-weight:500">${p.nomeC||p.nome}</div><button class="btn bd bsm" onclick="deleteProduto(${p.id})">×</button></div>
-    <div style="font-size:22px;font-weight:700;color:#0B6E4F;font-family:'Space Grotesk',sans-serif">€${p.valor}${p.tipo==='recorrente'?'<span style="font-size:12px;font-weight:400">/mês</span>':''}</div>
-    <div style="font-size:11px;color:var(--g4);margin:4px 0 8px">${p.desc||''}</div><div class="div"></div>
-    <div style="font-size:11px;color:var(--g4)">Vendas: <strong>${DB.pagamentos.filter(pg=>pg.produto===p.nome).length}</strong></div></div>
-  `).join('');
+  document.getElementById('produtos-grid').innerHTML=DB.produtos.map(function(p){
+    var vendas=DB.pagamentos.filter(function(pg){return pg.produto===p.nome;});
+    var vendaIDs=new Set(vendas.map(function(v){return v.grupoId||v.id;}));
+    var nVendas=vendaIDs.size;
+    var receita=vendas.filter(function(v){return v.estado==='Pago';}).reduce(function(s,v){return s+parseFloat(v.valor||0);},0);
+    // tipo badge
+    var tipoBadge=p.tipo==='recorrente'?'<span class="tag tp" style="font-size:9.5px">🔁 Mensal</span>'
+      :p.tipo==='parcelado'?'<span class="tag to" style="font-size:9.5px">📅 '+( p.parcelas||'?')+'x parcelas</span>'
+      :'<span class="tag tg" style="font-size:9.5px">✓ Único</span>';
+    var precoStr='€'+p.valor
+      +(p.tipo==='recorrente'?'<span style="font-size:12px;font-weight:400">/mês</span>'
+        :p.tipo==='parcelado'&&p.parcelas?'<span style="font-size:13px;font-weight:400"> em '+p.parcelas+'x de €'+(p.valor/p.parcelas).toFixed(0)+'</span>'
+        :'');
+    var duracaoStr='';
+    if(p.tipo==='recorrente'&&p.duracao){
+      duracaoStr=p.duracao==='custom'&&p.ate?'Até '+fmtDate(p.ate)
+        :p.duracao?'Durante '+p.duracao+' mes'+(p.duracao>1?'es':'')
+        :'Sem limite';
+    }
+    return '<div class="card">'
+      +'<div class="ch"><div><div style="font-size:13px;font-weight:600">'+( p.nomeC||p.nome)+'</div>'+tipoBadge+'</div>'
+      +'<button class="btn bd bsm" onclick="deleteProduto('+p.id+')">×</button></div>'
+      +'<div style="font-size:24px;font-weight:700;color:var(--g);margin:8px 0 4px">'+precoStr+'</div>'
+      +(duracaoStr?'<div style="font-size:10.5px;color:var(--g4);margin-bottom:4px">'+duracaoStr+'</div>':'')
+      +(p.desc?'<div style="font-size:11px;color:var(--g4);margin-bottom:8px">'+p.desc+'</div>':'')
+      +'<div class="div"></div>'
+      +'<div style="display:flex;justify-content:space-between;font-size:11px">'
+        +'<span style="color:var(--g4)">'+nVendas+' venda'+(nVendas!==1?'s':'')+'</span>'
+        +'<span style="font-weight:600;color:var(--g)">€'+receita.toFixed(0)+' recebido</span>'
+      +'</div>'
+    +'</div>';
+  }).join('');
 }
 
 /* ═══ AGENDA ═══ */
@@ -2314,41 +2442,73 @@ function renderEquipa(){
   }).join(''):'<div class="empty">Sem membros</div>';
 
   // ── ALERTAS DESPESAS MENSAIS ──
-  var hoje=new Date(); var mesAtual=hoje.getMonth(); var anoAtual=hoje.getFullYear();
+  var hoje2=new Date(); var mesAtual=hoje2.getMonth(); var anoAtual=hoje2.getFullYear();
   var despMensais=DB.despesas.filter(function(d){return d.recorrencia==='mensal';});
   var alertasEl=document.getElementById('eq-desp-alertas');
-  if(alertasEl&&despMensais.length){
+  if(alertasEl){
+    var html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">';
+    // SAIDAS
     var totalMensal=despMensais.reduce(function(s,d){return s+parseFloat(d.valor||0);},0);
-    var html='<div class="card" style="border-left:3px solid var(--re)">'
+    html+='<div class="card" style="border-left:3px solid var(--re)">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
-        +'<div><div class="ct">🔁 Despesas Mensais Recorrentes</div><div class="cs">Renovam automaticamente todo o mês</div></div>'
+        +'<div><div class="ct" style="font-size:13px">🔁 Saídas Mensais</div><div class="cs">Despesas recorrentes</div></div>'
         +'<div style="text-align:right"><div style="font-size:18px;font-weight:700;color:var(--re)">-€'+totalMensal.toFixed(0)+'</div><div style="font-size:10px;color:var(--g4)">/mês</div></div>'
       +'</div>';
-    despMensais.forEach(function(d){
-      // check if paid this month
-      var pagaMes=DB.pagamentos.filter(function(p){
-        if(!p.data)return false;
-        var dt=new Date(p.data+'T12:00:00');
-        return dt.getMonth()===mesAtual&&dt.getFullYear()===anoAtual&&p.cliente===d.desc&&p.estado==='Pago';
-      }).length>0;
-      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--g6)">'
-        +'<div style="width:8px;height:8px;border-radius:50%;background:'+(pagaMes?'var(--g)':'var(--re)')+';flex-shrink:0"></div>'
-        +'<div style="flex:1"><div style="font-size:12.5px;font-weight:500">'+d.desc+'</div>'
-          +(d.data?'<div style="font-size:10.5px;color:var(--g4)">Desde '+fmtDate(d.data)+'</div>':'')
-        +'</div>'
-        +'<span style="font-size:13px;font-weight:600;color:var(--re)">-€'+parseFloat(d.valor||0).toFixed(2)+'</span>'
-        +'<span class="tag '+(pagaMes?'tg':'tr')+'" style="font-size:9.5px">'+(pagaMes?'✓ Pago':'⚠ Pendente')+'</span>'
-        +'<button class="btn bd bsm" onclick="deleteDespesa('+d.id+')" style="font-size:10px">×</button>'
-      +'</div>';
+    if(despMensais.length){
+      despMensais.forEach(function(d){
+        html+='<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--g6)">'
+          +'<div style="flex:1;font-size:12px;font-weight:500">'+d.desc+'</div>'
+          +'<span style="font-size:12px;font-weight:600;color:var(--re)">-€'+parseFloat(d.valor||0).toFixed(0)+'</span>'
+          +'<button class="btn bd bsm" onclick="deleteDespesa('+d.id+')" style="font-size:10px">×</button>'
+        +'</div>';
+      });
+    } else { html+='<div style="font-size:11px;color:var(--g4);padding:6px 0">Sem saídas recorrentes</div>'; }
+    html+='</div>';
+    // ENTRADAS (parcelas ativas)
+    var gruposAtivos={};
+    DB.pagamentos.forEach(function(p){
+      var gid=p.grupoId||p.id;
+      if(!gruposAtivos[gid]) gruposAtivos[gid]={cliente:p.cliente,produto:p.produto,parcelas:[],valorParcela:parseFloat(p.valor||0)};
+      gruposAtivos[gid].parcelas.push(p);
     });
-    html+='<div></div>'
+    var recorrentes=Object.values(gruposAtivos).filter(function(g){
+      return g.parcelas.length>1&&g.parcelas.some(function(p){return p.estado==='Pendente';});
+    });
+    var totalEntMensal=recorrentes.reduce(function(s,g){return s+g.valorParcela;},0);
+    html+='<div class="card" style="border-left:3px solid var(--g)">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+        +'<div><div class="ct" style="font-size:13px">💳 Entradas Mensais</div><div class="cs">Clientes em parcelas</div></div>'
+        +'<div style="text-align:right"><div style="font-size:18px;font-weight:700;color:var(--g)">+€'+totalEntMensal.toFixed(0)+'</div><div style="font-size:10px;color:var(--g4)">/mês</div></div>'
+      +'</div>';
+    if(recorrentes.length){
+      recorrentes.forEach(function(g){
+        var nPago=g.parcelas.filter(function(p){return p.estado==='Pago';}).length;
+        var nTotal=g.parcelas.length;
+        var pct=Math.round(nPago/nTotal*100);
+        var proxPend=g.parcelas.filter(function(p){return p.estado==='Pendente';}).sort(function(a,b){return (a.data||'').localeCompare(b.data||'');})[0];
+        html+='<div style="padding:7px 0;border-bottom:1px solid var(--g6)">'
+          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
+            +'<div style="font-size:12px;font-weight:600">'+g.cliente+'</div>'
+            +'<span style="font-size:12px;font-weight:700;color:var(--g)">+€'+g.valorParcela.toFixed(0)+'/mês</span>'
+          +'</div>'
+          +'<div style="display:flex;align-items:center;gap:6px">'
+            +'<div class="sbw" style="flex:1"><div class="sbb" style="width:'+pct+'%;background:var(--g)"></div></div>'
+            +'<span style="font-size:10px;color:var(--g4)">'+nPago+'/'+nTotal+'</span>'
+            +(proxPend?'<span style="font-size:10px;color:var(--ye)">📅 '+fmtDate(proxPend.data)+'</span>':'')
+          +'</div>'
+        +'</div>';
+      });
+    } else { html+='<div style="font-size:11px;color:var(--g4);padding:6px 0">Sem clientes em parcelas ativas</div>'; }
+    html+='</div></div>';
+    var saldoRecorr=totalEntMensal-totalMensal;
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:'+(saldoRecorr>=0?'var(--gf)':'var(--rel)')+';border-radius:10px;margin-bottom:14px">'
+      +'<span style="font-size:12px;font-weight:500">Saldo mensal recorrente</span>'
+      +'<span style="font-size:16px;font-weight:700;color:'+(saldoRecorr>=0?'var(--g)':'var(--re)')+'">'+( saldoRecorr>=0?'+':'')+saldoRecorr.toFixed(0)+'€/mês</span>'
     +'</div>';
     alertasEl.innerHTML=html;
-  } else if(alertasEl){
-    alertasEl.innerHTML='<div class="empty">Sem despesas mensais recorrentes ainda</div>';
   }
 
-  // Preencher filtro de responsável
+    // Preencher filtro de responsável
   var filtroResp=document.getElementById('tf-filtro-resp');
   if(filtroResp){
     var selVal=filtroResp.value;
