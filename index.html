@@ -3451,5 +3451,361 @@ window.addEventListener('appinstalled',function(){ pwaDismiss(); toast('✓ App 
 
   <button class="btn bp" style="width:100%" onclick="saveProxEncontro()">Agendar encontro</button>
 </div></div>
+<!-- ═══════════════════════════════════════════════════════════════
+     HUB ADVANCE — Extensão: Histórico de mentorados + Google Calendar
+     Cola este bloco INTEIRO imediatamente ANTES de </body>
+     Não altera nada do que já existe — só acrescenta.
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+"use strict";
+
+/* ══════════════════════════════════════════════
+   ⚙️  Cola aqui o teu Client ID do Google Cloud
+   ══════════════════════════════════════════════ */
+var GCAL_CLIENT_ID = '1046779912638-naci6fvcusu8p95k70prtrhtmq0odmlk.apps.googleusercontent.com';
+/* ══════════════════════════════════════════════ */
+
+var mesesPT=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function d2(n){ return String(n).padStart(2,'0'); }
+function safeDate(d){ try{ return fmtDate(d); }catch(e){ return d||'—'; } }
+
+/* ═══════════════ HISTÓRICO DE MENTORADOS ═══════════════ */
+
+function ensureHistModal(){
+  if(document.getElementById('modal-historico')) return;
+  var wrap=document.createElement('div');
+  wrap.className='mo'; wrap.id='modal-historico';
+  wrap.innerHTML=''
+    +'<div class="mbox" style="max-width:520px">'
+    +'  <div class="mh">'
+    +'    <div><div class="mt">🕑 Histórico do mentorado</div><div id="hist-sub" style="font-size:11px;color:var(--g4);margin-top:2px"></div></div>'
+    +'    <span class="mx" onclick="closeHistorico()">✕</span>'
+    +'  </div>'
+    +'  <div id="hist-summary" style="margin-bottom:12px"></div>'
+    +'  <div id="hist-timeline"></div>'
+    +'</div>';
+  document.body.appendChild(wrap);
+  wrap.addEventListener('click',function(e){ if(e.target===wrap) closeHistorico(); });
+}
+
+window.closeHistorico=function(){
+  var m=document.getElementById('modal-historico');
+  if(m) m.classList.remove('open');
+};
+
+window.openHistorico=function(mentId){
+  ensureHistModal();
+  var m=DB.mentorados.find(function(x){return x.id===mentId;});
+  if(!m){ return; }
+  document.getElementById('hist-sub').textContent=(m.nicho?m.nicho+' · ':'')+(m.produto||'');
+
+  // ── Reunir dados ──
+  var sessoes=(m.sessoes||[]).slice();
+  var tarefas=(m.tarefas||[]).slice();
+  var reunioes=DB.reunioes.filter(function(r){return r.who===m.nome;});
+  var pagamentos=DB.pagamentos.filter(function(p){return p.cliente===m.nome;});
+
+  var totalPago=pagamentos.filter(function(p){return p.estado==='Pago';}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
+  var totalPrevisto=pagamentos.reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
+  var tDone=tarefas.filter(function(t){return t.done;}).length;
+  var semAtual=m.semana||0;
+  var fase=(typeof SEMANAS!=='undefined'&&SEMANAS[semAtual])?SEMANAS[semAtual]:null;
+
+  // ── Resumo ──
+  document.getElementById('hist-summary').innerHTML=''
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'
+    +  kpiBox('Fase',(fase?fase.e+' ':'')+'Sem. '+semAtual, fase?fase.l:'Concluído')
+    +  kpiBox('Sessões', sessoes.length, sessoes.length===1?'sessão':'sessões')
+    +  kpiBox('Tarefas', tDone+'/'+tarefas.length, 'concluídas')
+    +  kpiBox('Recebido', '€'+totalPago.toFixed(0), totalPrevisto>totalPago?('de €'+totalPrevisto.toFixed(0)):'total')
+    +'</div>';
+
+  // ── Timeline unificada ──
+  var items=[];
+  sessoes.forEach(function(s){
+    var st=tarefas.filter(function(t){return t.sessaoId===s.id;});
+    items.push({date:s.data||'', type:'sessao', semana:s.semana, resumo:s.resumo||'', tarefas:st});
+  });
+  reunioes.forEach(function(r){
+    items.push({date:r.data||'', type:'reuniao', hora:r.hora, tipo:r.tipo, notas:r.notas, formato:r.formato});
+  });
+  pagamentos.forEach(function(p){
+    items.push({date:p.data||'', type:'pagamento', produto:p.produto, valor:p.valor, estado:p.estado, parcela:p.parcela, totalParcelas:p.totalParcelas});
+  });
+  items.sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+
+  var today=todayISO();
+  var html=items.length?items.map(function(it){
+    var cor, icon, titulo, corpo='';
+    if(it.type==='sessao'){
+      cor='#00B37A'; icon='📋';
+      titulo='Sessão'+(it.semana!=null?' · Semana '+it.semana:'');
+      if(it.resumo) corpo+='<div style="font-size:11.5px;color:var(--g3);margin-top:4px;padding:6px 9px;background:var(--g7);border-radius:7px">'+esc(it.resumo)+'</div>';
+      if(it.tarefas&&it.tarefas.length){
+        corpo+='<div style="margin-top:6px">'+it.tarefas.map(function(t){
+          return '<div style="display:flex;gap:6px;align-items:flex-start;font-size:11.5px;margin-bottom:3px">'
+            +'<span style="color:'+(t.done?'var(--g)':'var(--g4)')+'">'+(t.done?'✓':'○')+'</span>'
+            +'<span style="'+(t.done?'text-decoration:line-through;color:var(--g4)':'')+'">'+esc(t.txt)+'</span></div>';
+        }).join('')+'</div>';
+      }
+    } else if(it.type==='reuniao'){
+      var futura=it.date>=today;
+      cor=futura?'#2563EB':'#7C6FED'; icon='📅';
+      titulo=(it.tipo||'Reunião')+(it.hora?' · '+it.hora:'');
+      var sub=[]; if(it.formato) sub.push(it.formato); if(futura) sub.push('agendada'); else sub.push('realizada');
+      corpo+='<div style="font-size:10.5px;color:var(--g4);margin-top:2px">'+sub.join(' · ')+'</div>';
+      if(it.notas) corpo+='<div style="font-size:11.5px;color:var(--g3);margin-top:4px">'+esc(it.notas)+'</div>';
+    } else {
+      var pago=it.estado==='Pago';
+      cor=pago?'#00B37A':'#C99A1A'; icon='💶';
+      titulo='€'+parseFloat(it.valor||0).toFixed(2)+(it.totalParcelas>1?(' · parcela '+it.parcela+'/'+it.totalParcelas):'');
+      corpo+='<div style="font-size:10.5px;color:var(--g4);margin-top:2px">'+(it.produto||'')+' · '+(pago?'pago':'pendente')+'</div>';
+    }
+    return '<div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--g6)">'
+      +'<div style="min-width:56px;text-align:right;font-size:10.5px;color:var(--g4);padding-top:2px">'+safeDate(it.date)+'</div>'
+      +'<div style="width:3px;align-self:stretch;background:'+cor+';border-radius:2px;flex-shrink:0"></div>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:12.5px;font-weight:600">'+icon+' '+esc(titulo)+'</div>'
+        +corpo
+      +'</div>'
+    +'</div>';
+  }).join(''):'<div class="empty" style="padding:2rem">Ainda não há histórico registado para este mentorado.</div>';
+
+  document.getElementById('hist-timeline').innerHTML=html;
+  document.getElementById('modal-historico').classList.add('open');
+};
+
+function kpiBox(label,val,sub){
+  return '<div style="background:var(--g7);border-radius:10px;padding:9px 10px;text-align:center">'
+    +'<div style="font-size:9px;color:var(--g4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">'+label+'</div>'
+    +'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:15px;font-weight:700;line-height:1.1">'+val+'</div>'
+    +'<div style="font-size:9.5px;color:var(--g4);margin-top:2px">'+sub+'</div>'
+    +'</div>';
+}
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* Injeta o botão "Histórico" em cada cartão de mentorado (sem editar o render original) */
+function injectHistButtons(){
+  try{
+    var list=document.getElementById('mentorados-list'); if(!list) return;
+    list.querySelectorAll('.card').forEach(function(card){
+      if(card.querySelector('[data-hist]')) return;
+      var sBtn=Array.prototype.slice.call(card.querySelectorAll('button')).find(function(b){
+        return /openSessao\(\d+\)/.test(b.getAttribute('onclick')||'');
+      });
+      if(!sBtn) return;
+      var mm=(sBtn.getAttribute('onclick').match(/openSessao\((\d+)\)/)||[])[1];
+      if(!mm) return;
+      var btn=document.createElement('button');
+      btn.className='btn bs bsm'; btn.setAttribute('data-hist','1');
+      btn.textContent='🕑 Histórico';
+      btn.onclick=(function(id){ return function(){ openHistorico(id); }; })(parseInt(mm,10));
+      sBtn.parentNode.insertBefore(btn, sBtn.nextSibling);
+    });
+  }catch(e){}
+}
+
+/* ═══════════════ GOOGLE CALENDAR ═══════════════ */
+
+var _gcalToken=sessionStorage.getItem('gcal_tok')||null;
+var _gcalTokenClient=null;
+var _gcalEvents=[];
+
+(function loadGis(){
+  var s=document.createElement('script');
+  s.src='https://accounts.google.com/gsi/client'; s.async=true; s.defer=true;
+  document.head.appendChild(s);
+})();
+
+function gcalReady(){ return typeof google!=='undefined' && google.accounts && google.accounts.oauth2; }
+
+function gcalInitClient(){
+  if(_gcalTokenClient || !gcalReady() || !GCAL_CLIENT_ID) return;
+  _gcalTokenClient=google.accounts.oauth2.initTokenClient({
+    client_id:GCAL_CLIENT_ID,
+    scope:'https://www.googleapis.com/auth/calendar.events',
+    callback:function(resp){
+      if(resp && resp.access_token){
+        _gcalToken=resp.access_token;
+        sessionStorage.setItem('gcal_tok', _gcalToken);
+        gcalUpdateUI();
+        try{ toast('✓ Google Calendar ligado'); }catch(e){}
+        gcalSync();
+      }
+    }
+  });
+}
+
+window.gcalToggle=function(){
+  if(_gcalToken){ gcalDisconnect(); return; }
+  if(!GCAL_CLIENT_ID){ try{ toast('Falta configurar o Client ID do Google no topo do bloco','#C0392B'); }catch(e){} return; }
+  gcalInitClient();
+  if(!_gcalTokenClient){ try{ toast('Google ainda a carregar — tenta outra vez num instante','#C99A1A'); }catch(e){} return; }
+  _gcalTokenClient.requestAccessToken({ prompt: _gcalToken?'':'consent' });
+};
+
+function gcalDisconnect(){
+  _gcalToken=null; sessionStorage.removeItem('gcal_tok'); _gcalEvents=[];
+  gcalUpdateUI(); renderGcalCard();
+  try{ toast('Google Calendar desligado'); }catch(e){}
+}
+
+function toLocalISO(dt){
+  return dt.getFullYear()+'-'+d2(dt.getMonth()+1)+'-'+d2(dt.getDate())+'T'+d2(dt.getHours())+':'+d2(dt.getMinutes())+':00';
+}
+
+async function gcalFetch(method,path,body){
+  try{
+    var res=await fetch('https://www.googleapis.com/calendar/v3'+path,{
+      method:method,
+      headers:{'Authorization':'Bearer '+_gcalToken,'Content-Type':'application/json'},
+      body: body?JSON.stringify(body):undefined
+    });
+    if(res.status===401){
+      _gcalToken=null; sessionStorage.removeItem('gcal_tok'); gcalUpdateUI();
+      try{ toast('A sessão Google expirou — liga outra vez','#C99A1A'); }catch(e){}
+      return null;
+    }
+    if(!res.ok) return null;
+    if(method==='DELETE') return true;
+    return await res.json();
+  }catch(e){ return null; }
+}
+
+async function gcalCreate(r){
+  var start=new Date((r.data||todayISO())+'T'+((r.hora||'10:00'))+':00');
+  if(isNaN(start.getTime())) return;
+  var end=new Date(start.getTime()); end.setHours(end.getHours()+1);
+  var body={
+    summary:(r.who||'Reunião')+(r.tipo?(' — '+r.tipo):''),
+    description:(r.notas?r.notas+'\n\n':'')+'(Agendado via Hub Advance)',
+    start:{dateTime:toLocalISO(start), timeZone:'Europe/Lisbon'},
+    end:{dateTime:toLocalISO(end), timeZone:'Europe/Lisbon'}
+  };
+  var out=await gcalFetch('POST','/calendars/primary/events', body);
+  if(out && out.id){ r.googleEventId=out.id; }
+}
+
+async function gcalPull(){
+  var tMin=new Date(); tMin.setHours(0,0,0,0);
+  var tMax=new Date(); tMax.setDate(tMax.getDate()+30);
+  var q='?timeMin='+encodeURIComponent(tMin.toISOString())
+    +'&timeMax='+encodeURIComponent(tMax.toISOString())
+    +'&singleEvents=true&orderBy=startTime&maxResults=50';
+  var out=await gcalFetch('GET','/calendars/primary/events'+q);
+  _gcalEvents=(out && out.items)?out.items:[];
+}
+
+window.gcalSync=async function(){
+  if(!_gcalToken){ window.gcalToggle(); return; }
+  try{ toast('A sincronizar com o Google…'); }catch(e){}
+  var futuras=DB.reunioes.filter(function(r){ return (r.data||'')>=todayISO() && !r.googleEventId; });
+  for(var i=0;i<futuras.length;i++){ await gcalCreate(futuras[i]); }
+  try{ save(); }catch(e){}
+  await gcalPull();
+  renderGcalCard(); gcalUpdateUI();
+  try{ toast('✓ Sincronizado ('+futuras.length+' enviada'+(futuras.length===1?'':'s')+')'); }catch(e){}
+};
+
+function gcalUpdateUI(){
+  var c=document.getElementById('gcal-connect-btn');
+  var s=document.getElementById('gcal-sync-btn');
+  var badge=document.getElementById('gcal-badge');
+  if(c){ c.innerHTML=_gcalToken?'🟢 Google ligado':'🔗 Ligar Google'; }
+  if(s){ s.style.display=_gcalToken?'inline-flex':'none'; }
+  if(badge){ badge.style.display=_gcalToken?'inline':'none'; }
+  var card=document.getElementById('ag-gcal-card');
+  if(card){ card.style.display=(_gcalToken && _gcalEvents.length)?'block':'none'; }
+}
+
+function renderGcalCard(){
+  var list=document.getElementById('ag-gcal-list');
+  var card=document.getElementById('ag-gcal-card');
+  if(!list||!card) return;
+  if(!_gcalToken || !_gcalEvents.length){ card.style.display='none'; list.innerHTML=''; return; }
+  card.style.display='block';
+  list.innerHTML=_gcalEvents.map(function(ev){
+    var sd=ev.start&&(ev.start.dateTime||ev.start.date)||'';
+    var dtxt='', htxt='';
+    if(sd){
+      var dd=new Date(sd);
+      if(!isNaN(dd.getTime())){
+        dtxt=d2(dd.getDate())+' '+mesesPT[dd.getMonth()];
+        if(ev.start.dateTime) htxt=d2(dd.getHours())+':'+d2(dd.getMinutes());
+      }
+    }
+    return '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--g6);align-items:center">'
+      +'<div style="min-width:52px;text-align:right;font-size:11px;color:var(--g4)">'+dtxt+(htxt?'<br><span style="font-weight:600;color:var(--bk)">'+htxt+'</span>':'')+'</div>'
+      +'<div style="width:3px;align-self:stretch;background:#4285F4;border-radius:2px;flex-shrink:0"></div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:500">'+esc(ev.summary||'(sem título)')+'</div>'
+        +(ev.location?'<div style="font-size:10.5px;color:var(--g4)">📍 '+esc(ev.location)+'</div>':'')+'</div>'
+      +(ev.htmlLink?'<a href="'+ev.htmlLink+'" target="_blank" class="btn bs bsm" style="text-decoration:none">abrir</a>':'')
+      +'</div>';
+  }).join('');
+}
+
+/* Injeta os botões do Google na barra da Agenda + o cartão de eventos */
+function injectGcalUI(){
+  try{
+    var panel=document.getElementById('p-agenda'); if(!panel) return;
+    var addBtn=Array.prototype.slice.call(panel.querySelectorAll('button')).find(function(b){
+      return /om\('reuniao'\)/.test(b.getAttribute('onclick')||'');
+    });
+    if(addBtn && !document.getElementById('gcal-connect-btn')){
+      var span=document.createElement('span');
+      span.style.display='inline-flex'; span.style.gap='6px'; span.style.marginRight='6px';
+      span.innerHTML=''
+        +'<button id="gcal-connect-btn" class="btn bs bsm" onclick="gcalToggle()">🔗 Ligar Google</button>'
+        +'<button id="gcal-sync-btn" class="btn bs bsm" onclick="gcalSync()" style="display:none">🔄 Sincronizar</button>';
+      addBtn.parentNode.insertBefore(span, addBtn);
+    }
+    if(!document.getElementById('ag-gcal-card')){
+      var card=document.createElement('div');
+      card.className='card'; card.id='ag-gcal-card';
+      card.style.marginBottom='16px'; card.style.display='none';
+      card.innerHTML='<div class="ct" style="margin-bottom:8px">📆 Do teu Google Calendar <span style="font-size:10px;color:var(--g4);font-weight:400">— próximos 30 dias</span></div><div id="ag-gcal-list"></div>';
+      var agWeek=document.getElementById('ag-week');
+      if(agWeek && agWeek.parentNode===panel){ panel.insertBefore(card, agWeek); }
+      else { panel.insertBefore(card, panel.firstChild); }
+    }
+    gcalUpdateUI(); renderGcalCard();
+  }catch(e){}
+}
+
+/* Ao apagar uma reunião, apaga também no Google (se estava sincronizada) */
+if(typeof window.deleteReuniao==='function'){
+  var _origDelReuniao=window.deleteReuniao;
+  window.deleteReuniao=function(){
+    try{
+      var id=parseInt((document.getElementById('rn-id')||{}).value,10);
+      var r=DB.reunioes.find(function(x){return x.id===id;});
+      if(_gcalToken && r && r.googleEventId){ gcalFetch('DELETE','/calendars/primary/events/'+r.googleEventId); }
+    }catch(e){}
+    return _origDelReuniao.apply(this, arguments);
+  };
+}
+
+/* ═══════════════ LIGAR TUDO SEM EDITAR O RENDER ORIGINAL ═══════════════ */
+
+function wrap(name, after){
+  if(typeof window[name]!=='function') return;
+  var orig=window[name];
+  window[name]=function(){
+    var out=orig.apply(this, arguments);
+    try{ after(); }catch(e){}
+    return out;
+  };
+}
+wrap('renderMentorados', injectHistButtons);
+wrap('renderAgenda', injectGcalUI);
+
+/* Caso já esteja renderizado quando este bloco corre */
+window.addEventListener('load', function(){
+  setTimeout(function(){ injectHistButtons(); injectGcalUI(); }, 400);
+});
+
+})();
+</script>
 </body>
 </html>
