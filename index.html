@@ -4032,5 +4032,88 @@ window.addEventListener('load', function(){
 
 })();
 </script>
+<!-- ═══════════════════════════════════════════════════════════════
+     HUB ADVANCE — Bloco 3: envio automático para o Google Calendar
+     Cola A SEGUIR aos outros blocos, também ANTES de </body>.
+     Faz com que uma reunião criada na Agenda vá sozinha para o Google
+     (não precisas de carregar em Sincronizar). Só funciona se já
+     tiveres carregado em "🔗 Ligar Google".
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+"use strict";
+
+function d2(n){ return String(n).padStart(2,'0'); }
+function tok(){ return sessionStorage.getItem('gcal_tok')||null; }
+function todayS(){ try{ return todayISO(); }catch(e){ var d=new Date(); return d.getFullYear()+'-'+d2(d.getMonth()+1)+'-'+d2(d.getDate()); } }
+function toLocalISO(dt){ return dt.getFullYear()+'-'+d2(dt.getMonth()+1)+'-'+d2(dt.getDate())+'T'+d2(dt.getHours())+':'+d2(dt.getMinutes())+':00'; }
+
+async function gfetch(method, path, body){
+  var t=tok(); if(!t) return null;
+  try{
+    var res=await fetch('https://www.googleapis.com/calendar/v3'+path, {
+      method:method,
+      headers:{'Authorization':'Bearer '+t, 'Content-Type':'application/json'},
+      body: body?JSON.stringify(body):undefined
+    });
+    if(res.status===401){ sessionStorage.removeItem('gcal_tok'); return null; }
+    if(!res.ok) return null;
+    if(method==='DELETE') return true;
+    return await res.json();
+  }catch(e){ return null; }
+}
+
+function eventBody(r){
+  var start=new Date((r.data||todayS())+'T'+((r.hora||'10:00'))+':00');
+  if(isNaN(start.getTime())) return null;
+  var end=new Date(start.getTime()); end.setHours(end.getHours()+1);
+  return {
+    summary:(r.who||'Reunião')+(r.tipo?(' — '+r.tipo):''),
+    description:(r.notas?r.notas+'\n\n':'')+'(Agendado via Hub Advance)',
+    start:{dateTime:toLocalISO(start), timeZone:'Europe/Lisbon'},
+    end:{dateTime:toLocalISO(end), timeZone:'Europe/Lisbon'}
+  };
+}
+
+async function syncOne(r){
+  var body=eventBody(r); if(!body) return false;
+  if(r.googleEventId){
+    // já existe no Google — atualiza (caso tenhas mudado data/hora)
+    await gfetch('PATCH','/calendars/primary/events/'+encodeURIComponent(r.googleEventId), body);
+    return false;
+  }
+  var out=await gfetch('POST','/calendars/primary/events', body);
+  if(out && out.id){ r.googleEventId=out.id; return true; }
+  return false;
+}
+
+var _busy=false;
+async function autoPush(){
+  if(_busy || !tok()) return;
+  _busy=true;
+  try{
+    var today=todayS();
+    var futuras=(DB.reunioes||[]).filter(function(r){ return (r.data||'')>=today; });
+    var criou=false;
+    for(var i=0;i<futuras.length;i++){ if(await syncOne(futuras[i])) criou=true; }
+    if(criou){ try{ save(); }catch(e){} try{ toast('✓ Guardado no Google Calendar'); }catch(e){} }
+  }catch(e){}
+  _busy=false;
+}
+
+function wrapSave(name){
+  if(typeof window[name]!=='function') return;
+  var orig=window[name];
+  window[name]=function(){
+    var out=orig.apply(this, arguments);
+    setTimeout(autoPush, 350);
+    return out;
+  };
+}
+wrapSave('saveReuniao');
+wrapSave('saveProxEncontro');
+
+})();
+</script>
 </body>
 </html>
