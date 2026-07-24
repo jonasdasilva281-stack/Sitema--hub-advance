@@ -3807,5 +3807,230 @@ window.addEventListener('load', function(){
 
 })();
 </script>
+<!-- ═══════════════════════════════════════════════════════════════
+     HUB ADVANCE — Bloco 2: Contactos na ficha + Lembretes no dashboard
+     Cola este bloco logo A SEGUIR ao bloco anterior, também ANTES de </body>.
+     Só acrescenta — não mexe em nada do que já existe.
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+"use strict";
+
+function d2(n){ return String(n).padStart(2,'0'); }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function firstName(n){ return (String(n||'').trim().split(/\s+/)[0])||''; }
+var meses=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+function normPhone(v){
+  var d=String(v||'').replace(/[^\d]/g,'');
+  if(!d) return '';
+  d=d.replace(/^00/,'');
+  if(d.length===9 && d[0]==='9') d='351'+d;   // telemóvel PT sem indicativo
+  return d;
+}
+function waLink(num,msg){
+  var n=normPhone(num);
+  if(!n) return '';
+  return 'https://wa.me/'+n+(msg?('?text='+encodeURIComponent(msg)):'');
+}
+function socialLink(v,base){
+  var s=String(v||'').trim();
+  if(!s) return '';
+  if(/^https?:\/\//i.test(s)) return s;
+  return base+s.replace(/^@/,'');
+}
+function menteeNumber(m){
+  if(!m) return '';
+  return normPhone(m.whatsapp||m.telefone||m.contacto||'');
+}
+function findNumberByName(nome){
+  var m=(DB.mentorados||[]).find(function(x){return x.nome===nome;});
+  var n=menteeNumber(m);
+  if(n) return n;
+  var l=(DB.leads||[]).find(function(x){return x.nome===nome;});
+  if(l) return normPhone(l.contacto||'');
+  return '';
+}
+
+/* ═══════════ CONTACTOS NA FICHA (dentro do modal já existente) ═══════════ */
+
+var _fichaId=null;
+
+window.fichaEditToggle=function(){
+  var f=document.getElementById('ficha-edit');
+  if(f) f.style.display=(f.style.display==='none'||!f.style.display)?'block':'none';
+};
+
+window.fichaSaveContacts=function(){
+  var m=(DB.mentorados||[]).find(function(x){return x.id===_fichaId;});
+  if(!m) return;
+  m.whatsapp=(document.getElementById('fc-wa').value||'').trim();
+  m.telefone=(document.getElementById('fc-tel').value||'').trim();
+  m.instagram=(document.getElementById('fc-ig').value||'').trim();
+  m.tiktok=(document.getElementById('fc-tt').value||'').trim();
+  try{ save(); }catch(e){}
+  fichaRenderContacts();
+  if(typeof refreshReminders==='function') refreshReminders();
+  try{ toast('✓ Contactos guardados'); }catch(e){}
+};
+
+function fichaRenderContacts(){
+  var box=document.getElementById('ficha-contactos');
+  var m=(DB.mentorados||[]).find(function(x){return x.id===_fichaId;});
+  if(!box||!m) return;
+
+  var num=menteeNumber(m);
+  var waGreet='Olá '+firstName(m.nome)+'! 👋';
+  var ig=socialLink(m.instagram,'https://instagram.com/');
+  var tt=socialLink(m.tiktok,'https://tiktok.com/@');
+  var tel=(m.telefone||m.contacto||'').trim();
+
+  var btns=[];
+  if(num) btns.push('<a href="'+waLink(num,waGreet)+'" target="_blank" class="btn bp bsm" style="text-decoration:none">📱 WhatsApp</a>');
+  if(tel) btns.push('<a href="tel:'+esc(tel.replace(/\s/g,''))+'" class="btn bs bsm" style="text-decoration:none">📞 Ligar</a>');
+  if(ig)  btns.push('<a href="'+esc(ig)+'" target="_blank" class="btn bs bsm" style="text-decoration:none">📸 Instagram</a>');
+  if(tt)  btns.push('<a href="'+esc(tt)+'" target="_blank" class="btn bs bsm" style="text-decoration:none">🎵 TikTok</a>');
+  var actions=btns.length?btns.join(''):'<span style="font-size:11.5px;color:var(--g4)">Sem contactos ainda — carrega em editar.</span>';
+
+  box.innerHTML=''
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+    +  '<div style="display:flex;gap:6px;flex-wrap:wrap">'+actions+'</div>'
+    +  '<button class="btn bs bsm" onclick="fichaEditToggle()">✏️ Editar</button>'
+    +'</div>'
+    +'<div id="ficha-edit" style="display:none;background:var(--g7);border-radius:10px;padding:10px;margin-bottom:4px">'
+    +  fieldRow('fc-wa','WhatsApp (só números, ex: 351912345678)', m.whatsapp||m.contacto||'')
+    +  fieldRow('fc-tel','Telefone', m.telefone||'')
+    +  fieldRow('fc-ig','Instagram (@utilizador ou link)', m.instagram||'')
+    +  fieldRow('fc-tt','TikTok (@utilizador ou link)', m.tiktok||'')
+    +  '<button class="btn bp bsm" style="width:100%;margin-top:4px" onclick="fichaSaveContacts()">Guardar contactos</button>'
+    +'</div>';
+}
+function fieldRow(id,label,val){
+  return '<div style="margin-bottom:7px">'
+    +'<label style="display:block;font-size:10px;color:var(--g4);margin-bottom:3px">'+label+'</label>'
+    +'<input id="'+id+'" value="'+esc(val)+'" style="width:100%;box-sizing:border-box;background:var(--g6,#fff);border:1px solid var(--g5,#ddd);border-radius:7px;padding:7px 9px;font-size:12.5px;color:var(--bk,#111);font-family:inherit">'
+    +'</div>';
+}
+
+/* Enriquecer o modal da ficha (definido no bloco 1) com a secção de contactos */
+if(typeof window.openHistorico==='function'){
+  var _origOpenHist=window.openHistorico;
+  window.openHistorico=function(mentId){
+    var out=_origOpenHist.apply(this, arguments);
+    _fichaId=mentId;
+    try{
+      var mt=document.querySelector('#modal-historico .mt'); if(mt) mt.textContent='👤 Ficha do mentorado';
+      var mbox=document.querySelector('#modal-historico .mbox');
+      var sum=document.getElementById('hist-summary');
+      var box=document.getElementById('ficha-contactos');
+      if(!box && mbox && sum){
+        box=document.createElement('div'); box.id='ficha-contactos'; box.style.marginBottom='14px';
+        mbox.insertBefore(box, sum);
+      }
+      fichaRenderContacts();
+    }catch(e){}
+    return out;
+  };
+}
+
+/* Botão WhatsApp rápido em cada cartão de mentorado */
+function injectCardWa(){
+  try{
+    var list=document.getElementById('mentorados-list'); if(!list) return;
+    list.querySelectorAll('.card').forEach(function(card){
+      if(card.querySelector('[data-wa]')) return;
+      var sBtn=Array.prototype.slice.call(card.querySelectorAll('button')).find(function(b){
+        return /openSessao\(\d+\)/.test(b.getAttribute('onclick')||'');
+      });
+      if(!sBtn) return;
+      var id=parseInt((sBtn.getAttribute('onclick').match(/openSessao\((\d+)\)/)||[])[1],10);
+      var m=(DB.mentorados||[]).find(function(x){return x.id===id;});
+      var num=menteeNumber(m);
+      var el;
+      if(num){
+        el=document.createElement('a');
+        el.href=waLink(num,'Olá '+firstName(m.nome)+'! 👋'); el.target='_blank';
+        el.className='btn bp bsm'; el.style.textDecoration='none'; el.textContent='📱';
+        el.title='WhatsApp';
+      } else {
+        el=document.createElement('button');
+        el.className='btn bs bsm'; el.textContent='📱'; el.title='Adicionar WhatsApp';
+        el.onclick=(function(i){ return function(){ openHistorico(i); }; })(id);
+      }
+      el.setAttribute('data-wa','1');
+      sBtn.parentNode.insertBefore(el, sBtn);
+    });
+  }catch(e){}
+}
+
+/* ═══════════ LEMBRETES DE SESSÕES NO DASHBOARD ═══════════ */
+
+function todayStr(){ try{ return todayISO(); }catch(e){ var d=new Date(); return d.getFullYear()+'-'+d2(d.getMonth()+1)+'-'+d2(d.getDate()); } }
+function fmtD(iso){ try{ return fmtDate(iso); }catch(e){ var p=String(iso).split('-'); return p[2]+'/'+p[1]; } }
+
+function findDashPanel(){
+  var panels=document.querySelectorAll('[id^="p-"]');
+  for(var i=0;i<panels.length;i++){
+    var t=panels[i].textContent||'';
+    if(t.indexOf('Forecast pipeline')>-1 || t.indexOf('Próxima reunião')>-1) return panels[i];
+  }
+  return null;
+}
+
+function ensureReminderCard(){
+  if(document.getElementById('hb-reminders')) return document.getElementById('hb-reminders');
+  var panel=findDashPanel(); if(!panel) return null;
+  var card=document.createElement('div');
+  card.className='card'; card.id='hb-reminders'; card.style.marginBottom='16px';
+  card.innerHTML='<div class="ct" style="margin-bottom:8px">🔔 Lembretes de sessões <span style="font-size:10px;color:var(--g4);font-weight:400">— próximos compromissos</span></div><div id="hb-reminders-list"></div>';
+  panel.insertBefore(card, panel.firstChild);
+  return card;
+}
+
+window.refreshReminders=function(){
+  var card=ensureReminderCard(); if(!card) return;
+  var list=document.getElementById('hb-reminders-list'); if(!list) return;
+  var today=todayStr();
+  var up=(DB.reunioes||[]).filter(function(r){ return (r.data||'')>=today; })
+    .sort(function(a,b){ return (a.data+' '+(a.hora||'')).localeCompare(b.data+' '+(b.hora||'')); })
+    .slice(0,8);
+
+  if(!up.length){ list.innerHTML='<div style="font-size:12px;color:var(--g4);padding:6px 0">Sem sessões agendadas. Marca uma reunião na Agenda ou pelo botão 📅 no mentorado.</div>'; return; }
+
+  list.innerHTML=up.map(function(r){
+    var dd=new Date((r.data||'')+'T00:00:00');
+    var dtxt=!isNaN(dd.getTime())?(d2(dd.getDate())+' '+meses[dd.getMonth()]):fmtD(r.data);
+    var num=findNumberByName(r.who);
+    var msg='Olá '+firstName(r.who)+'! 👋 Só a confirmar a nossa sessão de '+dtxt+(r.hora?(' às '+r.hora):'')+'. Até já!';
+    var lembrar=num
+      ? '<a href="'+waLink(num,msg)+'" target="_blank" class="btn bp bsm" style="text-decoration:none">📱 Lembrar</a>'
+      : '<span style="font-size:10px;color:var(--g4)">sem nº</span>';
+    return '<div style="display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--g6)">'
+      +'<div style="min-width:52px;text-align:right"><div style="font-size:12px;font-weight:700;font-family:\'Space Grotesk\',sans-serif">'+dtxt+'</div>'+(r.hora?'<div style="font-size:10.5px;color:var(--g4)">'+r.hora+'</div>':'')+'</div>'
+      +'<div style="width:3px;align-self:stretch;background:#00B37A;border-radius:2px;flex-shrink:0"></div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600">'+esc(r.who||'—')+'</div>'
+        +'<div style="font-size:10.5px;color:var(--g4)">'+esc(r.tipo||'Sessão')+(r.formato?(' · '+esc(r.formato)):'')+'</div></div>'
+      +lembrar
+    +'</div>';
+  }).join('');
+};
+
+/* ═══════════ LIGAR TUDO ═══════════ */
+function wrap(name, after){
+  if(typeof window[name]!=='function') return;
+  var orig=window[name];
+  window[name]=function(){ var out=orig.apply(this, arguments); try{ after(); }catch(e){} return out; };
+}
+wrap('renderMentorados', injectCardWa);
+wrap('renderMentorados', window.refreshReminders);
+wrap('renderAgenda', window.refreshReminders);
+wrap('renderAll', function(){ injectCardWa(); window.refreshReminders(); });
+
+window.addEventListener('load', function(){
+  setTimeout(function(){ injectCardWa(); try{ window.refreshReminders(); }catch(e){} }, 600);
+});
+
+})();
+</script>
 </body>
 </html>
