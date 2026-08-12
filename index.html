@@ -454,6 +454,31 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
   <!-- OVERVIEW -->
   <div class="panel on" id="p-overview">
 
+    <!-- Funil Hub Advance -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;align-items:stretch">
+      <div style="flex:1;min-width:110px;background:#0C0C12;border-radius:12px;padding:11px;text-align:center">
+        <div style="font-size:16px;margin-bottom:3px">📚</div>
+        <div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:2px">Curso</div>
+        <div style="font-size:14px;font-weight:700;color:#00B37A">€47</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px">Não preparado</div>
+      </div>
+      <div style="display:flex;align-items:center;color:var(--g4);font-size:16px;flex-shrink:0">›</div>
+      <div style="flex:1;min-width:110px;background:#0C0C12;border-radius:12px;padding:11px;text-align:center">
+        <div style="font-size:16px;margin-bottom:3px">👥</div>
+        <div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:2px">Comunidade</div>
+        <div style="font-size:14px;font-weight:700;color:#7C6FED">€30/mês</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px">Sem orçamento · 4ª feira</div>
+      </div>
+      <div style="display:flex;align-items:center;color:var(--g4);font-size:16px;flex-shrink:0">›</div>
+      <div style="flex:2;min-width:140px;background:linear-gradient(135deg,#0B6E4F,#009B6A);border-radius:12px;padding:11px;text-align:center;box-shadow:0 4px 16px rgba(0,179,122,.2)">
+        <div style="font-size:16px;margin-bottom:3px">🎯</div>
+        <div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:2px">Mentoria Individual</div>
+        <div style="font-size:15px;font-weight:700;color:#fff">€997</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.65);margin-top:2px">6 meses · 1 encontro/mês</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.45)">Inclui Curso + Comunidade</div>
+      </div>
+    </div>
+
     <!-- KPIs -->
     <div class="g4" style="margin-bottom:14px">
       <div class="card kpi"><div class="kl">Receita do mês</div><div class="kv" id="ov-receita" style="color:var(--g)">€0</div><div class="ks" id="ov-receita-sub">Saldo: €0</div></div>
@@ -633,7 +658,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
           <div class="cs">Agrupado por venda — clica para expandir</div>
         </div>
         <div style="display:flex;gap:6px">
-          <button class="filter-btn" id="fpag-todos" onclick="finPagFiltro('todos')">Todos</button>
+          <button class="filter-btn on" id="fpag-todos" onclick="finPagFiltro('todos')">Todos</button>
           <button class="filter-btn" id="fpag-pendente" onclick="finPagFiltro('pendente')">Pendentes</button>
           <button class="filter-btn" id="fpag-pago" onclick="finPagFiltro('pago')">Pagos</button>
         </div>
@@ -731,10 +756,16 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
 <div class="mo" id="modal-lead"><div class="mbox">
   <div class="mh"><div class="mt" id="lead-title">🎯 Novo Lead</div><span class="mx" onclick="cm('lead')">✕</span></div>
   <input type="hidden" id="ld-id"><input type="hidden" id="ld-etapaAntiga">
-  <div class="fr fg"><div><label class="fl">Nome</label><input class="fi" id="ld-nome"></div><div><label class="fl">Contacto</label><input class="fi" id="ld-contacto"></div></div>
+  <div class="fr fg">
+    <div><label class="fl">Nome</label><input class="fi" id="ld-nome"></div>
+    <div>
+      <label class="fl">Telemóvel <span style="color:var(--re)">*</span> <span style="font-size:9.5px;color:var(--g4);font-weight:400">identificador único</span></label>
+      <input class="fi" id="ld-contacto" type="tel" placeholder="351912345678" oninput="ldFormatTel(this)" style="font-family:monospace">
+    </div>
+  </div>
   <div class="fr fg">
     <div><label class="fl">Origem</label><select class="fi" id="ld-origem"><option>Instagram</option><option>TikTok</option><option>YouTube</option><option>Facebook</option><option>Google Ads</option><option>Indicação</option><option>Evento</option><option>Curso €47</option><option>Outro</option></select></div>
-    <div><label class="fl">Produto</label><select class="fi" id="ld-produto"></select></div>
+    <div><label class="fl">Produto de interesse <span style="font-size:9.5px;color:var(--g4)">objetivo: Mentoria €997</span></label><select class="fi" id="ld-produto">select></div>
   </div>
   <div class="fg"><label class="fl">Etapa</label><select class="fi" id="ld-etapa" onchange="toggleMotivo()">
     <option value="novo">Lead Novo</option><option value="sdr">SDR</option><option value="closer">Closer</option><option value="followup">Follow Up</option><option value="standby">Stand By</option><option value="fechado">Fechado</option><option value="perdido">Perdido</option>
@@ -759,7 +790,13 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
 <div class="mo" id="modal-mentorado"><div class="mbox" style="max-width:460px">
   <div class="mh"><div class="mt" id="mt-title">👥 Novo Mentorado</div><span class="mx" onclick="cm('mentorado')">✕</span></div>
   <input type="hidden" id="mt-id">
-  <div class="fg"><label class="fl">Nome</label><input class="fi" id="mt-nome"></div>
+  <div class="fr fg">
+    <div><label class="fl">Nome</label><input class="fi" id="mt-nome"></div>
+    <div>
+      <label class="fl">Telemóvel <span style="color:var(--re)">*</span></label>
+      <input class="fi" id="mt-tel" type="tel" placeholder="351912345678" oninput="ldFormatTel(this)" style="font-family:monospace">
+    </div>
+  </div>
   <div class="fg"><label class="fl">Produto</label><select class="fi" id="mt-produto"></select></div>
   <div class="fg">
     <label class="fl">Nicho / área de negócio</label>
@@ -975,7 +1012,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
   <div class="fg"><label class="fl">Nome</label><input class="fi" id="pd-nome"></div>
   <div class="fg"><label class="fl">Nome curto</label><input class="fi" id="pd-nomec"></div>
   <div class="fr fg">
-    <div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pd-valor-input" placeholder="0.00"></div>
+    <div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pd-valor-input" placeholder="0.00" oninput="pdCalcParcela()"></div>
     <div><label class="fl">Tipo de cobrança</label>
       <select class="fi" id="pd-tipo" onchange="pdToggleTipo()">
         <option value="unico">Único — pagamento único</option>
@@ -986,13 +1023,13 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
   </div>
   <!-- Parcelado: número de parcelas -->
   <div class="fr fg" id="pd-parcelas-wrap" style="display:none">
-    <div><label class="fl">Nº de parcelas</label><input type="number" class="fi" id="pd-parcelas" min="2" max="24" placeholder="Ex: 12"></div>
+    <div><label class="fl">Nº de parcelas</label><input type="number" class="fi" id="pd-parcelas" min="2" max="24" placeholder="Ex: 12" oninput="pdCalcParcela()"></div>
     <div><label class="fl">Valor/parcela</label><div class="fi" id="pd-parcela-calc" style="background:var(--g7);color:var(--g4);display:flex;align-items:center;font-size:13px">—</div></div>
   </div>
   <!-- Recorrente: até quando -->
   <div class="fr fg" id="pd-recorr-wrap" style="display:none">
     <div><label class="fl">Duração</label>
-      <select class="fi" id="pd-duracao">
+      <select class="fi" id="pd-duracao" onchange="document.getElementById('pd-ate-wrap').style.display=this.value==='custom'?'block':'none'">
         <option value="">Sem limite</option>
         <option value="1">1 mês</option>
         <option value="3">3 meses</option>
@@ -1075,9 +1112,9 @@ const avatarColors=['#0B6E4F','#5B4FCF','#C05621','#1A9E75','#C0392B','#B7791F',
 
 let DB={mentorados:[],leads:[],pagamentos:[],despesas:[],reunioes:[],tarefas:[],conteudo:[],
   produtos:[
-    {id:1,nome:'Curso €47',nomeC:'O Meu Primeiro Negócio',valor:47,tipo:'unico',desc:'20 aulas gravadas + suporte'},
-    {id:2,nome:'Comunidade €30/mês',nomeC:'Comunidade Advance',valor:30,tipo:'recorrente',desc:'Aulas ao vivo quinzenais'},
-    {id:3,nome:'Acompanhamento €697',nomeC:'Acompanhamento 90D',valor:697,tipo:'unico',desc:'3 meses de acompanhamento'}
+    {id:1,nome:'Curso €47',nomeC:'Curso — O Meu Primeiro Negócio',valor:47,tipo:'unico',desc:'Formação base para quem não está preparado para a mentoria individual.'},
+    {id:2,nome:'Comunidade €30/mês',nomeC:'Comunidade Advance',valor:30,tipo:'recorrente',duracao:'',desc:'Mentoria em grupo · Aula ao vivo todas as quartas-feiras.'},
+    {id:3,nome:'Mentoria €997',nomeC:'Mentoria Individual',valor:997,tipo:'parcelado',parcelas:null,desc:'Mentoria individual · 6 meses · 1 encontro/mês · Inclui Curso + Comunidade.'}
   ],
   equipa:[
     {id:1,nome:'Jonas',funcao:'CEO · Mentor · Closer',tag:'CEO',cor:'#0D0D0D'},
@@ -1144,6 +1181,40 @@ function fillSelects(){
 }
 
 /* ═══ LEADS ═══ */
+/* ── TELEFONE — identificador único ── */
+function ldFormatTel(input){
+  // Remove tudo que não seja número
+  var v=input.value.replace(/\D/g,'');
+  input.value=v;
+  // Validate in real time
+  var warn=input.parentElement.querySelector('.tel-warn');
+  if(!warn){ warn=document.createElement('div'); warn.className='tel-warn'; warn.style.cssText='font-size:10px;margin-top:3px'; input.parentElement.appendChild(warn); }
+  if(!v){ warn.textContent=''; return; }
+  // Check duplicate
+  var dup=findByTel(v);
+  if(dup&&dup.tipo){ warn.style.color='var(--re)'; warn.textContent='⚠ '+dup.nome+' já usa este número ('+dup.tipo+')'; }
+  else { warn.style.color='var(--g)'; warn.textContent='✓ Número disponível'; }
+}
+function normalizeTel(tel){
+  return (tel||'').replace(/\D/g,'').replace(/^00/,'').replace(/^\+/,'');
+}
+function findByTel(tel){
+  var t=normalizeTel(tel); if(!t||t.length<6) return null;
+  var lead=DB.leads.find(function(l){return normalizeTel(l.contacto)===t;});
+  if(lead) return {nome:lead.nome,tipo:'Lead — '+( lead.etapa||''),id:lead.id,obj:lead};
+  var ment=DB.mentorados.find(function(m){return normalizeTel(m.tel||m.contacto)===t;});
+  if(ment) return {nome:ment.nome,tipo:'Mentorado',id:ment.id,obj:ment};
+  return null;
+}
+function checkDupTel(tel, excludeId, excludeType){
+  var t=normalizeTel(tel); if(!t||t.length<6) return false;
+  var leadDup=DB.leads.find(function(l){return normalizeTel(l.contacto)===t&&(excludeType!=='lead'||l.id!==excludeId);});
+  if(leadDup) return {nome:leadDup.nome,tipo:'Lead'};
+  var mentDup=DB.mentorados.find(function(m){return normalizeTel(m.tel||m.contacto)===t&&(excludeType!=='ment'||m.id!==excludeId);});
+  if(mentDup) return {nome:mentDup.nome,tipo:'Mentorado'};
+  return false;
+}
+
 function toggleMotivo(){
   const e=document.getElementById('ld-etapa').value;
   document.getElementById('ld-motivo-wrap').style.display=(e==='perdido'||e==='standby')?'block':'none';
@@ -1185,11 +1256,15 @@ function saveLead(){
   const etapaAntiga=document.getElementById('ld-etapaAntiga').value;
   const nome=document.getElementById('ld-nome').value.trim();
   const etapa=document.getElementById('ld-etapa').value;
+  const contacto=normalizeTel(document.getElementById('ld-contacto').value);
   if(!nome){toast('Insere o nome','#C0392B');return;}
+  if(!contacto||contacto.length<6){toast('⚠ Telemóvel obrigatório — é o identificador único','#C0392B');return;}
+  var dupTel=checkDupTel(contacto, id?parseInt(id):null, id?'lead':null);
+  if(dupTel){toast('⚠ Número já usado por '+dupTel.nome+' ('+dupTel.tipo+')','#C0392B');return;}
   if(id && etapa==='fechado' && !['closer','followup','fechado'].includes(etapaAntiga)){
     toast('⚠ Só pode marcar como Fechado a partir de Closer ou Follow Up','#C0392B'); return;
   }
-  const data={nome,contacto:document.getElementById('ld-contacto').value,origem:document.getElementById('ld-origem').value,
+  const data={nome,contacto:contacto,origem:document.getElementById('ld-origem').value,
     produto:document.getElementById('ld-produto').value,etapa,
     proxData:document.getElementById('ld-proxdata').value,proxTipo:document.getElementById('ld-proxtipo').value,
     motivo:document.getElementById('ld-motivo').value,notas:document.getElementById('ld-notas').value};
@@ -1263,7 +1338,7 @@ function leadCardHTML(l){
   const interacoes=(l.interacoes||[]).slice().reverse();
   return `<div class="lead-card" style="border-left:3px solid ${atrasado?'#C0392B':et.hex}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-      <div><div style="font-size:13px;font-weight:500">${l.nome}</div><div style="font-size:11px;color:var(--g4)">${l.contacto||''}${l.contacto?' · ':''}${l.origem} · ${l.produto} · €${produtoValor(l.produto)}</div></div>
+      <div><div style="font-size:13px;font-weight:500">${l.nome}</div><div style="font-size:11px;color:var(--g4)">${(l.tel||l.contacto)?'<a href="https://wa.me/'+(l.tel||l.contacto)+'" target="_blank" style="color:#25D366;font-size:10px">📱 '+(l.tel||l.contacto)+'</a>':''} · ${l.origem} · ${l.produto} · €${produtoValor(l.produto)}</div></div>
       <div style="display:flex;gap:4px;align-items:center"><span class="tag ${et.cls}">${et.l}</span><button class="btn bs bsm" onclick="toggleExpand(${l.id})">▾</button><button class="btn bs bsm" onclick="editLead(${l.id})">✏</button><button class="btn bd bsm" onclick="DB.leads=DB.leads.filter(x=>x.id!==${l.id});save();renderAll();toast('Lead removido','#C0392B')">×</button></div>
     </div>
     ${l.proxData?`<div style="font-size:10px;display:inline-block;padding:2px 7px;border-radius:5px;margin-bottom:6px;${atrasado?'background:#FDEDEC;color:#C0392B':'background:var(--g7);color:var(--g4)'}">${atrasado?'⚠ Atrasado — ':'📅 '}${fmtDate(l.proxData)} via ${l.proxTipo||''}</div>`:''}
@@ -1403,6 +1478,7 @@ function editMentorado(id){
   om('mentorado');
   document.getElementById('mt-id').value=m.id;
   document.getElementById('mt-nome').value=m.nome;
+  document.getElementById('mt-tel').value=m.tel||m.contacto||'';
   document.getElementById('mt-produto').value=m.produto;
   // Nicho select
   const nichoSel=document.getElementById('mt-nicho');
@@ -1429,7 +1505,11 @@ function saveMentorado(){
   if(!nome){toast('Insere o nome','#C0392B');return;}
   const nichoSel=document.getElementById('mt-nicho').value;
   const nicho=nichoSel==='Outro'?document.getElementById('mt-nicho-outro').value:nichoSel;
-  const data={nome,produto:document.getElementById('mt-produto').value,nicho,
+  var tel=normalizeTel(document.getElementById('mt-tel').value);
+  if(!tel||tel.length<6){toast('⚠ Telemóvel obrigatório','#C0392B');return;}
+  var dupTel2=checkDupTel(tel, id?parseInt(id):null, id?'ment':null);
+  if(dupTel2){toast('⚠ Número já usado por '+dupTel2.nome+' ('+dupTel2.tipo+')','#C0392B');return;}
+  const data={nome,tel,contacto:tel,produto:document.getElementById('mt-produto').value,nicho,
     score:document.getElementById('mt-score').value,estado:document.getElementById('mt-estado').value,notas:document.getElementById('mt-notas').value};
   if(id){ Object.assign(DB.mentorados.find(x=>x.id===parseInt(id)),data); }
   else { DB.mentorados.push({...data,id:uid(),semana:0,tarefas:[],sessoes:[]}); }
@@ -1535,7 +1615,10 @@ function renderMentorados(){
           <div class="av" style="background:${avatarColors[DB.mentorados.indexOf(m)%avatarColors.length]}">${initials(m.nome)}</div>
           <div>
             <div style="font-size:13px;font-weight:600">${m.nome} ${viaPipeline?'<span class="tag tg" style="font-size:9px">pipeline</span>':''}</div>
-            <div style="font-size:11px;color:var(--g4)">${m.nicho||'—'} · ${m.produto}</div>
+            <div style="font-size:11px;color:var(--g4);display:flex;align-items:center;gap:8px">
+              ${m.nicho||'—'} · ${m.produto}
+              ${(m.tel||m.contacto)?'<a href="https://wa.me/'+(m.tel||m.contacto)+'" target="_blank" style="color:#25D366;font-size:10px;display:inline-flex;align-items:center;gap:3px;text-decoration:none">📱 '+(m.tel||m.contacto)+'</a>':'<span style="color:var(--re);font-size:10px">⚠ sem telefone</span>'}
+            </div>
           </div>
         </div>
         <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
@@ -1626,7 +1709,10 @@ function savePagamento(){
   const vlParcela=parseFloat((valor/parcelas).toFixed(2));
   const datas=gerarDatas(dataInicio,parcelas);
   const grupoId=uid();
-  datas.forEach((data,i)=>{ DB.pagamentos.push({id:uid(),grupoId,cliente,data,produto,valor:vlParcela,valorTotal:valor,parcela:i+1,totalParcelas:parcelas,estado:i===0?estado:'Pendente',formaPagamento}); });
+  var leadRef=findLeadByPerson(cliente);
+  var leadId=leadRef?leadRef.id:null;
+  var leadTel=leadRef?normalizeTel(leadRef.contacto||''):'';
+  datas.forEach((data,i)=>{ DB.pagamentos.push({id:uid(),grupoId,cliente,leadId,tel:leadTel,data,produto,valor:vlParcela,valorTotal:valor,parcela:i+1,totalParcelas:parcelas,estado:i===0?estado:'Pendente',formaPagamento}); });
   document.getElementById('pg-cliente').value='';document.getElementById('pg-valor').value='';
   save();cm('pagamento');renderAll();toast(parcelas===1?'✓ Pagamento registado':`✓ ${parcelas} parcelas criadas`);
 }
@@ -1983,6 +2069,8 @@ function pdToggleTipo(){
   var tipo=document.getElementById('pd-tipo').value;
   document.getElementById('pd-parcelas-wrap').style.display=tipo==='parcelado'?'grid':'none';
   document.getElementById('pd-recorr-wrap').style.display=tipo==='recorrente'?'grid':'none';
+  document.getElementById('pd-ate-wrap').style.display='none';
+  document.getElementById('pd-parcela-calc').textContent='—';
 }
 function pdCalcParcela(){
   var val=parseFloat(document.getElementById('pd-valor-input').value)||0;
@@ -2281,7 +2369,10 @@ function saveReuniao(){
   const fmt=document.getElementById('rn-formato').value;
   const waNum=document.getElementById('rn-wa-num').value.replace(/\D/g,'');
   const mapsAddr=document.getElementById('rn-maps-addr').value.trim();
-  const obj={who,data,hora:document.getElementById('rn-hora').value,tipo:document.getElementById('rn-tipo').value,notas:document.getElementById('rn-notas').value,formato:fmt,waNum,mapsAddr};
+  var leadRef2=findLeadByPerson(who);
+  var leadId2=leadRef2?leadRef2.id:null;
+  var telRef=leadRef2?normalizeTel(leadRef2.contacto||''):(waNum||'');
+  const obj={who,leadId:leadId2,tel:telRef,data,hora:document.getElementById('rn-hora').value,tipo:document.getElementById('rn-tipo').value,notas:document.getElementById('rn-notas').value,formato:fmt,waNum:waNum||telRef,mapsAddr};
   if(id){ Object.assign(DB.reunioes.find(x=>x.id===parseInt(id)),obj); }
   else { DB.reunioes.push({...obj,id:uid()}); }
   save(); renderAll();
@@ -2970,9 +3061,10 @@ function saveVendaRapida(){
     if(lead2 && !DB.mentorados.find(function(m){return m.nome===lead2.nome;})){
       DB.mentorados.push({
         id:uid(),nome:lead2.nome,
+        tel:normalizeTel(lead2.contacto||''),
+        contacto:normalizeTel(lead2.contacto||''),
         produto:produto||lead2.produto||'',
         nicho:lead2.nicho||'',
-        contacto:lead2.contacto||'',
         score:'B',semana:0,estado:'Ativo',
         tarefas:[],sessoes:[],
         notas:'Convertido do pipeline em '+todayISO()+' · Origem: '+(lead2.origem||'—'),
@@ -3099,7 +3191,8 @@ function pgBuildClientes(){
   DB.mentorados.forEach(function(m){
     var totalPago=DB.pagamentos.filter(function(p){return p.cliente===m.nome&&p.estado==='Pago';}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
     var totalPend=DB.pagamentos.filter(function(p){return p.cliente===m.nome&&p.estado==='Pendente';}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
-    list.push({nome:m.nome,produto:m.produto||'',sub:'Mentorado · '+(m.produto||'—')+(totalPago>0?' · €'+totalPago.toFixed(0)+' recebido':'')+(totalPend>0?' · €'+totalPend.toFixed(0)+' pendente':''),badge:'Mentorado',badgeCls:'tg',tipo:'mentorado'});
+    var tel=m.tel||m.contacto||'';
+    list.push({nome:m.nome,tel:tel,produto:m.produto||'',sub:'Mentorado · '+(m.produto||'—')+(tel?' · 📱'+tel:'')+(totalPago>0?' · €'+totalPago.toFixed(0)+' recebido':'')+(totalPend>0?' · €'+totalPend.toFixed(0)+' pendente':''),badge:'Mentorado',badgeCls:'tg',tipo:'mentorado'});
   });
   DB.leads.filter(function(l){return l.etapa==='fechado';}).forEach(function(l){
     if(!list.find(function(x){return x.nome===l.nome;}))
@@ -3116,7 +3209,7 @@ function pgRenderDropdown(dropId, inputId, prodId, valorId, query){
   var drop=document.getElementById(dropId);
   var clientes=pgBuildClientes();
   var q=(query||'').toLowerCase().trim();
-  var filtered=!q ? clientes : clientes.filter(function(c){ return c.nome.toLowerCase().includes(q)||(c.produto||'').toLowerCase().includes(q); });
+  var filtered=!q ? clientes : clientes.filter(function(c){ return c.nome.toLowerCase().includes(q)||(c.produto||'').toLowerCase().includes(q)||(c.tel||'').includes(q); });
   window._pgDropData=filtered;
   window._pgDropCtx={inputId:inputId,dropId:dropId,prodId:prodId,valorId:valorId};
   if(!filtered.length){
@@ -3451,669 +3544,5 @@ window.addEventListener('appinstalled',function(){ pwaDismiss(); toast('✓ App 
 
   <button class="btn bp" style="width:100%" onclick="saveProxEncontro()">Agendar encontro</button>
 </div></div>
-<!-- ═══════════════════════════════════════════════════════════════
-     HUB ADVANCE — Extensão: Histórico de mentorados + Google Calendar
-     Cola este bloco INTEIRO imediatamente ANTES de </body>
-     Não altera nada do que já existe — só acrescenta.
-     ═══════════════════════════════════════════════════════════════ -->
-<script>
-(function(){
-"use strict";
-
-/* ══════════════════════════════════════════════
-   ⚙️  Cola aqui o teu Client ID do Google Cloud
-   ══════════════════════════════════════════════ */
-var GCAL_CLIENT_ID = '1046779912638-naci6fvcusu8p95k70prtrhtmq0odmlk.apps.googleusercontent.com';
-/* ══════════════════════════════════════════════ */
-
-var mesesPT=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-function d2(n){ return String(n).padStart(2,'0'); }
-function safeDate(d){ try{ return fmtDate(d); }catch(e){ return d||'—'; } }
-
-/* ═══════════════ HISTÓRICO DE MENTORADOS ═══════════════ */
-
-function ensureHistModal(){
-  if(document.getElementById('modal-historico')) return;
-  var wrap=document.createElement('div');
-  wrap.className='mo'; wrap.id='modal-historico';
-  wrap.innerHTML=''
-    +'<div class="mbox" style="max-width:520px">'
-    +'  <div class="mh">'
-    +'    <div><div class="mt">🕑 Histórico do mentorado</div><div id="hist-sub" style="font-size:11px;color:var(--g4);margin-top:2px"></div></div>'
-    +'    <span class="mx" onclick="closeHistorico()">✕</span>'
-    +'  </div>'
-    +'  <div id="hist-summary" style="margin-bottom:12px"></div>'
-    +'  <div id="hist-timeline"></div>'
-    +'</div>';
-  document.body.appendChild(wrap);
-  wrap.addEventListener('click',function(e){ if(e.target===wrap) closeHistorico(); });
-}
-
-window.closeHistorico=function(){
-  var m=document.getElementById('modal-historico');
-  if(m) m.classList.remove('open');
-};
-
-window.openHistorico=function(mentId){
-  ensureHistModal();
-  var m=DB.mentorados.find(function(x){return x.id===mentId;});
-  if(!m){ return; }
-  document.getElementById('hist-sub').textContent=(m.nicho?m.nicho+' · ':'')+(m.produto||'');
-
-  // ── Reunir dados ──
-  var sessoes=(m.sessoes||[]).slice();
-  var tarefas=(m.tarefas||[]).slice();
-  var reunioes=DB.reunioes.filter(function(r){return r.who===m.nome;});
-  var pagamentos=DB.pagamentos.filter(function(p){return p.cliente===m.nome;});
-
-  var totalPago=pagamentos.filter(function(p){return p.estado==='Pago';}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
-  var totalPrevisto=pagamentos.reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
-  var tDone=tarefas.filter(function(t){return t.done;}).length;
-  var semAtual=m.semana||0;
-  var fase=(typeof SEMANAS!=='undefined'&&SEMANAS[semAtual])?SEMANAS[semAtual]:null;
-
-  // ── Resumo ──
-  document.getElementById('hist-summary').innerHTML=''
-    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'
-    +  kpiBox('Fase',(fase?fase.e+' ':'')+'Sem. '+semAtual, fase?fase.l:'Concluído')
-    +  kpiBox('Sessões', sessoes.length, sessoes.length===1?'sessão':'sessões')
-    +  kpiBox('Tarefas', tDone+'/'+tarefas.length, 'concluídas')
-    +  kpiBox('Recebido', '€'+totalPago.toFixed(0), totalPrevisto>totalPago?('de €'+totalPrevisto.toFixed(0)):'total')
-    +'</div>';
-
-  // ── Timeline unificada ──
-  var items=[];
-  sessoes.forEach(function(s){
-    var st=tarefas.filter(function(t){return t.sessaoId===s.id;});
-    items.push({date:s.data||'', type:'sessao', semana:s.semana, resumo:s.resumo||'', tarefas:st});
-  });
-  reunioes.forEach(function(r){
-    items.push({date:r.data||'', type:'reuniao', hora:r.hora, tipo:r.tipo, notas:r.notas, formato:r.formato});
-  });
-  pagamentos.forEach(function(p){
-    items.push({date:p.data||'', type:'pagamento', produto:p.produto, valor:p.valor, estado:p.estado, parcela:p.parcela, totalParcelas:p.totalParcelas});
-  });
-  items.sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
-
-  var today=todayISO();
-  var html=items.length?items.map(function(it){
-    var cor, icon, titulo, corpo='';
-    if(it.type==='sessao'){
-      cor='#00B37A'; icon='📋';
-      titulo='Sessão'+(it.semana!=null?' · Semana '+it.semana:'');
-      if(it.resumo) corpo+='<div style="font-size:11.5px;color:var(--g3);margin-top:4px;padding:6px 9px;background:var(--g7);border-radius:7px">'+esc(it.resumo)+'</div>';
-      if(it.tarefas&&it.tarefas.length){
-        corpo+='<div style="margin-top:6px">'+it.tarefas.map(function(t){
-          return '<div style="display:flex;gap:6px;align-items:flex-start;font-size:11.5px;margin-bottom:3px">'
-            +'<span style="color:'+(t.done?'var(--g)':'var(--g4)')+'">'+(t.done?'✓':'○')+'</span>'
-            +'<span style="'+(t.done?'text-decoration:line-through;color:var(--g4)':'')+'">'+esc(t.txt)+'</span></div>';
-        }).join('')+'</div>';
-      }
-    } else if(it.type==='reuniao'){
-      var futura=it.date>=today;
-      cor=futura?'#2563EB':'#7C6FED'; icon='📅';
-      titulo=(it.tipo||'Reunião')+(it.hora?' · '+it.hora:'');
-      var sub=[]; if(it.formato) sub.push(it.formato); if(futura) sub.push('agendada'); else sub.push('realizada');
-      corpo+='<div style="font-size:10.5px;color:var(--g4);margin-top:2px">'+sub.join(' · ')+'</div>';
-      if(it.notas) corpo+='<div style="font-size:11.5px;color:var(--g3);margin-top:4px">'+esc(it.notas)+'</div>';
-    } else {
-      var pago=it.estado==='Pago';
-      cor=pago?'#00B37A':'#C99A1A'; icon='💶';
-      titulo='€'+parseFloat(it.valor||0).toFixed(2)+(it.totalParcelas>1?(' · parcela '+it.parcela+'/'+it.totalParcelas):'');
-      corpo+='<div style="font-size:10.5px;color:var(--g4);margin-top:2px">'+(it.produto||'')+' · '+(pago?'pago':'pendente')+'</div>';
-    }
-    return '<div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--g6)">'
-      +'<div style="min-width:56px;text-align:right;font-size:10.5px;color:var(--g4);padding-top:2px">'+safeDate(it.date)+'</div>'
-      +'<div style="width:3px;align-self:stretch;background:'+cor+';border-radius:2px;flex-shrink:0"></div>'
-      +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:12.5px;font-weight:600">'+icon+' '+esc(titulo)+'</div>'
-        +corpo
-      +'</div>'
-    +'</div>';
-  }).join(''):'<div class="empty" style="padding:2rem">Ainda não há histórico registado para este mentorado.</div>';
-
-  document.getElementById('hist-timeline').innerHTML=html;
-  document.getElementById('modal-historico').classList.add('open');
-};
-
-function kpiBox(label,val,sub){
-  return '<div style="background:var(--g7);border-radius:10px;padding:9px 10px;text-align:center">'
-    +'<div style="font-size:9px;color:var(--g4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">'+label+'</div>'
-    +'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:15px;font-weight:700;line-height:1.1">'+val+'</div>'
-    +'<div style="font-size:9.5px;color:var(--g4);margin-top:2px">'+sub+'</div>'
-    +'</div>';
-}
-function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-/* Injeta o botão "Histórico" em cada cartão de mentorado (sem editar o render original) */
-function injectHistButtons(){
-  try{
-    var list=document.getElementById('mentorados-list'); if(!list) return;
-    list.querySelectorAll('.card').forEach(function(card){
-      if(card.querySelector('[data-hist]')) return;
-      var sBtn=Array.prototype.slice.call(card.querySelectorAll('button')).find(function(b){
-        return /openSessao\(\d+\)/.test(b.getAttribute('onclick')||'');
-      });
-      if(!sBtn) return;
-      var mm=(sBtn.getAttribute('onclick').match(/openSessao\((\d+)\)/)||[])[1];
-      if(!mm) return;
-      var btn=document.createElement('button');
-      btn.className='btn bs bsm'; btn.setAttribute('data-hist','1');
-      btn.textContent='🕑 Histórico';
-      btn.onclick=(function(id){ return function(){ openHistorico(id); }; })(parseInt(mm,10));
-      sBtn.parentNode.insertBefore(btn, sBtn.nextSibling);
-    });
-  }catch(e){}
-}
-
-/* ═══════════════ GOOGLE CALENDAR ═══════════════ */
-
-var _gcalToken=sessionStorage.getItem('gcal_tok')||null;
-var _gcalTokenClient=null;
-var _gcalEvents=[];
-
-(function loadGis(){
-  var s=document.createElement('script');
-  s.src='https://accounts.google.com/gsi/client'; s.async=true; s.defer=true;
-  document.head.appendChild(s);
-})();
-
-function gcalReady(){ return typeof google!=='undefined' && google.accounts && google.accounts.oauth2; }
-
-function gcalInitClient(){
-  if(_gcalTokenClient || !gcalReady() || !GCAL_CLIENT_ID) return;
-  _gcalTokenClient=google.accounts.oauth2.initTokenClient({
-    client_id:GCAL_CLIENT_ID,
-    scope:'https://www.googleapis.com/auth/calendar.events',
-    callback:function(resp){
-      if(resp && resp.access_token){
-        _gcalToken=resp.access_token;
-        sessionStorage.setItem('gcal_tok', _gcalToken);
-        gcalUpdateUI();
-        try{ toast('✓ Google Calendar ligado'); }catch(e){}
-        gcalSync();
-      }
-    }
-  });
-}
-
-window.gcalToggle=function(){
-  if(_gcalToken){ gcalDisconnect(); return; }
-  if(!GCAL_CLIENT_ID){ try{ toast('Falta configurar o Client ID do Google no topo do bloco','#C0392B'); }catch(e){} return; }
-  gcalInitClient();
-  if(!_gcalTokenClient){ try{ toast('Google ainda a carregar — tenta outra vez num instante','#C99A1A'); }catch(e){} return; }
-  _gcalTokenClient.requestAccessToken({ prompt: _gcalToken?'':'consent' });
-};
-
-function gcalDisconnect(){
-  _gcalToken=null; sessionStorage.removeItem('gcal_tok'); _gcalEvents=[];
-  gcalUpdateUI(); renderGcalCard();
-  try{ toast('Google Calendar desligado'); }catch(e){}
-}
-
-function toLocalISO(dt){
-  return dt.getFullYear()+'-'+d2(dt.getMonth()+1)+'-'+d2(dt.getDate())+'T'+d2(dt.getHours())+':'+d2(dt.getMinutes())+':00';
-}
-
-async function gcalFetch(method,path,body){
-  try{
-    var res=await fetch('https://www.googleapis.com/calendar/v3'+path,{
-      method:method,
-      headers:{'Authorization':'Bearer '+_gcalToken,'Content-Type':'application/json'},
-      body: body?JSON.stringify(body):undefined
-    });
-    if(res.status===401){
-      _gcalToken=null; sessionStorage.removeItem('gcal_tok'); gcalUpdateUI();
-      try{ toast('A sessão Google expirou — liga outra vez','#C99A1A'); }catch(e){}
-      return null;
-    }
-    if(!res.ok) return null;
-    if(method==='DELETE') return true;
-    return await res.json();
-  }catch(e){ return null; }
-}
-
-async function gcalCreate(r){
-  var start=new Date((r.data||todayISO())+'T'+((r.hora||'10:00'))+':00');
-  if(isNaN(start.getTime())) return;
-  var end=new Date(start.getTime()); end.setHours(end.getHours()+1);
-  var body={
-    summary:(r.who||'Reunião')+(r.tipo?(' — '+r.tipo):''),
-    description:(r.notas?r.notas+'\n\n':'')+'(Agendado via Hub Advance)',
-    start:{dateTime:toLocalISO(start), timeZone:'Europe/Lisbon'},
-    end:{dateTime:toLocalISO(end), timeZone:'Europe/Lisbon'}
-  };
-  var out=await gcalFetch('POST','/calendars/primary/events', body);
-  if(out && out.id){ r.googleEventId=out.id; }
-}
-
-async function gcalPull(){
-  var tMin=new Date(); tMin.setHours(0,0,0,0);
-  var tMax=new Date(); tMax.setDate(tMax.getDate()+30);
-  var q='?timeMin='+encodeURIComponent(tMin.toISOString())
-    +'&timeMax='+encodeURIComponent(tMax.toISOString())
-    +'&singleEvents=true&orderBy=startTime&maxResults=50';
-  var out=await gcalFetch('GET','/calendars/primary/events'+q);
-  _gcalEvents=(out && out.items)?out.items:[];
-}
-
-window.gcalSync=async function(){
-  if(!_gcalToken){ window.gcalToggle(); return; }
-  try{ toast('A sincronizar com o Google…'); }catch(e){}
-  var futuras=DB.reunioes.filter(function(r){ return (r.data||'')>=todayISO() && !r.googleEventId; });
-  for(var i=0;i<futuras.length;i++){ await gcalCreate(futuras[i]); }
-  try{ save(); }catch(e){}
-  await gcalPull();
-  renderGcalCard(); gcalUpdateUI();
-  try{ toast('✓ Sincronizado ('+futuras.length+' enviada'+(futuras.length===1?'':'s')+')'); }catch(e){}
-};
-
-function gcalUpdateUI(){
-  var c=document.getElementById('gcal-connect-btn');
-  var s=document.getElementById('gcal-sync-btn');
-  var badge=document.getElementById('gcal-badge');
-  if(c){ c.innerHTML=_gcalToken?'🟢 Google ligado':'🔗 Ligar Google'; }
-  if(s){ s.style.display=_gcalToken?'inline-flex':'none'; }
-  if(badge){ badge.style.display=_gcalToken?'inline':'none'; }
-  var card=document.getElementById('ag-gcal-card');
-  if(card){ card.style.display=(_gcalToken && _gcalEvents.length)?'block':'none'; }
-}
-
-function renderGcalCard(){
-  var list=document.getElementById('ag-gcal-list');
-  var card=document.getElementById('ag-gcal-card');
-  if(!list||!card) return;
-  if(!_gcalToken || !_gcalEvents.length){ card.style.display='none'; list.innerHTML=''; return; }
-  card.style.display='block';
-  list.innerHTML=_gcalEvents.map(function(ev){
-    var sd=ev.start&&(ev.start.dateTime||ev.start.date)||'';
-    var dtxt='', htxt='';
-    if(sd){
-      var dd=new Date(sd);
-      if(!isNaN(dd.getTime())){
-        dtxt=d2(dd.getDate())+' '+mesesPT[dd.getMonth()];
-        if(ev.start.dateTime) htxt=d2(dd.getHours())+':'+d2(dd.getMinutes());
-      }
-    }
-    return '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--g6);align-items:center">'
-      +'<div style="min-width:52px;text-align:right;font-size:11px;color:var(--g4)">'+dtxt+(htxt?'<br><span style="font-weight:600;color:var(--bk)">'+htxt+'</span>':'')+'</div>'
-      +'<div style="width:3px;align-self:stretch;background:#4285F4;border-radius:2px;flex-shrink:0"></div>'
-      +'<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:500">'+esc(ev.summary||'(sem título)')+'</div>'
-        +(ev.location?'<div style="font-size:10.5px;color:var(--g4)">📍 '+esc(ev.location)+'</div>':'')+'</div>'
-      +(ev.htmlLink?'<a href="'+ev.htmlLink+'" target="_blank" class="btn bs bsm" style="text-decoration:none">abrir</a>':'')
-      +'</div>';
-  }).join('');
-}
-
-/* Injeta os botões do Google na barra da Agenda + o cartão de eventos */
-function injectGcalUI(){
-  try{
-    var panel=document.getElementById('p-agenda'); if(!panel) return;
-    var addBtn=Array.prototype.slice.call(panel.querySelectorAll('button')).find(function(b){
-      return /om\('reuniao'\)/.test(b.getAttribute('onclick')||'');
-    });
-    if(addBtn && !document.getElementById('gcal-connect-btn')){
-      var span=document.createElement('span');
-      span.style.display='inline-flex'; span.style.gap='6px'; span.style.marginRight='6px';
-      span.innerHTML=''
-        +'<button id="gcal-connect-btn" class="btn bs bsm" onclick="gcalToggle()">🔗 Ligar Google</button>'
-        +'<button id="gcal-sync-btn" class="btn bs bsm" onclick="gcalSync()" style="display:none">🔄 Sincronizar</button>';
-      addBtn.parentNode.insertBefore(span, addBtn);
-    }
-    if(!document.getElementById('ag-gcal-card')){
-      var card=document.createElement('div');
-      card.className='card'; card.id='ag-gcal-card';
-      card.style.marginBottom='16px'; card.style.display='none';
-      card.innerHTML='<div class="ct" style="margin-bottom:8px">📆 Do teu Google Calendar <span style="font-size:10px;color:var(--g4);font-weight:400">— próximos 30 dias</span></div><div id="ag-gcal-list"></div>';
-      var agWeek=document.getElementById('ag-week');
-      if(agWeek && agWeek.parentNode===panel){ panel.insertBefore(card, agWeek); }
-      else { panel.insertBefore(card, panel.firstChild); }
-    }
-    gcalUpdateUI(); renderGcalCard();
-  }catch(e){}
-}
-
-/* Ao apagar uma reunião, apaga também no Google (se estava sincronizada) */
-if(typeof window.deleteReuniao==='function'){
-  var _origDelReuniao=window.deleteReuniao;
-  window.deleteReuniao=function(){
-    try{
-      var id=parseInt((document.getElementById('rn-id')||{}).value,10);
-      var r=DB.reunioes.find(function(x){return x.id===id;});
-      if(_gcalToken && r && r.googleEventId){ gcalFetch('DELETE','/calendars/primary/events/'+r.googleEventId); }
-    }catch(e){}
-    return _origDelReuniao.apply(this, arguments);
-  };
-}
-
-/* ═══════════════ LIGAR TUDO SEM EDITAR O RENDER ORIGINAL ═══════════════ */
-
-function wrap(name, after){
-  if(typeof window[name]!=='function') return;
-  var orig=window[name];
-  window[name]=function(){
-    var out=orig.apply(this, arguments);
-    try{ after(); }catch(e){}
-    return out;
-  };
-}
-wrap('renderMentorados', injectHistButtons);
-wrap('renderAgenda', injectGcalUI);
-
-/* Caso já esteja renderizado quando este bloco corre */
-window.addEventListener('load', function(){
-  setTimeout(function(){ injectHistButtons(); injectGcalUI(); }, 400);
-});
-
-})();
-</script>
-<!-- ═══════════════════════════════════════════════════════════════
-     HUB ADVANCE — Bloco 2: Contactos na ficha + Lembretes no dashboard
-     Cola este bloco logo A SEGUIR ao bloco anterior, também ANTES de </body>.
-     Só acrescenta — não mexe em nada do que já existe.
-     ═══════════════════════════════════════════════════════════════ -->
-<script>
-(function(){
-"use strict";
-
-function d2(n){ return String(n).padStart(2,'0'); }
-function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function firstName(n){ return (String(n||'').trim().split(/\s+/)[0])||''; }
-var meses=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-
-function normPhone(v){
-  var d=String(v||'').replace(/[^\d]/g,'');
-  if(!d) return '';
-  d=d.replace(/^00/,'');
-  if(d.length===9 && d[0]==='9') d='351'+d;   // telemóvel PT sem indicativo
-  return d;
-}
-function waLink(num,msg){
-  var n=normPhone(num);
-  if(!n) return '';
-  return 'https://wa.me/'+n+(msg?('?text='+encodeURIComponent(msg)):'');
-}
-function socialLink(v,base){
-  var s=String(v||'').trim();
-  if(!s) return '';
-  if(/^https?:\/\//i.test(s)) return s;
-  return base+s.replace(/^@/,'');
-}
-function menteeNumber(m){
-  if(!m) return '';
-  return normPhone(m.whatsapp||m.telefone||m.contacto||'');
-}
-function findNumberByName(nome){
-  var m=(DB.mentorados||[]).find(function(x){return x.nome===nome;});
-  var n=menteeNumber(m);
-  if(n) return n;
-  var l=(DB.leads||[]).find(function(x){return x.nome===nome;});
-  if(l) return normPhone(l.contacto||'');
-  return '';
-}
-
-/* ═══════════ CONTACTOS NA FICHA (dentro do modal já existente) ═══════════ */
-
-var _fichaId=null;
-
-window.fichaEditToggle=function(){
-  var f=document.getElementById('ficha-edit');
-  if(f) f.style.display=(f.style.display==='none'||!f.style.display)?'block':'none';
-};
-
-window.fichaSaveContacts=function(){
-  var m=(DB.mentorados||[]).find(function(x){return x.id===_fichaId;});
-  if(!m) return;
-  m.whatsapp=(document.getElementById('fc-wa').value||'').trim();
-  m.telefone=(document.getElementById('fc-tel').value||'').trim();
-  m.instagram=(document.getElementById('fc-ig').value||'').trim();
-  m.tiktok=(document.getElementById('fc-tt').value||'').trim();
-  try{ save(); }catch(e){}
-  fichaRenderContacts();
-  if(typeof refreshReminders==='function') refreshReminders();
-  try{ toast('✓ Contactos guardados'); }catch(e){}
-};
-
-function fichaRenderContacts(){
-  var box=document.getElementById('ficha-contactos');
-  var m=(DB.mentorados||[]).find(function(x){return x.id===_fichaId;});
-  if(!box||!m) return;
-
-  var num=menteeNumber(m);
-  var waGreet='Olá '+firstName(m.nome)+'! 👋';
-  var ig=socialLink(m.instagram,'https://instagram.com/');
-  var tt=socialLink(m.tiktok,'https://tiktok.com/@');
-  var tel=(m.telefone||m.contacto||'').trim();
-
-  var btns=[];
-  if(num) btns.push('<a href="'+waLink(num,waGreet)+'" target="_blank" class="btn bp bsm" style="text-decoration:none">📱 WhatsApp</a>');
-  if(tel) btns.push('<a href="tel:'+esc(tel.replace(/\s/g,''))+'" class="btn bs bsm" style="text-decoration:none">📞 Ligar</a>');
-  if(ig)  btns.push('<a href="'+esc(ig)+'" target="_blank" class="btn bs bsm" style="text-decoration:none">📸 Instagram</a>');
-  if(tt)  btns.push('<a href="'+esc(tt)+'" target="_blank" class="btn bs bsm" style="text-decoration:none">🎵 TikTok</a>');
-  var actions=btns.length?btns.join(''):'<span style="font-size:11.5px;color:var(--g4)">Sem contactos ainda — carrega em editar.</span>';
-
-  box.innerHTML=''
-    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-    +  '<div style="display:flex;gap:6px;flex-wrap:wrap">'+actions+'</div>'
-    +  '<button class="btn bs bsm" onclick="fichaEditToggle()">✏️ Editar</button>'
-    +'</div>'
-    +'<div id="ficha-edit" style="display:none;background:var(--g7);border-radius:10px;padding:10px;margin-bottom:4px">'
-    +  fieldRow('fc-wa','WhatsApp (só números, ex: 351912345678)', m.whatsapp||m.contacto||'')
-    +  fieldRow('fc-tel','Telefone', m.telefone||'')
-    +  fieldRow('fc-ig','Instagram (@utilizador ou link)', m.instagram||'')
-    +  fieldRow('fc-tt','TikTok (@utilizador ou link)', m.tiktok||'')
-    +  '<button class="btn bp bsm" style="width:100%;margin-top:4px" onclick="fichaSaveContacts()">Guardar contactos</button>'
-    +'</div>';
-}
-function fieldRow(id,label,val){
-  return '<div style="margin-bottom:7px">'
-    +'<label style="display:block;font-size:10px;color:var(--g4);margin-bottom:3px">'+label+'</label>'
-    +'<input id="'+id+'" value="'+esc(val)+'" style="width:100%;box-sizing:border-box;background:var(--g6,#fff);border:1px solid var(--g5,#ddd);border-radius:7px;padding:7px 9px;font-size:12.5px;color:var(--bk,#111);font-family:inherit">'
-    +'</div>';
-}
-
-/* Enriquecer o modal da ficha (definido no bloco 1) com a secção de contactos */
-if(typeof window.openHistorico==='function'){
-  var _origOpenHist=window.openHistorico;
-  window.openHistorico=function(mentId){
-    var out=_origOpenHist.apply(this, arguments);
-    _fichaId=mentId;
-    try{
-      var mt=document.querySelector('#modal-historico .mt'); if(mt) mt.textContent='👤 Ficha do mentorado';
-      var mbox=document.querySelector('#modal-historico .mbox');
-      var sum=document.getElementById('hist-summary');
-      var box=document.getElementById('ficha-contactos');
-      if(!box && mbox && sum){
-        box=document.createElement('div'); box.id='ficha-contactos'; box.style.marginBottom='14px';
-        mbox.insertBefore(box, sum);
-      }
-      fichaRenderContacts();
-    }catch(e){}
-    return out;
-  };
-}
-
-/* Botão WhatsApp rápido em cada cartão de mentorado */
-function injectCardWa(){
-  try{
-    var list=document.getElementById('mentorados-list'); if(!list) return;
-    list.querySelectorAll('.card').forEach(function(card){
-      if(card.querySelector('[data-wa]')) return;
-      var sBtn=Array.prototype.slice.call(card.querySelectorAll('button')).find(function(b){
-        return /openSessao\(\d+\)/.test(b.getAttribute('onclick')||'');
-      });
-      if(!sBtn) return;
-      var id=parseInt((sBtn.getAttribute('onclick').match(/openSessao\((\d+)\)/)||[])[1],10);
-      var m=(DB.mentorados||[]).find(function(x){return x.id===id;});
-      var num=menteeNumber(m);
-      var el;
-      if(num){
-        el=document.createElement('a');
-        el.href=waLink(num,'Olá '+firstName(m.nome)+'! 👋'); el.target='_blank';
-        el.className='btn bp bsm'; el.style.textDecoration='none'; el.textContent='📱';
-        el.title='WhatsApp';
-      } else {
-        el=document.createElement('button');
-        el.className='btn bs bsm'; el.textContent='📱'; el.title='Adicionar WhatsApp';
-        el.onclick=(function(i){ return function(){ openHistorico(i); }; })(id);
-      }
-      el.setAttribute('data-wa','1');
-      sBtn.parentNode.insertBefore(el, sBtn);
-    });
-  }catch(e){}
-}
-
-/* ═══════════ LEMBRETES DE SESSÕES NO DASHBOARD ═══════════ */
-
-function todayStr(){ try{ return todayISO(); }catch(e){ var d=new Date(); return d.getFullYear()+'-'+d2(d.getMonth()+1)+'-'+d2(d.getDate()); } }
-function fmtD(iso){ try{ return fmtDate(iso); }catch(e){ var p=String(iso).split('-'); return p[2]+'/'+p[1]; } }
-
-function findDashPanel(){
-  var panels=document.querySelectorAll('[id^="p-"]');
-  for(var i=0;i<panels.length;i++){
-    var t=panels[i].textContent||'';
-    if(t.indexOf('Forecast pipeline')>-1 || t.indexOf('Próxima reunião')>-1) return panels[i];
-  }
-  return null;
-}
-
-function ensureReminderCard(){
-  if(document.getElementById('hb-reminders')) return document.getElementById('hb-reminders');
-  var panel=findDashPanel(); if(!panel) return null;
-  var card=document.createElement('div');
-  card.className='card'; card.id='hb-reminders'; card.style.marginBottom='16px';
-  card.innerHTML='<div class="ct" style="margin-bottom:8px">🔔 Lembretes de sessões <span style="font-size:10px;color:var(--g4);font-weight:400">— próximos compromissos</span></div><div id="hb-reminders-list"></div>';
-  panel.insertBefore(card, panel.firstChild);
-  return card;
-}
-
-window.refreshReminders=function(){
-  var card=ensureReminderCard(); if(!card) return;
-  var list=document.getElementById('hb-reminders-list'); if(!list) return;
-  var today=todayStr();
-  var up=(DB.reunioes||[]).filter(function(r){ return (r.data||'')>=today; })
-    .sort(function(a,b){ return (a.data+' '+(a.hora||'')).localeCompare(b.data+' '+(b.hora||'')); })
-    .slice(0,8);
-
-  if(!up.length){ list.innerHTML='<div style="font-size:12px;color:var(--g4);padding:6px 0">Sem sessões agendadas. Marca uma reunião na Agenda ou pelo botão 📅 no mentorado.</div>'; return; }
-
-  list.innerHTML=up.map(function(r){
-    var dd=new Date((r.data||'')+'T00:00:00');
-    var dtxt=!isNaN(dd.getTime())?(d2(dd.getDate())+' '+meses[dd.getMonth()]):fmtD(r.data);
-    var num=findNumberByName(r.who);
-    var msg='Olá '+firstName(r.who)+'! 👋 Só a confirmar a nossa sessão de '+dtxt+(r.hora?(' às '+r.hora):'')+'. Até já!';
-    var lembrar=num
-      ? '<a href="'+waLink(num,msg)+'" target="_blank" class="btn bp bsm" style="text-decoration:none">📱 Lembrar</a>'
-      : '<span style="font-size:10px;color:var(--g4)">sem nº</span>';
-    return '<div style="display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--g6)">'
-      +'<div style="min-width:52px;text-align:right"><div style="font-size:12px;font-weight:700;font-family:\'Space Grotesk\',sans-serif">'+dtxt+'</div>'+(r.hora?'<div style="font-size:10.5px;color:var(--g4)">'+r.hora+'</div>':'')+'</div>'
-      +'<div style="width:3px;align-self:stretch;background:#00B37A;border-radius:2px;flex-shrink:0"></div>'
-      +'<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600">'+esc(r.who||'—')+'</div>'
-        +'<div style="font-size:10.5px;color:var(--g4)">'+esc(r.tipo||'Sessão')+(r.formato?(' · '+esc(r.formato)):'')+'</div></div>'
-      +lembrar
-    +'</div>';
-  }).join('');
-};
-
-/* ═══════════ LIGAR TUDO ═══════════ */
-function wrap(name, after){
-  if(typeof window[name]!=='function') return;
-  var orig=window[name];
-  window[name]=function(){ var out=orig.apply(this, arguments); try{ after(); }catch(e){} return out; };
-}
-wrap('renderMentorados', injectCardWa);
-wrap('renderMentorados', window.refreshReminders);
-wrap('renderAgenda', window.refreshReminders);
-wrap('renderAll', function(){ injectCardWa(); window.refreshReminders(); });
-
-window.addEventListener('load', function(){
-  setTimeout(function(){ injectCardWa(); try{ window.refreshReminders(); }catch(e){} }, 600);
-});
-
-})();
-</script>
-<!-- ═══════════════════════════════════════════════════════════════
-     HUB ADVANCE — Bloco 3: envio automático para o Google Calendar
-     Cola A SEGUIR aos outros blocos, também ANTES de </body>.
-     Faz com que uma reunião criada na Agenda vá sozinha para o Google
-     (não precisas de carregar em Sincronizar). Só funciona se já
-     tiveres carregado em "🔗 Ligar Google".
-     ═══════════════════════════════════════════════════════════════ -->
-<script>
-(function(){
-"use strict";
-
-function d2(n){ return String(n).padStart(2,'0'); }
-function tok(){ return sessionStorage.getItem('gcal_tok')||null; }
-function todayS(){ try{ return todayISO(); }catch(e){ var d=new Date(); return d.getFullYear()+'-'+d2(d.getMonth()+1)+'-'+d2(d.getDate()); } }
-function toLocalISO(dt){ return dt.getFullYear()+'-'+d2(dt.getMonth()+1)+'-'+d2(dt.getDate())+'T'+d2(dt.getHours())+':'+d2(dt.getMinutes())+':00'; }
-
-async function gfetch(method, path, body){
-  var t=tok(); if(!t) return null;
-  try{
-    var res=await fetch('https://www.googleapis.com/calendar/v3'+path, {
-      method:method,
-      headers:{'Authorization':'Bearer '+t, 'Content-Type':'application/json'},
-      body: body?JSON.stringify(body):undefined
-    });
-    if(res.status===401){ sessionStorage.removeItem('gcal_tok'); return null; }
-    if(!res.ok) return null;
-    if(method==='DELETE') return true;
-    return await res.json();
-  }catch(e){ return null; }
-}
-
-function eventBody(r){
-  var start=new Date((r.data||todayS())+'T'+((r.hora||'10:00'))+':00');
-  if(isNaN(start.getTime())) return null;
-  var end=new Date(start.getTime()); end.setHours(end.getHours()+1);
-  return {
-    summary:(r.who||'Reunião')+(r.tipo?(' — '+r.tipo):''),
-    description:(r.notas?r.notas+'\n\n':'')+'(Agendado via Hub Advance)',
-    start:{dateTime:toLocalISO(start), timeZone:'Europe/Lisbon'},
-    end:{dateTime:toLocalISO(end), timeZone:'Europe/Lisbon'}
-  };
-}
-
-async function syncOne(r){
-  var body=eventBody(r); if(!body) return false;
-  if(r.googleEventId){
-    // já existe no Google — atualiza (caso tenhas mudado data/hora)
-    await gfetch('PATCH','/calendars/primary/events/'+encodeURIComponent(r.googleEventId), body);
-    return false;
-  }
-  var out=await gfetch('POST','/calendars/primary/events', body);
-  if(out && out.id){ r.googleEventId=out.id; return true; }
-  return false;
-}
-
-var _busy=false;
-async function autoPush(){
-  if(_busy || !tok()) return;
-  _busy=true;
-  try{
-    var today=todayS();
-    var futuras=(DB.reunioes||[]).filter(function(r){ return (r.data||'')>=today; });
-    var criou=false;
-    for(var i=0;i<futuras.length;i++){ if(await syncOne(futuras[i])) criou=true; }
-    if(criou){ try{ save(); }catch(e){} try{ toast('✓ Guardado no Google Calendar'); }catch(e){} }
-  }catch(e){}
-  _busy=false;
-}
-
-function wrapSave(name){
-  if(typeof window[name]!=='function') return;
-  var orig=window[name];
-  window[name]=function(){
-    var out=orig.apply(this, arguments);
-    setTimeout(autoPush, 350);
-    return out;
-  };
-}
-wrapSave('saveReuniao');
-wrapSave('saveProxEncontro');
-
-})();
-</script>
 </body>
 </html>
