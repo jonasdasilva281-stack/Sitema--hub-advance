@@ -1196,7 +1196,14 @@ function ldFormatTel(input){
   else { warn.style.color='var(--g)'; warn.textContent='✓ Número disponível'; }
 }
 function normalizeTel(tel){
-  return (tel||'').replace(/\D/g,'').replace(/^00/,'').replace(/^\+/,'');
+  var d=(tel||'').replace(/\D/g,'').replace(/^00/,'');
+  if(d.length===9) d='351'+d; // PT nacional sem indicativo; estrangeiros com código ficam intactos
+  return d;
+}
+function findLeadByPerson(nome){
+  if(!nome) return null;
+  var n=nome.trim().toLowerCase();
+  return DB.leads.find(function(l){return (l.nome||'').trim().toLowerCase()===n;})||null;
 }
 function findByTel(tel){
   var t=normalizeTel(tel); if(!t||t.length<6) return null;
@@ -1338,7 +1345,7 @@ function leadCardHTML(l){
   const interacoes=(l.interacoes||[]).slice().reverse();
   return `<div class="lead-card" style="border-left:3px solid ${atrasado?'#C0392B':et.hex}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-      <div><div style="font-size:13px;font-weight:500">${l.nome}</div><div style="font-size:11px;color:var(--g4)">${(l.tel||l.contacto)?'<a href="https://wa.me/'+(l.tel||l.contacto)+'" target="_blank" style="color:#25D366;font-size:10px">📱 '+(l.tel||l.contacto)+'</a>':''} · ${l.origem} · ${l.produto} · €${produtoValor(l.produto)}</div></div>
+      <div><div style="font-size:13px;font-weight:500">${l.nome}</div><div style="font-size:11px;color:var(--g4)">${(l.tel||l.contacto)?'<a href="https://wa.me/'+normalizeTel(l.tel||l.contacto)+'" target="_blank" style="color:#25D366;font-size:10px">📱 '+normalizeTel(l.tel||l.contacto)+'</a>':''} · ${l.origem} · ${l.produto} · €${produtoValor(l.produto)}</div></div>
       <div style="display:flex;gap:4px;align-items:center"><span class="tag ${et.cls}">${et.l}</span><button class="btn bs bsm" onclick="toggleExpand(${l.id})">▾</button><button class="btn bs bsm" onclick="editLead(${l.id})">✏</button><button class="btn bd bsm" onclick="DB.leads=DB.leads.filter(x=>x.id!==${l.id});save();renderAll();toast('Lead removido','#C0392B')">×</button></div>
     </div>
     ${l.proxData?`<div style="font-size:10px;display:inline-block;padding:2px 7px;border-radius:5px;margin-bottom:6px;${atrasado?'background:#FDEDEC;color:#C0392B':'background:var(--g7);color:var(--g4)'}">${atrasado?'⚠ Atrasado — ':'📅 '}${fmtDate(l.proxData)} via ${l.proxTipo||''}</div>`:''}
@@ -1617,7 +1624,7 @@ function renderMentorados(){
             <div style="font-size:13px;font-weight:600">${m.nome} ${viaPipeline?'<span class="tag tg" style="font-size:9px">pipeline</span>':''}</div>
             <div style="font-size:11px;color:var(--g4);display:flex;align-items:center;gap:8px">
               ${m.nicho||'—'} · ${m.produto}
-              ${(m.tel||m.contacto)?'<a href="https://wa.me/'+(m.tel||m.contacto)+'" target="_blank" style="color:#25D366;font-size:10px;display:inline-flex;align-items:center;gap:3px;text-decoration:none">📱 '+(m.tel||m.contacto)+'</a>':'<span style="color:var(--re);font-size:10px">⚠ sem telefone</span>'}
+              ${(m.tel||m.contacto)?'<a href="https://wa.me/'+normalizeTel(m.tel||m.contacto)+'" target="_blank" style="color:#25D366;font-size:10px;display:inline-flex;align-items:center;gap:3px;text-decoration:none">📱 '+normalizeTel(m.tel||m.contacto)+'</a>':'<span style="color:var(--re);font-size:10px">⚠ sem telefone</span>'}
             </div>
           </div>
         </div>
