@@ -393,6 +393,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div class="ni" onclick="nav('pipeline',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="4" height="18" rx="1.5"/><rect x="10" y="7" width="4" height="14" rx="1.5"/><rect x="17" y="11" width="4" height="10" rx="1.5"/></svg></span><span class="ni-label">Pipeline</span><span class="nb" id="nb-leads">0</span></div>
     <div class="nav-sec">Negócio</div>
     <div class="ni" onclick="nav('mentorados',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span><span class="ni-label">Mentorados</span><span class="nb" id="nb-ment">0</span></div>
+    <div class="ni" onclick="nav('entregas',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="ni-label">Entregas</span><span class="nb" id="nb-ent">0</span></div>
     <div class="ni" onclick="nav('financeiro',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/><circle cx="12" cy="12" r="5"/></svg></span><span class="ni-label">Financeiro</span></div>
     <div class="ni" onclick="nav('produtos',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="ni-label">Produtos</span></div>
     <div class="nav-sec">Operação</div>
@@ -615,6 +616,17 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div class="al algr">ℹ️ Mentorados são criados automaticamente quando um lead é Fechado no pipeline de vendas. A criação manual é só para casos excecionais.</div>
     <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn bp" onclick="resetMentoradoModal();om('mentorado')">+ Mentorado (manual)</button></div>
     <div id="mentorados-list"></div>
+  </div>
+
+  <!-- ENTREGAS -->
+  <div class="panel" id="p-entregas">
+    <div class="al algr">📦 Cada compra fica ligada a um produto. Aqui vê o que já entregou e o que falta. As sessões concluídas dos mentorados contam sozinhas como encontros.</div>
+    <div id="ent-filtros" style="display:flex;gap:6px;margin-bottom:12px">
+      <button class="btn bsm bp" data-f="em_curso" onclick="entFiltro='em_curso';renderEntregas()">Em curso</button>
+      <button class="btn bsm bs" data-f="concluida" onclick="entFiltro='concluida';renderEntregas()">Entregues</button>
+      <button class="btn bsm bs" data-f="todas" onclick="entFiltro='todas';renderEntregas()">Todas</button>
+    </div>
+    <div id="entregas-list"></div>
   </div>
 
   <!-- FINANCEIRO -->
@@ -1091,8 +1103,33 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     </div>
     <div id="pd-ate-wrap" style="display:none"><label class="fl">Até quando</label><input type="date" class="fi" id="pd-ate"></div>
   </div>
+  <div class="fg"><label class="fl">📦 O que entrega ao cliente <span style="font-weight:400;color:var(--g4)">— para acompanhar o que falta entregar</span></label>
+    <div style="display:grid;grid-template-columns:80px 1fr auto;gap:8px;align-items:center;margin-top:6px">
+      <input type="number" class="fi" id="pd-e1q" min="0" step="0.5" placeholder="Qtd">
+      <select class="fi" id="pd-e1u"><option value="encontros">encontros</option><option value="horas">horas de trabalho</option><option value="unica">entrega única</option><option value="acesso">acesso imediato (digital)</option></select>
+      <label style="font-size:11.5px;display:flex;gap:4px;align-items:center;white-space:nowrap"><input type="checkbox" id="pd-e1m" style="accent-color:var(--g)">por mês</label>
+    </div>
+    <div style="display:grid;grid-template-columns:80px 1fr auto;gap:8px;align-items:center;margin-top:6px">
+      <input type="number" class="fi" id="pd-e2q" min="0" step="0.5" placeholder="Qtd">
+      <select class="fi" id="pd-e2u"><option value="">— nenhuma —</option><option value="encontros">encontros</option><option value="horas">horas de trabalho</option><option value="unica">entrega única</option><option value="acesso">acesso imediato (digital)</option></select>
+      <label style="font-size:11.5px;display:flex;gap:4px;align-items:center;white-space:nowrap"><input type="checkbox" id="pd-e2m" style="accent-color:var(--g)">por mês</label>
+    </div>
+  </div>
   <div class="fg"><label class="fl">Descrição</label><input class="fi" id="pd-desc" placeholder="O que está incluído..."></div>
   <button class="btn bp" style="width:100%" id="pd-submit" onclick="saveProduto()">Criar</button>
+</div></div>
+
+<!-- MODAL ENTREGA -->
+<div class="mo" id="modal-entrega"><div class="mbox" style="max-width:400px">
+  <div class="mh"><div><div class="mt">📦 Registar entrega</div><div id="en-sub" style="font-size:11px;color:var(--g4);margin-top:2px"></div></div><span class="mx" onclick="cm('entrega')">✕</span></div>
+  <input type="hidden" id="en-vid">
+  <div class="fg"><label class="fl">O quê</label><select class="fi" id="en-item" onchange="enItemChange()"></select></div>
+  <div class="fr fg">
+    <div><label class="fl" id="en-q-label">Quantidade</label><input type="number" class="fi" id="en-q" min="0" step="0.5"></div>
+    <div><label class="fl">Data</label><input type="date" class="fi" id="en-data"></div>
+  </div>
+  <div class="fg"><label class="fl">Nota</label><input class="fi" id="en-nota" placeholder="Ex: versão 1 da página, ajustes de cores..."></div>
+  <button class="btn bp" style="width:100%" onclick="saveEntrega()">Registar</button>
 </div></div>
 
 <!-- MODAL MEMBRO -->
@@ -1194,7 +1231,7 @@ function save(){ try{ localStorage.setItem('hub_advance_v3_db', JSON.stringify(D
 function load(){ try{ const d=localStorage.getItem('hub_advance_v3_db'); if(d) DB=JSON.parse(d); }catch(e){} }
 function toast(msg,color){ const t=document.getElementById('toast'); t.textContent=msg; t.style.background=color||'#0B6E4F'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
 
-const titles={overview:'Visão Geral',pipeline:'Pipeline de Vendas',mentorados:'Mentorados',financeiro:'Financeiro',produtos:'Produtos',agenda:'Agenda',marketing:'Marketing',equipa:'Equipa'};
+const titles={overview:'Visão Geral',pipeline:'Pipeline de Vendas',mentorados:'Mentorados',entregas:'Entregas',financeiro:'Financeiro',produtos:'Produtos',agenda:'Agenda',marketing:'Marketing',equipa:'Equipa'};
 function nav(id,el){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
@@ -1577,6 +1614,7 @@ function saveMentorado(){
     if(antigo!==nome){
       DB.reunioes.forEach(r=>{ if((r.personType==='mentorado'&&r.personId===mm.id)||(!r.personType&&r.who===antigo)){ r.who=nome; r.personType='mentorado'; r.personId=mm.id; } });
       DB.pagamentos.forEach(p=>{ if(p.cliente===antigo) p.cliente=nome; });
+      (DB.vendas||[]).forEach(v=>{ if(v.cliente===antigo) v.cliente=nome; });
     }
   }
   else { DB.mentorados.push({...data,id:uid(),semana:0,tarefas:[],sessoes:[]}); }
@@ -1823,6 +1861,11 @@ function saveConcluir(){
   r.resumo=_ssEstado==='realizada'?resumo:'';
   r.concluidaEm=new Date().toISOString();
   var msgs=[R_ESTADOS[_ssEstado].l];
+  desfazerEncontro(r);
+  if(m && _ssEstado==='realizada'){
+    var vv=registarEncontroEntregue(m,r);
+    if(vv){ var ii=vv.itens.findIndex(function(it){return it.u==='encontros';}); msgs.push('encontro '+itemFeito(vv,ii)+'/'+vv.itens[ii].q); }
+  }
   if(m){
     if(!m.tarefas) m.tarefas=[];
     document.querySelectorAll('#ss-pendentes input[data-tid]').forEach(function(cb){
@@ -1964,6 +2007,10 @@ function renderMentorados(){
         +'</div>'
         +'<div><div class="mt-lbl">Valor pago</div><div style="font-size:13px;font-weight:600;color:var(--g)">€'+totalPago.toFixed(0)+'</div></div>'
       +'</div>'
+      // Entregas das compras
+      +(function(){ var vs=vendasDeMentorado(m).filter(function(v){return v.estado!=='terminada'&&v.itens.some(function(it){return it.u!=='acesso';});});
+          return vs.length?'<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--g6)"><div class="mt-lbl">Entregas</div>'
+            +vs.map(function(v){return '<div style="margin-top:4px"><div style="font-size:11px;color:var(--g4);margin-bottom:2px">'+esc(prodNomeC(v))+'</div>'+entregaBarras(v,true)+'</div>';}).join('')+'</div>':''; })()
       // Tarefas por fazer
       +'<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--g6)">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
@@ -1999,6 +2046,7 @@ function savePagamento(){
   const formaPagamento=document.getElementById('pg-forma').value;
   const estado=document.getElementById('pg-estado').value;
   if(!cliente||!valor){toast('Preenche cliente e valor','#C0392B');return;}
+  if(!produto||!prodPorNome(produto)){toast('⚠ Toda a compra tem de estar ligada a um produto','#C0392B');return;}
   const vlParcela=parseFloat((valor/parcelas).toFixed(2));
   const datas=gerarDatas(dataInicio,parcelas);
   const grupoId=uid();
@@ -2006,11 +2054,13 @@ function savePagamento(){
   var leadId=leadRef?leadRef.id:null;
   var leadTel=leadRef?normalizeTel(leadRef.contacto||''):'';
   datas.forEach((data,i)=>{ DB.pagamentos.push({id:uid(),grupoId,cliente,leadId,tel:leadTel,data,produto,valor:vlParcela,valorTotal:valor,parcela:i+1,totalParcelas:parcelas,estado:i===0?estado:'Pendente',formaPagamento}); });
+  criarVenda(grupoId,cliente,produto,dataInicio);
   document.getElementById('pg-cliente').value='';document.getElementById('pg-valor').value='';
   save();cm('pagamento');renderAll();toast(parcelas===1?'✓ Pagamento registado':`✓ ${parcelas} parcelas criadas`);
 }
 function marcarPago(id){ var p=DB.pagamentos.find(function(x){return x.id===id;}); if(p){p.estado='Pago';save();renderAll();toast('✓ Marcado como pago');} }
-function deletePagamento(id){ if(!confirm('Apagar?'))return; DB.pagamentos=DB.pagamentos.filter(function(x){return x.id!==id;}); save();renderAll(); }
+function limparVendasOrfas(){ DB.vendas=(DB.vendas||[]).filter(function(v){return DB.pagamentos.some(function(p){return vendaGrupo(p)===v.grupoId;});}); }
+function deletePagamento(id){ if(!confirm('Apagar?'))return; DB.pagamentos=DB.pagamentos.filter(function(x){return x.id!==id;}); limparVendasOrfas(); save();renderAll(); }
 function openEditarPag(id){
   var p=DB.pagamentos.find(function(x){return x.id===id;}); if(!p) return;
   document.getElementById('ep-id').value=id;
@@ -2032,13 +2082,21 @@ function saveEditarPag(){
   p.valor=parseFloat(document.getElementById('ep-valor').value);
   p.estado=document.getElementById('ep-estado').value;
   p.formaPagamento=document.getElementById('ep-forma').value;
-  p.produto=document.getElementById('ep-produto').value;
+  var novoProd=document.getElementById('ep-produto').value;
+  if(novoProd!==p.produto){
+    var g=vendaGrupo(p);
+    DB.pagamentos.forEach(function(x){ if(vendaGrupo(x)===g) x.produto=novoProd; });
+    var v=(DB.vendas||[]).find(function(x){return x.grupoId===g;}), np=prodPorNome(novoProd);
+    if(v&&np){ v.produtoId=np.id; v.produto=np.nome; v.itens=entregaveisDe(np).map(function(e){return {u:e.u,q:e.q,mensal:!!e.mensal};}); atualizarEstadoVenda(v); }
+  }
+  p.produto=novoProd;
   save();cm('editar-pag');renderAll();toast('✓ Pagamento atualizado');
 }
 function deleteEditarPag(){
   var id=parseInt(document.getElementById('ep-id').value);
   if(!confirm('Apagar este pagamento?'))return;
   DB.pagamentos=DB.pagamentos.filter(function(x){return x.id!==id;});
+  limparVendasOrfas();
   save();cm('editar-pag');renderAll();toast('Pagamento removido','#C0392B');
 }
 function dsToggleRecorr(){
@@ -2408,10 +2466,35 @@ function pdCalcPreco(){
   if(tipo==='parcelado' && meses && parc>meses) out.push('<span style="color:var(--re)">⚠ '+parc+' prestações para '+meses+' meses de serviço — máximo recomendado: '+meses+'x</span>');
   el.innerHTML=out.join('<br>');
 }
+function pdSetEntregaveis(e){
+  [1,2].forEach(function(n,k){
+    var it=e[k];
+    document.getElementById('pd-e'+n+'q').value=it?it.q:'';
+    document.getElementById('pd-e'+n+'u').value=it?it.u:(n===1?'horas':'');
+    document.getElementById('pd-e'+n+'m').checked=!!(it&&it.mensal);
+  });
+}
+function pdGetEntregaveis(){
+  var out=[];
+  [1,2].forEach(function(n){
+    var u=document.getElementById('pd-e'+n+'u').value, q=parseFloat(document.getElementById('pd-e'+n+'q').value);
+    if(!u) return;
+    if(u==='acesso'||u==='unica') q=q||1;
+    if(!q) return;
+    out.push({u:u,q:q,mensal:document.getElementById('pd-e'+n+'m').checked});
+  });
+  return out;
+}
+function entregaTexto(p){
+  return entregaveisDe(p).map(function(e){
+    return e.u==='acesso'?'acesso imediato':e.u==='unica'?'entrega única':e.u==='horas'?e.q+'h':e.q+' encontros';
+  }).join(' + ')+(entregaveisDe(p).some(function(e){return e.mensal;})?' por mês':'');
+}
 function novoProduto(){
   document.getElementById('pd-id').value='';
   ['pd-nome','pd-nomec','pd-desc','pd-valor-input','pd-parcelas','pd-horas','pd-horasmes','pd-meses'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('pd-digital').checked=false;
+  pdSetEntregaveis([]);
   document.getElementById('pd-tipo').value='unico'; pdToggleTipo();
   document.getElementById('pd-title').textContent='📦 Novo Produto';
   document.getElementById('pd-submit').textContent='Criar';
@@ -2432,6 +2515,7 @@ function editProduto(id){
   document.getElementById('pd-horasmes').value=p.horasMes||'';
   document.getElementById('pd-meses').value=p.meses||'';
   document.getElementById('pd-digital').checked=!!p.digital;
+  pdSetEntregaveis(entregaveisDe(p));
   document.getElementById('pd-title').textContent='✏️ Editar Produto';
   document.getElementById('pd-submit').textContent='Guardar';
   pdCalcParcela(); pdCalcPreco();
@@ -2451,6 +2535,8 @@ function saveProduto(){
     horasMes:parseFloat(document.getElementById('pd-horasmes').value)||null,
     meses:parseInt(document.getElementById('pd-meses').value)||null,
     digital:document.getElementById('pd-digital').checked};
+  var ents=pdGetEntregaveis();
+  obj.entregaveis=ents.length?ents:entregaveisDe(Object.assign({},obj,{entregaveis:null}));
   if(id){
     var p=DB.produtos.find(function(x){return x.id===id;});
     var antigo=p.nome;
@@ -2459,6 +2545,7 @@ function saveProduto(){
       DB.pagamentos.forEach(function(x){if(x.produto===antigo)x.produto=nome;});
       DB.mentorados.forEach(function(x){if(x.produto===antigo)x.produto=nome;});
       DB.leads.forEach(function(x){if(x.produto===antigo)x.produto=nome;});
+      (DB.vendas||[]).forEach(function(x){if(x.produto===antigo)x.produto=nome;});
     }
   } else {
     DB.produtos.push(Object.assign({id:uid()},obj));
@@ -2497,6 +2584,7 @@ function renderProdutos(){
       +'<div style="font-size:24px;font-weight:700;color:var(--g);margin:8px 0 4px">'+precoStr+'</div>'
       +(duracaoStr?'<div style="font-size:10.5px;color:var(--g4);margin-bottom:4px">'+duracaoStr+'</div>':'')
       +(p.desc?'<div style="font-size:11px;color:var(--g4);margin-bottom:8px">'+esc(p.desc)+'</div>':'')
+      +'<div style="font-size:10.5px;color:var(--g3);margin-bottom:4px">📦 Entrega: '+entregaTexto(p)+'</div>'
       +((p.horas||p.horasMes)?'<div style="font-size:10.5px;color:var(--g3);margin-bottom:8px">⏱ '+(p.horas?p.horas+'h para entregar':'')+(p.horas&&p.horasMes?' · ':'')+(p.horasMes?p.horasMes+'h/mês':'')
         +((p.digital&&p.horas)?' · paga-se com <b style="color:var(--g)">'+Math.ceil(p.horas*PRECO_REGRA.min/p.valor)+' vendas</b>':'')
         +((!p.digital&&p.tipo!=='recorrente'&&p.horas)?' · <b style="color:'+(p.valor/p.horas<PRECO_REGRA.min?'var(--re)':'var(--g)')+'">€'+(p.valor/p.horas).toFixed(0)+'/h</b>':'')
@@ -3411,10 +3499,216 @@ function renderAll(){
   renderMentorados();
   renderFinanceiro();
   renderProdutos();
+  renderEntregas();
   renderAgenda();
   renderMarketing();
   renderEquipa();
   fillSelects();
+}
+
+/* ═══ ENTREGAS ═══
+   Cada compra (venda) fica ligada a um produto e guarda o que já foi entregue.
+   O produto diz o que entrega: encontros, horas, entrega única ou acesso imediato
+   (e se é por mês, como as manutenções). */
+const ENT_UNID={
+  encontros:{l:'encontros',s:'encontro'},
+  horas:{l:'h',s:'h'},
+  unica:{l:'entrega',s:'entrega'},
+  acesso:{l:'acesso imediato',s:'acesso'}
+};
+function entregaveisDe(p){
+  if(!p) return [{u:'unica',q:1}];
+  if(p.entregaveis&&p.entregaveis.length) return p.entregaveis;
+  if(p.digital) return [{u:'acesso',q:1}];
+  var n=(p.nome||'').toLowerCase();
+  if(/mentoria|acompanhamento/.test(n)){
+    var e=[{u:'encontros',q:12}];
+    if(/landing/.test(n)) e.push({u:'horas',q:6});
+    return e;
+  }
+  if(p.tipo==='recorrente') return p.horasMes?[{u:'horas',q:p.horasMes,mensal:true}]:[{u:'acesso',q:1,mensal:true}];
+  if(p.horas) return [{u:'horas',q:p.horas}];
+  return [{u:'unica',q:1}];
+}
+function prodPorNome(n){ return DB.produtos.find(function(p){return p.nome===n;}); }
+function vendaGrupo(pg){ return pg.grupoId||pg.id; }
+function vendaPagamentos(v){ return DB.pagamentos.filter(function(p){return vendaGrupo(p)===v.grupoId;}); }
+function vendaPago(v){ return vendaPagamentos(v).filter(function(p){return p.estado==='Pago';}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0); }
+function vendaTotal(v){ var ps=vendaPagamentos(v); return ps.length?parseFloat(ps[0].valorTotal||ps.reduce(function(s,p){return s+parseFloat(p.valor||0);},0)):(v.valorTotal||0); }
+function mesAtual(){ return todayISO().slice(0,7); }
+function itemFeito(v,i){
+  var it=v.itens[i];
+  return (v.registos||[]).filter(function(r){return r.i===i&&(!it.mensal||(r.data||'').slice(0,7)===mesAtual());})
+    .reduce(function(s,r){return s+(parseFloat(r.q)||0);},0);
+}
+function vendaCompleta(v){
+  var unicos=v.itens.map(function(it,i){return {it:it,i:i};}).filter(function(x){return !x.it.mensal;});
+  if(!unicos.length) return false; // só mensal → continua até terminar
+  return unicos.every(function(x){return x.it.u==='acesso'||itemFeito(v,x.i)>=x.it.q;});
+}
+function atualizarEstadoVenda(v){
+  if(v.estado==='terminada') return;
+  v.estado=vendaCompleta(v)?'concluida':'em_curso';
+}
+function criarVenda(grupoId,cliente,produtoNome,data){
+  var p=prodPorNome(produtoNome);
+  var m=DB.mentorados.find(function(x){return x.nome===cliente;});
+  var v={id:uid(),grupoId:grupoId,cliente:cliente,mentoradoId:m?m.id:null,produtoId:p?p.id:null,produto:produtoNome,data:data||todayISO(),
+    itens:entregaveisDe(p).map(function(e){return {u:e.u,q:e.q,mensal:!!e.mensal};}),registos:[],estado:'em_curso'};
+  atualizarEstadoVenda(v);
+  if(!DB.vendas) DB.vendas=[];
+  DB.vendas.push(v);
+  return v;
+}
+function vendasDeMentorado(m){
+  return (DB.vendas||[]).filter(function(v){return v.mentoradoId===m.id||v.cliente===m.nome;}).sort(function(a,b){return (a.data||'').localeCompare(b.data||'');});
+}
+/* Sessão realizada conta como encontro entregue na compra em curso mais antiga */
+function registarEncontroEntregue(m,r){
+  var ja=(DB.vendas||[]).some(function(v){return (v.registos||[]).some(function(x){return x.reuniaoId===r.id;});});
+  if(ja) return null;
+  var v=vendasDeMentorado(m).find(function(v){
+    if(v.estado==='terminada') return false;
+    var i=v.itens.findIndex(function(it){return it.u==='encontros'&&!it.mensal;});
+    return i>=0&&itemFeito(v,i)<v.itens[i].q;
+  });
+  if(!v) return null;
+  var i=v.itens.findIndex(function(it){return it.u==='encontros'&&!it.mensal;});
+  v.registos.push({id:uid(),i:i,q:1,data:r.data,nota:r.resumo||'Sessão',reuniaoId:r.id});
+  atualizarEstadoVenda(v);
+  return v;
+}
+function desfazerEncontro(r){
+  (DB.vendas||[]).forEach(function(v){
+    var n=(v.registos||[]).length;
+    v.registos=(v.registos||[]).filter(function(x){return x.reuniaoId!==r.id;});
+    if(v.registos.length!==n) atualizarEstadoVenda(v);
+  });
+}
+
+/* ── MIGRAÇÃO 4: criar as compras a partir dos pagamentos que já existem ── */
+function migrarVendas(){
+  if((DB.schema||1)>=4) return false;
+  DB.vendas=DB.vendas||[];
+  var grupos={};
+  DB.pagamentos.forEach(function(p){ var g=vendaGrupo(p); (grupos[g]=grupos[g]||[]).push(p); });
+  Object.keys(grupos).forEach(function(g){
+    var ps=grupos[g].sort(function(a,b){return (a.data||'').localeCompare(b.data||'');});
+    if(DB.vendas.some(function(v){return String(v.grupoId)===g;})) return;
+    var v=criarVenda(ps[0].grupoId||ps[0].id,ps[0].cliente,ps[0].produto,ps[0].data);
+    v.valorTotal=ps[0].valorTotal||null;
+  });
+  // Sessões já realizadas contam como encontros entregues
+  DB.mentorados.forEach(function(m){
+    sessoesDe(m).filter(function(r){return rEstado(r)==='realizada';}).forEach(function(r){ registarEncontroEntregue(m,r); });
+  });
+  DB.vendas.forEach(atualizarEstadoVenda);
+  DB.schema=4;
+  return true;
+}
+
+/* ── REGISTAR ENTREGA ── */
+function openEntrega(vendaId,i){
+  var v=(DB.vendas||[]).find(function(x){return x.id===vendaId;}); if(!v) return;
+  document.getElementById('en-vid').value=v.id;
+  document.getElementById('en-sub').textContent=v.cliente+' · '+(prodNomeC(v));
+  var sel=document.getElementById('en-item');
+  sel.innerHTML=v.itens.map(function(it,k){
+    var f=itemFeito(v,k);
+    return '<option value="'+k+'">'+(it.u==='horas'?'Horas':it.u==='encontros'?'Encontros':it.u==='acesso'?'Acesso':'Entrega')+(it.mensal?' (este mês)':'')+' — '+fmtQ(f,it)+' de '+fmtQ(it.q,it)+'</option>';
+  }).join('');
+  sel.value=String(i||0);
+  enItemChange();
+  document.getElementById('en-data').value=todayISO();
+  document.getElementById('en-nota').value='';
+  om('entrega');
+}
+function enItemChange(){
+  var v=(DB.vendas||[]).find(function(x){return x.id===parseInt(document.getElementById('en-vid').value);}); if(!v) return;
+  var it=v.itens[parseInt(document.getElementById('en-item').value)||0];
+  document.getElementById('en-q').value=it.u==='horas'?'1':'1';
+  document.getElementById('en-q-label').textContent=it.u==='horas'?'Horas':'Quantidade';
+}
+function saveEntrega(){
+  var v=(DB.vendas||[]).find(function(x){return x.id===parseInt(document.getElementById('en-vid').value);}); if(!v) return;
+  var i=parseInt(document.getElementById('en-item').value)||0;
+  var q=parseFloat(document.getElementById('en-q').value);
+  if(!q||q<=0){toast('Indique a quantidade','#C0392B');return;}
+  v.registos.push({id:uid(),i:i,q:q,data:document.getElementById('en-data').value||todayISO(),nota:document.getElementById('en-nota').value.trim()});
+  atualizarEstadoVenda(v);
+  save();cm('entrega');renderAll();
+  var it=v.itens[i], f=itemFeito(v,i);
+  toast('✓ Entregue: '+fmtQ(f,it)+' de '+fmtQ(it.q,it)+(it.mensal?' este mês':'')+(f>it.q&&it.mensal?' · ⚠ passou das horas incluídas':''));
+}
+function deleteRegistoEntrega(vendaId,regId){
+  var v=(DB.vendas||[]).find(function(x){return x.id===vendaId;}); if(!v) return;
+  if(!confirm('Apagar este registo de entrega?')) return;
+  v.registos=v.registos.filter(function(r){return r.id!==regId;});
+  atualizarEstadoVenda(v); save(); renderAll();
+}
+function terminarVenda(vendaId){
+  var v=(DB.vendas||[]).find(function(x){return x.id===vendaId;}); if(!v) return;
+  if(v.estado==='terminada'){ v.estado='em_curso'; atualizarEstadoVenda(v); }
+  else { if(!confirm('Marcar como terminada? (ex.: cliente desistiu ou manutenção cancelada)')) return; v.estado='terminada'; }
+  save(); renderAll();
+}
+function ligarVendaProduto(vendaId,sel){
+  var v=(DB.vendas||[]).find(function(x){return x.id===vendaId;}); var p=DB.produtos.find(function(x){return String(x.id)===sel.value;});
+  if(!v||!p) return;
+  v.produtoId=p.id; v.produto=p.nome;
+  v.itens=entregaveisDe(p).map(function(e){return {u:e.u,q:e.q,mensal:!!e.mensal};});
+  vendaPagamentos(v).forEach(function(pg){pg.produto=p.nome;});
+  atualizarEstadoVenda(v); save(); renderAll(); toast('✓ Compra ligada a '+(p.nomeC||p.nome));
+}
+function fmtQ(n,it){ n=Math.round(n*10)/10; return it.u==='horas'?n+'h':n+''; }
+function prodNomeC(v){ var p=DB.produtos.find(function(x){return x.id===v.produtoId;}); return p?(p.nomeC||p.nome):(v.produto||'Sem produto'); }
+
+/* barra de progresso de uma compra (usada no cartão do mentorado e na página Entregas) */
+function entregaBarras(v,compacto){
+  return v.itens.map(function(it,i){
+    if(it.u==='acesso') return '<div style="font-size:11px;color:var(--g)">✓ Acesso entregue'+(it.mensal?' (mensal)':'')+'</div>';
+    var f=itemFeito(v,i), pct=it.q?Math.min(100,Math.round(f/it.q*100)):0, falta=Math.max(0,it.q-f), passou=it.mensal&&f>it.q;
+    var nome=it.u==='encontros'?'encontros':it.u==='horas'?'horas':'entrega';
+    var txt=it.mensal
+      ? 'Este mês: <b>'+fmtQ(f,it)+'</b> de '+fmtQ(it.q,it)+(passou?' <span style="color:var(--re)">· +'+fmtQ(f-it.q,it)+' extra (€'+PRECO_REGRA.extra+'/h)</span>':'')
+      : '<b>'+fmtQ(f,it)+' de '+fmtQ(it.q,it)+'</b> '+(it.u==='horas'?'':nome)+(falta>0?' · <span style="color:#B7791F">faltam '+fmtQ(falta,it)+'</span>':' · <span style="color:var(--g)">✓ completo</span>');
+    return '<div style="margin-bottom:5px"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11.5px">'
+      +'<span>'+txt+'</span>'
+      +(!compacto&&v.estado!=='terminada'?'<button class="btn bs bsm" style="font-size:10.5px;padding:2px 8px" onclick="openEntrega('+v.id+','+i+')">+ Registar</button>':'')
+      +'</div><div class="sbw" style="margin-top:3px"><div class="sbb" style="width:'+pct+'%;background:'+(passou?'var(--re)':pct>=100?'var(--g)':'#B7791F')+'"></div></div></div>';
+  }).join('');
+}
+
+/* ── PÁGINA ENTREGAS ── */
+var entFiltro='em_curso';
+function renderEntregas(){
+  var vs=(DB.vendas||[]).slice().sort(function(a,b){return (b.data||'').localeCompare(a.data||'');});
+  var emCurso=vs.filter(function(v){return v.estado==='em_curso';});
+  var nb=document.getElementById('nb-ent'); if(nb) nb.textContent=emCurso.length;
+  var semProd=vs.filter(function(v){return !v.produtoId;});
+  var lista=entFiltro==='todas'?vs:vs.filter(function(v){return v.estado===entFiltro||(entFiltro==='concluida'&&v.estado==='terminada');});
+  document.querySelectorAll('#ent-filtros button').forEach(function(b){ b.className='btn bsm '+(b.dataset.f===entFiltro?'bp':'bs'); });
+  var prodOpts=DB.produtos.map(function(p){return '<option value="'+p.id+'">'+esc(p.nomeC||p.nome)+'</option>';}).join('');
+  var html='';
+  if(semProd.length) html+='<div class="al" style="background:#FEE8EB;color:#9B1C1C;margin-bottom:12px">⚠ '+semProd.length+' compra'+(semProd.length>1?'s':'')+' sem produto ligado. Escolha o produto em cada uma.</div>';
+  html+=lista.length?lista.map(function(v){
+    var pago=vendaPago(v), total=vendaTotal(v);
+    var est=v.estado==='concluida'?'<span class="tag tg" style="font-size:9.5px">✓ Entregue</span>':v.estado==='terminada'?'<span class="tag tgr" style="font-size:9.5px">Terminada</span>':'<span class="tag ty" style="font-size:9.5px">Em curso</span>';
+    var regs=(v.registos||[]).slice().sort(function(a,b){return (b.data||'').localeCompare(a.data||'');});
+    return '<div class="card" style="margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-bottom:8px">'
+        +'<div><div style="font-size:13px;font-weight:600">'+esc(v.cliente)+' '+est+'</div>'
+        +'<div style="font-size:11px;color:var(--g4)">'+esc(prodNomeC(v))+' · comprado a '+fmtDate(v.data)+' · pago <b style="color:var(--g)">€'+pago.toFixed(0)+'</b> de €'+total.toFixed(0)+'</div></div>'
+        +'<button class="btn bs bsm" onclick="terminarVenda('+v.id+')">'+(v.estado==='terminada'?'Reabrir':'Terminar')+'</button>'
+      +'</div>'
+      +(!v.produtoId?'<div class="fg"><select class="fi" onchange="ligarVendaProduto('+v.id+',this)"><option value="">— Escolher produto —</option>'+prodOpts+'</select></div>':'')
+      +entregaBarras(v,false)
+      +(regs.length?'<details style="margin-top:6px"><summary style="font-size:11px;color:var(--g4);cursor:pointer">Histórico de entregas ('+regs.length+')</summary>'
+        +regs.map(function(r){var it=v.itens[r.i]||{u:'unica'};return '<div style="display:flex;gap:8px;font-size:11px;padding:4px 0;border-bottom:1px solid var(--g6)"><span style="min-width:48px;color:var(--g4)">'+fmtDate(r.data)+'</span><span style="min-width:34px;font-weight:600">'+fmtQ(r.q,it)+'</span><span style="flex:1">'+esc(r.nota||'')+'</span>'+(r.reuniaoId?'':'<span style="cursor:pointer;color:var(--re)" onclick="deleteRegistoEntrega('+v.id+','+r.id+')">×</span>')+'</div>';}).join('')
+        +'</details>':'')
+    +'</div>';
+  }).join(''):'<div class="empty">Nada aqui</div>';
+  document.getElementById('entregas-list').innerHTML=html;
 }
 
 /* ═══ BACKUP ═══ */
@@ -3481,6 +3775,7 @@ function saveVendaRapida(){
   const dataInicio=document.getElementById('vr-data').value||todayISO();
   const leadId=parseInt(document.getElementById('vr-leadid').value)||0;
   if(!cliente||!valor){toast('Preenche cliente e valor','#C0392B');return;}
+  if(!produto||!prodPorNome(produto)){toast('⚠ Toda a compra tem de estar ligada a um produto','#C0392B');return;}
   const vlParcela=parseFloat((valor/parcelas).toFixed(2));
   const datas=gerarDatas(dataInicio,parcelas);
   const grupoId=uid();
@@ -3505,6 +3800,7 @@ function saveVendaRapida(){
       novoMentorado=true;
     }
   }
+  criarVenda(grupoId,cliente,produto,dataInicio);
   save();cm('venda-rapida');renderAll();
   if(novoMentorado){
     toast('🎉 Pagamento registado · '+cliente+' é agora mentorado!');
@@ -3795,7 +4091,7 @@ function load(){ /* handled by initApp */ }
 async function initApp(){
   updateDbStatus();
   await dbLoad();
-  var mudou=migrarDB(); mudou=migrarPrecos()||mudou;
+  var mudou=migrarDB(); mudou=migrarPrecos()||mudou; mudou=migrarVendas()||mudou;
   if(mudou && _loadOK) save();
   rnRenderTipos('Sessão de acompanhamento');
   rnUpdateSugestoes('Sessão de acompanhamento');
