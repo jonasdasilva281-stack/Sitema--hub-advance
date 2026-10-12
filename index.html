@@ -1106,12 +1106,12 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
   <div class="fg"><label class="fl">📦 O que entrega ao cliente <span style="font-weight:400;color:var(--g4)">— para acompanhar o que falta entregar</span></label>
     <div style="display:grid;grid-template-columns:80px 1fr auto;gap:8px;align-items:center;margin-top:6px">
       <input type="number" class="fi" id="pd-e1q" min="0" step="0.5" placeholder="Qtd">
-      <select class="fi" id="pd-e1u"><option value="encontros">encontros</option><option value="horas">horas de trabalho</option><option value="unica">entrega única</option><option value="acesso">acesso imediato (digital)</option></select>
+      <select class="fi" id="pd-e1u"><option value="encontros">encontros</option><option value="horas">horas de trabalho</option><option value="etapas">etapas</option><option value="unica">entrega única</option><option value="acesso">acesso imediato (digital)</option></select>
       <label style="font-size:11.5px;display:flex;gap:4px;align-items:center;white-space:nowrap"><input type="checkbox" id="pd-e1m" style="accent-color:var(--g)">por mês</label>
     </div>
     <div style="display:grid;grid-template-columns:80px 1fr auto;gap:8px;align-items:center;margin-top:6px">
       <input type="number" class="fi" id="pd-e2q" min="0" step="0.5" placeholder="Qtd">
-      <select class="fi" id="pd-e2u"><option value="">— nenhuma —</option><option value="encontros">encontros</option><option value="horas">horas de trabalho</option><option value="unica">entrega única</option><option value="acesso">acesso imediato (digital)</option></select>
+      <select class="fi" id="pd-e2u"><option value="">— nenhuma —</option><option value="encontros">encontros</option><option value="horas">horas de trabalho</option><option value="etapas">etapas</option><option value="unica">entrega única</option><option value="acesso">acesso imediato (digital)</option></select>
       <label style="font-size:11.5px;display:flex;gap:4px;align-items:center;white-space:nowrap"><input type="checkbox" id="pd-e2m" style="accent-color:var(--g)">por mês</label>
     </div>
   </div>
@@ -1739,6 +1739,19 @@ function migrarPrecos(){
     {nome:'Manutenção Sistema €197/mês',nomeC:'Manutenção Sistema',valor:197,tipo:'recorrente',duracao:'',horasMes:6,desc:'Inclui até 6h/mês · extra €35/h'}
   ].forEach(function(n){ if(!porNome(n.nome)) DB.produtos.push(Object.assign({id:uid()},n)); });
   DB.schema=3;
+  return true;
+}
+
+/* ── MIGRAÇÃO 5: Gestão Web (12/10/2026) ── */
+function migrarGestaoWeb(){
+  if((DB.schema||1)>=5) return false;
+  var existe=function(n){return DB.produtos.some(function(p){return p.nome===n;});};
+  if(!existe('Gestão Web €1.097')) DB.produtos.push({id:uid(),nome:'Gestão Web €1.097',nomeC:'Gestão Web',valor:1097,tipo:'parcelado',parcelas:2,meses:2,horas:24,horasMes:6,
+    entregaveis:[{u:'etapas',q:7,mensal:false}],
+    desc:'Posicionamento da marca · redes sociais · página de vendas · perfil Google · contas de anúncios · primeiros conteúdos · reunião de entrega. Manutenção à parte: €197/mês'});
+  if(!existe('Manutenção Gestão Web €197/mês')) DB.produtos.push({id:uid(),nome:'Manutenção Gestão Web €197/mês',nomeC:'Manutenção Gestão Web',valor:197,tipo:'recorrente',duracao:'',horasMes:6,
+    entregaveis:[{u:'horas',q:6,mensal:true}],desc:'Inclui até 6h/mês · extra €35/h'});
+  DB.schema=5;
   return true;
 }
 
@@ -2487,7 +2500,7 @@ function pdGetEntregaveis(){
 }
 function entregaTexto(p){
   return entregaveisDe(p).map(function(e){
-    return e.u==='acesso'?'acesso imediato':e.u==='unica'?'entrega única':e.u==='horas'?e.q+'h':e.q+' encontros';
+    return e.u==='acesso'?'acesso imediato':e.u==='unica'?'entrega única':e.u==='horas'?e.q+'h':e.u==='etapas'?e.q+' etapas':e.q+' encontros';
   }).join(' + ')+(entregaveisDe(p).some(function(e){return e.mensal;})?' por mês':'');
 }
 function novoProduto(){
@@ -3514,6 +3527,7 @@ const ENT_UNID={
   encontros:{l:'encontros',s:'encontro'},
   horas:{l:'h',s:'h'},
   unica:{l:'entrega',s:'entrega'},
+  etapas:{l:'etapas',s:'etapa'},
   acesso:{l:'acesso imediato',s:'acesso'}
 };
 function entregaveisDe(p){
@@ -3615,7 +3629,7 @@ function openEntrega(vendaId,i){
   var sel=document.getElementById('en-item');
   sel.innerHTML=v.itens.map(function(it,k){
     var f=itemFeito(v,k);
-    return '<option value="'+k+'">'+(it.u==='horas'?'Horas':it.u==='encontros'?'Encontros':it.u==='acesso'?'Acesso':'Entrega')+(it.mensal?' (este mês)':'')+' — '+fmtQ(f,it)+' de '+fmtQ(it.q,it)+'</option>';
+    return '<option value="'+k+'">'+(it.u==='horas'?'Horas':it.u==='encontros'?'Encontros':it.u==='etapas'?'Etapas':it.u==='acesso'?'Acesso':'Entrega')+(it.mensal?' (este mês)':'')+' — '+fmtQ(f,it)+' de '+fmtQ(it.q,it)+'</option>';
   }).join('');
   sel.value=String(i||0);
   enItemChange();
@@ -3668,7 +3682,7 @@ function entregaBarras(v,compacto){
   return v.itens.map(function(it,i){
     if(it.u==='acesso') return '<div style="font-size:11px;color:var(--g)">✓ Acesso entregue'+(it.mensal?' (mensal)':'')+'</div>';
     var f=itemFeito(v,i), pct=it.q?Math.min(100,Math.round(f/it.q*100)):0, falta=Math.max(0,it.q-f), passou=it.mensal&&f>it.q;
-    var nome=it.u==='encontros'?'encontros':it.u==='horas'?'horas':'entrega';
+    var nome=it.u==='encontros'?'encontros':it.u==='horas'?'horas':it.u==='etapas'?'etapas':'entrega';
     var txt=it.mensal
       ? 'Este mês: <b>'+fmtQ(f,it)+'</b> de '+fmtQ(it.q,it)+(passou?' <span style="color:var(--re)">· +'+fmtQ(f-it.q,it)+' extra (€'+PRECO_REGRA.extra+'/h)</span>':'')
       : '<b>'+fmtQ(f,it)+' de '+fmtQ(it.q,it)+'</b> '+(it.u==='horas'?'':nome)+(falta>0?' · <span style="color:#B7791F">faltam '+fmtQ(falta,it)+'</span>':' · <span style="color:var(--g)">✓ completo</span>');
@@ -4091,7 +4105,7 @@ function load(){ /* handled by initApp */ }
 async function initApp(){
   updateDbStatus();
   await dbLoad();
-  var mudou=migrarDB(); mudou=migrarPrecos()||mudou; mudou=migrarVendas()||mudou;
+  var mudou=migrarDB(); mudou=migrarPrecos()||mudou; mudou=migrarVendas()||mudou; mudou=migrarGestaoWeb()||mudou;
   if(mudou && _loadOK) save();
   rnRenderTipos('Sessão de acompanhamento');
   rnUpdateSugestoes('Sessão de acompanhamento');
