@@ -1897,6 +1897,23 @@ function migrarBeatriz(){
 function proxQuarta(){ var d=new Date(todayISO()+'T12:00:00'); var add=(3-d.getDay()+7)%7; d.setDate(d.getDate()+add); return isoLocal(d); }
 function mesesPagos(v){ return vendaPagamentos(v).filter(function(p){return p.estado==='Pago';}).length; }
 
+/* ── MIGRAÇÃO 12: Romário e Mara concluíram o Plano de Negócio ── */
+function migrarRomario(){
+  if((DB.schema||1)>=12) return false;
+  var n='Romario e Mara';
+  var m=DB.mentorados.find(function(x){return x.nome===n;}); if(m) m.estado='Concluído';
+  (DB.vendas||[]).filter(function(v){return v.cliente===n;}).forEach(function(v){
+    v.itens.forEach(function(it,i){
+      if(it.mensal||it.u==='acesso') return;
+      var falta=it.q-itemFeito(v,i);
+      if(falta>0) v.registos.push({id:uid(),i:i,q:falta,data:v.data||todayISO(),nota:'Processo finalizado'});
+    });
+    atualizarEstadoVenda(v);
+  });
+  DB.schema=12;
+  return true;
+}
+
 /* ── MARCAR (um só formulário para tudo) ── */
 function openMarcar(ptype,pid,presetData){
   resetReuniaoModal(presetData);
@@ -4260,7 +4277,7 @@ function load(){ /* handled by initApp */ }
 async function initApp(){
   updateDbStatus();
   await dbLoad();
-  var mudou=migrarDB(); mudou=migrarPrecos()||mudou; mudou=migrarVendas()||mudou; mudou=migrarGestaoWeb()||mudou; mudou=migrarCorrecoesCompras()||mudou; mudou=migrarAcertos2()||mudou; mudou=migrarConcluidos()||mudou; mudou=migrarSessoesConfirmadas()||mudou; mudou=migrarBeatriz()||mudou;
+  var mudou=migrarDB(); mudou=migrarPrecos()||mudou; mudou=migrarVendas()||mudou; mudou=migrarGestaoWeb()||mudou; mudou=migrarCorrecoesCompras()||mudou; mudou=migrarAcertos2()||mudou; mudou=migrarConcluidos()||mudou; mudou=migrarSessoesConfirmadas()||mudou; mudou=migrarBeatriz()||mudou; mudou=migrarRomario()||mudou;
   if(mudou && _loadOK) save();
   rnRenderTipos('Sessão de acompanhamento');
   rnUpdateSugestoes('Sessão de acompanhamento');
