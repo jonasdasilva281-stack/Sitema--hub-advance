@@ -1886,6 +1886,17 @@ function migrarSessoesConfirmadas(){
   return true;
 }
 
+/* ── MIGRAÇÃO 11: Beatriz é da Comunidade (7.º mês) ── */
+function migrarBeatriz(){
+  if((DB.schema||1)>=11) return false;
+  var b=DB.mentorados.find(function(x){return x.nome==='Beatriz';});
+  if(b&&prodPorNome('Comunidade €30/mês')) b.produto='Comunidade €30/mês';
+  DB.schema=11;
+  return true;
+}
+function proxQuarta(){ var d=new Date(todayISO()+'T12:00:00'); var add=(3-d.getDay()+7)%7; d.setDate(d.getDate()+add); return isoLocal(d); }
+function mesesPagos(v){ return vendaPagamentos(v).filter(function(p){return p.estado==='Pago';}).length; }
+
 /* ── MARCAR (um só formulário para tudo) ── */
 function openMarcar(ptype,pid,presetData){
   resetReuniaoModal(presetData);
@@ -2148,6 +2159,7 @@ function renderMentorados(){
           +'<div class="sbw" style="width:80px;margin-top:5px"><div class="sbb" style="width:'+Math.round(sem/12*100)+'%;background:var(--g)"></div></div></div>'
         +'<div><div class="mt-lbl">Próxima sessão</div>'
           +(m.estado==='Concluído'?'<div style="font-size:12px;font-weight:600;color:var(--g)">✓ Concluído</div>'
+           :(!prox&&/^Comunidade/.test(m.produto||''))?'<div style="font-size:12px;font-weight:500">'+(proxQuarta()===todayISO()?'<b>Hoje</b>':'Qua '+fmtDate(proxQuarta()))+' · live da comunidade</div>'
            :(m.estado==='Stand by'&&!prox)?'<div style="font-size:12px;font-weight:600;color:#0C447C">⏸ Stand by</div>'
            :prox?'<div style="font-size:12px;font-weight:500;cursor:pointer" onclick="editReuniao('+prox.id+')">'+proxSessaoTexto(prox)+'</div><div style="font-size:10.5px;color:var(--g4)">'+esc(prox.formato||'')+'</div>'
                :'<div style="font-size:12px;color:var(--re);cursor:pointer;font-weight:500" onclick="openMarcar(\'mentorado\','+m.id+')">📅 Agendar</div>')
@@ -2159,9 +2171,14 @@ function renderMentorados(){
         +'<div><div class="mt-lbl">Valor pago</div><div style="font-size:13px;font-weight:600;color:var(--g)">€'+totalPago.toFixed(0)+'</div></div>'
       +'</div>'
       // Entregas das compras
-      +(function(){ var vs=vendasDeMentorado(m).filter(function(v){return v.estado!=='terminada'&&v.itens.some(function(it){return it.u!=='acesso';});});
+      +(function(){ var vs=vendasDeMentorado(m).filter(function(v){return v.estado!=='terminada'&&(v.itens.some(function(it){return it.u!=='acesso';})||v.itens.some(function(it){return it.mensal;}));});
           return vs.length?'<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--g6)"><div class="mt-lbl">Entregas</div>'
-            +vs.map(function(v){return '<div style="margin-top:4px"><div style="font-size:11px;color:var(--g4);margin-bottom:2px">'+esc(prodNomeC(v))+'</div>'+entregaBarras(v,true)+'</div>';}).join('')+'</div>':''; })()
+            +vs.map(function(v){
+              var sub=v.itens.every(function(it){return it.mensal&&it.u==='acesso';});
+              if(sub){ var n=mesesPagos(v), ult=vendaPagamentos(v).filter(function(p){return p.estado==='Pago';}).sort(function(a,b){return a.data.localeCompare(b.data);}).pop();
+                return '<div style="margin-top:4px;font-size:11.5px"><span style="color:var(--g4)">'+esc(prodNomeC(v))+'</span> · <b>'+n+'.º mês</b>'+(ult?' · pago até '+fmtDate(ult.data):'')+'</div>'; }
+              return '<div style="margin-top:4px"><div style="font-size:11px;color:var(--g4);margin-bottom:2px">'+esc(prodNomeC(v))+'</div>'+entregaBarras(v,true)+'</div>';
+            }).join('')+'</div>':''; })()
       // Tarefas por fazer
       +'<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--g6)">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
@@ -4243,7 +4260,7 @@ function load(){ /* handled by initApp */ }
 async function initApp(){
   updateDbStatus();
   await dbLoad();
-  var mudou=migrarDB(); mudou=migrarPrecos()||mudou; mudou=migrarVendas()||mudou; mudou=migrarGestaoWeb()||mudou; mudou=migrarCorrecoesCompras()||mudou; mudou=migrarAcertos2()||mudou; mudou=migrarConcluidos()||mudou; mudou=migrarSessoesConfirmadas()||mudou;
+  var mudou=migrarDB(); mudou=migrarPrecos()||mudou; mudou=migrarVendas()||mudou; mudou=migrarGestaoWeb()||mudou; mudou=migrarCorrecoesCompras()||mudou; mudou=migrarAcertos2()||mudou; mudou=migrarConcluidos()||mudou; mudou=migrarSessoesConfirmadas()||mudou; mudou=migrarBeatriz()||mudou;
   if(mudou && _loadOK) save();
   rnRenderTipos('Sessão de acompanhamento');
   rnUpdateSugestoes('Sessão de acompanhamento');
