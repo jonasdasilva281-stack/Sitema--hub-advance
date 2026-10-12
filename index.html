@@ -1851,6 +1851,24 @@ function migrarAcertos2(){
   return true;
 }
 
+/* ── MIGRAÇÃO 9: Daividson e Elisabeth concluíram o Plano de Negócio (12/10/2026) ── */
+function migrarConcluidos(){
+  if((DB.schema||1)>=9) return false;
+  ['Daividson','Elisabeth'].forEach(function(n){
+    var m=DB.mentorados.find(function(x){return x.nome===n;}); if(m) m.estado='Concluído';
+    (DB.vendas||[]).filter(function(v){return v.cliente===n;}).forEach(function(v){
+      v.itens.forEach(function(it,i){
+        if(it.mensal||it.u==='acesso') return;
+        var falta=it.q-itemFeito(v,i);
+        if(falta>0) v.registos.push({id:uid(),i:i,q:falta,data:v.data||todayISO(),nota:'Processo finalizado'});
+      });
+      atualizarEstadoVenda(v);
+    });
+  });
+  DB.schema=9;
+  return true;
+}
+
 /* ── MARCAR (um só formulário para tudo) ── */
 function openMarcar(ptype,pid,presetData){
   resetReuniaoModal(presetData);
@@ -4206,7 +4224,7 @@ function load(){ /* handled by initApp */ }
 async function initApp(){
   updateDbStatus();
   await dbLoad();
-  var mudou=migrarDB(); mudou=migrarPrecos()||mudou; mudou=migrarVendas()||mudou; mudou=migrarGestaoWeb()||mudou; mudou=migrarCorrecoesCompras()||mudou; mudou=migrarAcertos2()||mudou;
+  var mudou=migrarDB(); mudou=migrarPrecos()||mudou; mudou=migrarVendas()||mudou; mudou=migrarGestaoWeb()||mudou; mudou=migrarCorrecoesCompras()||mudou; mudou=migrarAcertos2()||mudou; mudou=migrarConcluidos()||mudou;
   if(mudou && _loadOK) save();
   rnRenderTipos('Sessão de acompanhamento');
   rnUpdateSugestoes('Sessão de acompanhamento');
