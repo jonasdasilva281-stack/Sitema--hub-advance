@@ -1869,6 +1869,23 @@ function migrarConcluidos(){
   return true;
 }
 
+/* ── MIGRAÇÃO 10: sessões confirmadas pelo Jonas (12/10/2026) ── */
+function migrarSessoesConfirmadas(){
+  if((DB.schema||1)>=10) return false;
+  var marcar=function(nome,data,hora){
+    var m=DB.mentorados.find(function(x){return x.nome===nome;}); if(!m) return;
+    var r=sessoesDe(m).find(function(x){return x.data===data;});
+    if(!r){ r={id:uid(),who:m.nome,personType:'mentorado',personId:m.id,data:data,hora:hora||'',tipo:'Sessão de acompanhamento',notas:'',formato:'',estado:'realizada',resumo:''}; DB.reunioes.push(r); }
+    r.estado='realizada';
+    registarEncontroEntregue(m,r);
+  };
+  marcar('Dalva Andrade','2026-07-06');   // Dalva teve 1 sessão
+  marcar('Milla','2026-07-12');           // Milla teve 2 sessões
+  marcar('Milla','2026-08-15');           // (dia de agosto aproximado)
+  DB.schema=10;
+  return true;
+}
+
 /* ── MARCAR (um só formulário para tudo) ── */
 function openMarcar(ptype,pid,presetData){
   resetReuniaoModal(presetData);
@@ -2131,6 +2148,7 @@ function renderMentorados(){
           +'<div class="sbw" style="width:80px;margin-top:5px"><div class="sbb" style="width:'+Math.round(sem/12*100)+'%;background:var(--g)"></div></div></div>'
         +'<div><div class="mt-lbl">Próxima sessão</div>'
           +(m.estado==='Concluído'?'<div style="font-size:12px;font-weight:600;color:var(--g)">✓ Concluído</div>'
+           :(m.estado==='Stand by'&&!prox)?'<div style="font-size:12px;font-weight:600;color:#0C447C">⏸ Stand by</div>'
            :prox?'<div style="font-size:12px;font-weight:500;cursor:pointer" onclick="editReuniao('+prox.id+')">'+proxSessaoTexto(prox)+'</div><div style="font-size:10.5px;color:var(--g4)">'+esc(prox.formato||'')+'</div>'
                :'<div style="font-size:12px;color:var(--re);cursor:pointer;font-weight:500" onclick="openMarcar(\'mentorado\','+m.id+')">📅 Agendar</div>')
         +'</div>'
@@ -4225,7 +4243,7 @@ function load(){ /* handled by initApp */ }
 async function initApp(){
   updateDbStatus();
   await dbLoad();
-  var mudou=migrarDB(); mudou=migrarPrecos()||mudou; mudou=migrarVendas()||mudou; mudou=migrarGestaoWeb()||mudou; mudou=migrarCorrecoesCompras()||mudou; mudou=migrarAcertos2()||mudou; mudou=migrarConcluidos()||mudou;
+  var mudou=migrarDB(); mudou=migrarPrecos()||mudou; mudou=migrarVendas()||mudou; mudou=migrarGestaoWeb()||mudou; mudou=migrarCorrecoesCompras()||mudou; mudou=migrarAcertos2()||mudou; mudou=migrarConcluidos()||mudou; mudou=migrarSessoesConfirmadas()||mudou;
   if(mudou && _loadOK) save();
   rnRenderTipos('Sessão de acompanhamento');
   rnUpdateSugestoes('Sessão de acompanhamento');
