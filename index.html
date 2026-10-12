@@ -313,7 +313,13 @@ textarea.fi{resize:vertical;min-height:60px}
 .pl-card-sub{font-size:10.5px;color:var(--g4);margin-bottom:6px}
 .pl-card-actions{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px;padding-top:7px;border-top:1px solid var(--g6)}
 
-.day-col{min-width:104px;background:var(--g7);border-radius:10px;padding:8px;flex-shrink:0}
+.ag-sec{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g3);margin:10px 0 4px}
+.ag-sec:first-child{margin-top:0}
+.ag-row{display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--g6);flex-wrap:wrap}
+.ag-when{min-width:46px;font-size:11px;color:var(--g4);text-align:right}
+.mt-lbl{font-size:10px;color:var(--g4);margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em}
+@media(max-width:768px){.mt-grid{grid-template-columns:1fr 1fr !important}}
+.day-col{flex:1;min-width:104px;background:var(--g7);border-radius:10px;padding:8px;flex-shrink:0}
 .event-chip{border-radius:7px;padding:5px 8px;margin-bottom:4px;font-size:11px;cursor:pointer}
 .filter-btn{padding:5px 12px;font-size:11px;border-radius:20px;border:1px solid var(--g6);background:var(--wh);cursor:pointer;color:var(--g3);font-family:'Inter',sans-serif;transition:all .12s;box-shadow:var(--shadow-sm)}
 .filter-btn.on{background:var(--bk);color:var(--wh);border-color:var(--bk);box-shadow:none}
@@ -439,7 +445,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
       <button class="btn bs bsm" id="topbar-menu-toggle" onclick="toggleSidebar()" style="display:none">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-      <button class="btn bs bsm" onclick="resetReuniaoModal();om('reuniao')">
+      <button class="btn bs bsm" onclick="openMarcar()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         Reunião
       </button>
@@ -450,6 +456,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     </div>
   </header>
   <div class="content" id="content">
+  <div id="db-banner" class="al" style="display:none;align-items:center;gap:10px;background:#FEE8EB;color:#9B1C1C;border:1px solid #F5C2C7;margin-bottom:12px;font-size:12.5px"></div>
 
   <!-- OVERVIEW -->
   <div class="panel on" id="p-overview">
@@ -694,10 +701,11 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
         <button class="btn bs bsm" onclick="weekOffset++;renderAgenda()">→</button>
         <button class="btn bs bsm" onclick="weekOffset=0;renderAgenda()">Hoje</button>
       </div>
-      <button class="btn bp" onclick="resetReuniaoModal();om('reuniao')">+ Reunião</button>
+      <button class="btn bp" onclick="openMarcar()">+ Marcar</button>
     </div>
+    <div class="card" style="margin-bottom:14px"><div id="ag-hoje"></div></div>
     <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:16px" id="ag-week"></div>
-    <div class="card"><div class="ct" style="margin-bottom:8px">Próximas reuniões</div><div id="ag-upcoming"></div></div>
+    <div class="card"><div class="ct" style="margin-bottom:8px">Próximas marcações</div><div id="ag-upcoming"></div></div>
   </div>
 
   <!-- MARKETING -->
@@ -834,28 +842,58 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
 <!-- MODAL SESSÃO (pós-encontro) -->
 <div class="mo" id="modal-sessao"><div class="mbox" style="max-width:480px">
   <div class="mh">
-    <div><div class="mt">📋 Registo de sessão</div><div id="ss-sub" style="font-size:11px;color:var(--g4);margin-top:2px"></div></div>
+    <div><div class="mt">✅ Concluir sessão</div><div id="ss-sub" style="font-size:11px;color:var(--g4);margin-top:2px"></div></div>
     <span class="mx" onclick="cm('sessao')">✕</span>
   </div>
-  <input type="hidden" id="ss-mentid">
+  <input type="hidden" id="ss-rid"><input type="hidden" id="ss-ptype"><input type="hidden" id="ss-pid">
   <div class="fg">
-    <label class="fl">Resumo da sessão</label>
-    <textarea class="fi" id="ss-resumo" rows="2" placeholder="O que foi trabalhado, decisões tomadas, insights..."></textarea>
+    <label class="fl">Como correu?</label>
+    <div id="ss-estado-btns" style="display:flex;gap:6px;flex-wrap:wrap">
+      <button type="button" class="btn bsm" style="border:1.5px solid var(--g6);background:#fff" data-val="realizada" onclick="ssSetEstado('realizada')">✓ Realizada</button>
+      <button type="button" class="btn bsm" style="border:1.5px solid var(--g6);background:#fff" data-val="faltou" onclick="ssSetEstado('faltou')">✗ Faltou</button>
+      <button type="button" class="btn bsm" style="border:1.5px solid var(--g6);background:#fff" data-val="cancelada" onclick="ssSetEstado('cancelada')">Cancelada</button>
+    </div>
   </div>
-  <div class="fg">
-    <label class="fl" style="display:flex;justify-content:space-between">
-      Tarefas para o mentorado
-      <button type="button" class="btn bs bsm" onclick="ssAddTarefa()">+ Tarefa</button>
-    </label>
-    <div id="ss-tarefas-list" style="margin-top:6px"></div>
-    <input class="fi" id="ss-tarefa-input" placeholder="Escreve a tarefa e clica + Tarefa ou Enter..." style="margin-top:6px"
-      onkeydown="if(event.key==='Enter'){event.preventDefault();ssAddTarefa();}">
+  <div class="fg" id="ss-resumo-wrap">
+    <label class="fl">Resumo</label>
+    <textarea class="fi" id="ss-resumo" rows="2" placeholder="O que foi trabalhado, decisões, próximos passos..."></textarea>
   </div>
-  <div class="al algr" style="font-size:11px">As tarefas serão associadas à semana atual do mentorado e aparecem no card para verificação antes de avançar.</div>
+  <div id="ss-ment-wrap">
+    <div class="fg" id="ss-pendentes"></div>
+    <div class="fg">
+      <label class="fl">Novas tarefas</label>
+      <div id="ss-tarefas-list"></div>
+      <div style="display:flex;gap:6px">
+        <input class="fi" id="ss-tarefa-input" placeholder="Escreva e carregue Enter" onkeydown="if(event.key==='Enter'){event.preventDefault();ssAddTarefa();}">
+        <button type="button" class="btn bs" onclick="ssAddTarefa()">+</button>
+      </div>
+    </div>
+    <div class="fg" style="background:var(--g7);border-radius:9px;padding:9px 11px">
+      <div style="font-size:11px;color:var(--g4)">Fase atual: <b id="ss-fase-label" style="color:var(--bk)"></b></div>
+      <label id="ss-avancar-wrap" style="display:flex;gap:7px;align-items:center;font-size:12px;margin-top:6px;cursor:pointer"><input type="checkbox" id="ss-avancar" style="accent-color:var(--g)"><span id="ss-avancar-label"></span></label>
+    </div>
+  </div>
+  <div class="fg" style="border:1px solid var(--g6);border-radius:9px;padding:9px 11px">
+    <label style="display:flex;gap:7px;align-items:center;font-size:12.5px;font-weight:500;cursor:pointer"><input type="checkbox" id="ss-prox-on" style="accent-color:var(--g)" onchange="ssToggleProx()">📅 Marcar a próxima sessão</label>
+    <div id="ss-prox-info" style="font-size:11px;color:var(--g4);margin-top:3px"></div>
+    <div id="ss-prox-campos" class="fr" style="margin-top:8px">
+      <div><label class="fl">Data</label><input type="date" class="fi" id="ss-prox-data"></div>
+      <div><label class="fl">Hora</label><input type="time" class="fi" id="ss-prox-hora"></div>
+    </div>
+  </div>
   <div style="display:flex;gap:8px;margin-top:4px">
-    <button class="btn bp" style="flex:1" onclick="saveSessao()">Guardar sessão</button>
+    <button class="btn bp" style="flex:1" onclick="saveConcluir()">Guardar</button>
     <button class="btn bs" onclick="cm('sessao')">Cancelar</button>
   </div>
+</div></div>
+
+<!-- MODAL HISTÓRICO -->
+<div class="mo" id="modal-historico"><div class="mbox" style="max-width:520px">
+  <div class="mh">
+    <div><div class="mt" id="hs-title">🕑 Histórico</div><div id="hs-sub" style="font-size:11px;color:var(--g4);margin-top:2px"></div></div>
+    <span class="mx" onclick="cm('historico')">✕</span>
+  </div>
+  <div id="hs-list"></div>
 </div></div>
 
 <!-- MODAL PROCESSO -->
@@ -871,13 +909,13 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div><div class="mt" id="rn-title">📅 Nova Reunião</div><div id="rn-ctx" style="font-size:11px;color:var(--g4);margin-top:2px"></div></div>
     <span class="mx" onclick="cm('reuniao')">✕</span>
   </div>
-  <input type="hidden" id="rn-id">
+  <input type="hidden" id="rn-id"><input type="hidden" id="rn-ptype"><input type="hidden" id="rn-pid">
 
   <!-- Pesquisa de pessoa -->
   <div class="fg" style="position:relative">
     <label class="fl">Com quem <span style="font-size:10px;color:var(--g4);font-weight:400">— mentorado, lead ou equipa</span></label>
     <input class="fi" id="rn-who" placeholder="Pesquisar..." autocomplete="off"
-      oninput="rnSearchWho(this.value)" onfocus="rnSearchWho(this.value)"
+      oninput="document.getElementById('rn-ptype').value='';document.getElementById('rn-pid').value='';rnSearchWho(this.value)" onfocus="rnSearchWho(this.value)"
       onblur="setTimeout(()=>pgHideDropdown('rn-dropdown'),200)">
     <div id="rn-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:300;background:#fff;border:1px solid var(--g6);border-radius:10px;box-shadow:var(--shadow-lg);max-height:200px;overflow-y:auto;margin-top:4px"></div>
   </div>
@@ -937,7 +975,8 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
   <div id="rn-action-btn" style="display:none;margin-bottom:8px"></div>
 
   <div style="display:flex;gap:8px">
-    <button class="btn bp" style="flex:1" id="rn-submit" onclick="saveReuniao()">Agendar</button>
+    <button class="btn bp" style="flex:1" id="rn-submit" onclick="saveReuniao()">Marcar</button>
+    <button class="btn bs" id="rn-concluir" style="display:none" onclick="rnConcluirAtual()">✅ Concluir</button>
     <button class="btn bd" id="rn-delete" style="display:none" onclick="deleteReuniao()">Apagar</button>
   </div>
 </div></div>
@@ -1132,10 +1171,12 @@ function uid(){ return ++DB.nextId; }
 function initials(n){ return (n||'').split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase(); }
 function fmtDate(d){ if(!d) return '—'; return new Date(d+'T12:00:00').toLocaleDateString('pt-PT',{day:'2-digit',month:'short'}); }
 function fmtDT(dt){ if(!dt) return '—'; const d=new Date(dt); return d.toLocaleDateString('pt-PT',{day:'2-digit',month:'short'})+' · '+d.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}); }
-function todayISO(){ return new Date().toISOString().split('T')[0]; }
+function isoLocal(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayISO(){ return isoLocal(new Date()); }
+function addDays(iso,n){ var d=new Date(iso+'T12:00:00'); d.setDate(d.getDate()+n); return isoLocal(d); }
 function thisMonth(d){ if(!d) return false; const n=new Date(),dt=new Date(d+'T12:00:00'); return dt.getMonth()===n.getMonth()&&dt.getFullYear()===n.getFullYear(); }
-function gerarDatas(inicio,n){ const r=[]; for(let i=0;i<n;i++){ const d=new Date(inicio+'T12:00:00'); d.setMonth(d.getMonth()+i); r.push(d.toISOString().split('T')[0]); } return r; }
-function weekDays(offset){ const days=[],now=new Date(),start=new Date(now); start.setDate(start.getDate()-start.getDay()+1+offset*7); for(let i=0;i<7;i++){ const d=new Date(start); d.setDate(start.getDate()+i); days.push(d.toISOString().split('T')[0]); } return days; }
+function gerarDatas(inicio,n){ const r=[]; for(let i=0;i<n;i++){ const d=new Date(inicio+'T12:00:00'); d.setMonth(d.getMonth()+i); r.push(isoLocal(d)); } return r; }
+function weekDays(offset){ const now=new Date(), dow=(now.getDay()+6)%7, days=[]; for(let i=0;i<7;i++){ days.push(isoLocal(new Date(now.getFullYear(),now.getMonth(),now.getDate()-dow+offset*7+i,12))); } return days; }
 function dayLabel(iso){ return new Date(iso+'T12:00:00').toLocaleDateString('pt-PT',{weekday:'short',day:'2-digit',month:'short'}); }
 function produtoValor(nome){ const p=DB.produtos.find(x=>x.nome===nome); return p?p.valor:0; }
 function save(){ try{ localStorage.setItem('hub_advance_v3_db', JSON.stringify(DB)); }catch(e){} }
@@ -1518,179 +1559,388 @@ function saveMentorado(){
   if(dupTel2){toast('⚠ Número já usado por '+dupTel2.nome+' ('+dupTel2.tipo+')','#C0392B');return;}
   const data={nome,tel,contacto:tel,produto:document.getElementById('mt-produto').value,nicho,
     score:document.getElementById('mt-score').value,estado:document.getElementById('mt-estado').value,notas:document.getElementById('mt-notas').value};
-  if(id){ Object.assign(DB.mentorados.find(x=>x.id===parseInt(id)),data); }
+  if(id){
+    const mm=DB.mentorados.find(x=>x.id===parseInt(id));
+    const antigo=mm.nome;
+    Object.assign(mm,data);
+    if(antigo!==nome){
+      DB.reunioes.forEach(r=>{ if((r.personType==='mentorado'&&r.personId===mm.id)||(!r.personType&&r.who===antigo)){ r.who=nome; r.personType='mentorado'; r.personId=mm.id; } });
+      DB.pagamentos.forEach(p=>{ if(p.cliente===antigo) p.cliente=nome; });
+    }
+  }
   else { DB.mentorados.push({...data,id:uid(),semana:0,tarefas:[],sessoes:[]}); }
   save();cm('mentorado');renderAll();toast(id?'✓ Guardado':'✓ Mentorado adicionado');
 }
 
-/* ═══ SESSÃO + TAREFAS ═══ */
-let _ssTarefas=[];
-function openSessao(mentId){
-  const m=DB.mentorados.find(x=>x.id===mentId); if(!m) return;
-  document.getElementById('ss-mentid').value=mentId;
-  document.getElementById('ss-sub').textContent=m.nome+' · Semana '+(m.semana||0)+' — '+(SEMANAS[m.semana||0]?SEMANAS[m.semana||0].l:'');
-  document.getElementById('ss-resumo').value='';
+/* ═══ SESSÕES — UM SÓ FLUXO ═══
+   Tudo o que é marcado vive em DB.reunioes.
+   Uma reunião tem estado: agendada → realizada / faltou / cancelada
+   (as antigas sem registo ficam como 'sem_registo').
+   Concluir uma sessão = registar o que aconteceu + tarefas + marcar a próxima. */
+
+function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function nowHM(){ var d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function byDT(a,b){ return ((a.data||'')+(a.hora||'')).localeCompare((b.data||'')+(b.hora||'')); }
+function rEstado(r){ return r.estado||'agendada'; }
+const R_ESTADOS={
+  agendada:{l:'Agendada',cls:'tb'},
+  realizada:{l:'Realizada',cls:'tg'},
+  faltou:{l:'Faltou',cls:'tr'},
+  cancelada:{l:'Cancelada',cls:'tgr'},
+  sem_registo:{l:'Sem registo',cls:'tgr'}
+};
+function rPessoa(r){
+  if(r.personType==='mentorado'){ var m=DB.mentorados.find(function(x){return x.id===r.personId;}); if(m) return {tipo:'mentorado',obj:m}; }
+  if(r.personType==='lead'){ var l=DB.leads.find(function(x){return x.id===r.personId;}); if(l) return {tipo:'lead',obj:l}; }
+  var m2=DB.mentorados.find(function(x){return x.nome===r.who;}); if(m2) return {tipo:'mentorado',obj:m2};
+  var l2=DB.leads.find(function(x){return x.nome===r.who;}); if(l2) return {tipo:'lead',obj:l2};
+  var e=DB.equipa.find(function(x){return x.nome===r.who;}); if(e) return {tipo:'equipa',obj:e};
+  return {tipo:'outro',obj:null};
+}
+function rTel(r){
+  var p=rPessoa(r);
+  if(p.obj&&(p.obj.tel||p.obj.contacto)) return normalizeTel(p.obj.tel||p.obj.contacto);
+  return (r.waNum||r.tel||'').replace(/\D/g,'');
+}
+function sessoesDe(m){
+  return DB.reunioes.filter(function(r){
+    return (r.personType==='mentorado'&&r.personId===m.id)||(!r.personType&&r.who===m.nome);
+  }).sort(byDT);
+}
+function rPorFechar(r){
+  if(rEstado(r)!=='agendada') return false;
+  var t=todayISO();
+  return r.data<t || (r.data===t && r.hora && r.hora<nowHM());
+}
+function porFecharTodas(){ return DB.reunioes.filter(rPorFechar).sort(byDT); }
+function proxSessao(m){ var t=todayISO(); return sessoesDe(m).filter(function(r){return rEstado(r)==='agendada'&&r.data>=t&&!rPorFechar(r);})[0]; }
+function ultimaSessao(m){ var x=sessoesDe(m).filter(function(r){return rEstado(r)==='realizada';}); return x[x.length-1]; }
+function sessaoPorFechar(m){ return sessoesDe(m).filter(rPorFechar)[0]; }
+function diasDesde(iso){ if(!iso) return null; return Math.round((new Date(todayISO()+'T12:00:00')-new Date(iso+'T12:00:00'))/86400000); }
+function fmtDH(r){ return fmtDate(r.data)+(r.hora?' · '+r.hora:''); }
+
+/* ── MIGRAÇÃO (corre uma vez) ── */
+function migrarDB(){
+  if((DB.schema||1)>=2) return false;
+  var hoje=todayISO();
+  DB.reunioes=DB.reunioes||[];
+  // 1) Ligar cada reunião à pessoa certa (por id, não só pelo nome)
+  DB.reunioes.forEach(function(r){
+    if(r.personType) return;
+    var w=(r.who||'').trim().toLowerCase();
+    var m=DB.mentorados.find(function(x){return x.nome.toLowerCase()===w;})
+       || (w.length>=3 ? DB.mentorados.find(function(x){return x.nome.toLowerCase().indexOf(w)===0;}) : null);
+    if(m){ r.personType='mentorado'; r.personId=m.id; r.who=m.nome; return; }
+    var l=DB.leads.find(function(x){return x.nome.toLowerCase()===w;});
+    if(l){ r.personType='lead'; r.personId=l.id; r.who=l.nome; return; }
+    var e=DB.equipa.find(function(x){return x.nome.toLowerCase()===w;});
+    if(e){ r.personType='equipa'; r.personId=e.id; r.who=e.nome; }
+  });
+  // 2) Remover duplicados (mesma pessoa, dia e hora)
+  var vistos={}, limpas=[];
+  DB.reunioes.slice().sort(function(a,b){return a.id-b.id;}).forEach(function(r){
+    var k=(r.personType||'')+'|'+(r.personId||r.who)+'|'+r.data+'|'+(r.hora||'');
+    var ja=vistos[k];
+    if(ja){
+      if((r.notas||'').length>(ja.notas||'').length) ja.notas=r.notas;
+      if(!ja.formato&&r.formato) ja.formato=r.formato;
+      return;
+    }
+    vistos[k]=r; limpas.push(r);
+  });
+  DB.reunioes=limpas;
+  // 3) Sessões registadas antigas → reuniões realizadas
+  DB.mentorados.forEach(function(m){
+    (m.sessoes||[]).forEach(function(s){
+      var r=DB.reunioes.find(function(x){return x.personType==='mentorado'&&x.personId===m.id&&x.data===s.data&&rEstado(x)!=='realizada';})
+         || DB.reunioes.find(function(x){return x.personType==='mentorado'&&x.personId===m.id&&x.data===s.data;});
+      if(r){
+        r.estado='realizada';
+        if(s.resumo&&!(r.resumo||'').includes(s.resumo)) r.resumo=r.resumo?r.resumo+' · '+s.resumo:s.resumo;
+      } else {
+        DB.reunioes.push({id:uid(),who:m.nome,personType:'mentorado',personId:m.id,data:s.data,hora:'',tipo:'Sessão de acompanhamento',notas:'',formato:'',estado:'realizada',resumo:s.resumo||''});
+      }
+    });
+  });
+  // 4) Reuniões passadas sem registo deixam de ficar "abertas"
+  DB.reunioes.forEach(function(r){ if(!r.estado) r.estado = r.data<hoje ? 'sem_registo' : 'agendada'; });
+  DB.schema=2;
+  return true;
+}
+
+/* ── MARCAR (um só formulário para tudo) ── */
+function openMarcar(ptype,pid,presetData){
+  resetReuniaoModal(presetData);
+  var obj=null;
+  if(ptype==='mentorado') obj=DB.mentorados.find(function(x){return x.id===pid;});
+  if(ptype==='lead') obj=DB.leads.find(function(x){return x.id===pid;});
+  if(obj){
+    document.getElementById('rn-who').value=obj.nome;
+    document.getElementById('rn-ptype').value=ptype;
+    document.getElementById('rn-pid').value=obj.id;
+    var tipo='Sessão de acompanhamento';
+    if(ptype==='lead') tipo=(obj.etapa==='novo'||obj.etapa==='sdr')?'Chamada SDR':'Chamada Closer';
+    rnRenderTipos(tipo); rnUpdateSugestoes(tipo);
+    if(ptype==='mentorado'){
+      var ult=sessoesDe(obj).filter(function(r){return r.hora;}).pop();
+      if(ult){
+        if(ult.hora) document.getElementById('rn-hora').value=ult.hora;
+        if(ult.formato) rnRenderFormatos(ult.formato);
+      }
+      document.getElementById('rn-ctx').textContent='Sessão 1:1 · Semana '+(obj.semana||0)+' de 12';
+    } else {
+      document.getElementById('rn-ctx').textContent='Lead em '+((ETAPAS.find(function(e){return e.id===obj.etapa;})||{l:obj.etapa}).l);
+    }
+  }
+  om('reuniao');
+}
+
+/* ── CONCLUIR SESSÃO ── */
+var _ssTarefas=[], _ssEstado='realizada';
+function concluirMentorado(mentId){
+  var m=DB.mentorados.find(function(x){return x.id===mentId;}); if(!m) return;
+  var t=todayISO();
+  var r=sessaoPorFechar(m) || sessoesDe(m).find(function(x){return rEstado(x)==='agendada'&&x.data===t;});
+  openConcluir(r?r.id:null, mentId);
+}
+function openConcluir(reuniaoId, mentId){
+  var r=reuniaoId?DB.reunioes.find(function(x){return x.id===reuniaoId;}):null;
+  var p=r?rPessoa(r):{tipo:'mentorado',obj:DB.mentorados.find(function(x){return x.id===mentId;})};
+  if(!p.obj && !r) return;
+  cm('reuniao');
+  document.getElementById('ss-rid').value=r?r.id:'';
+  document.getElementById('ss-ptype').value=p.tipo;
+  document.getElementById('ss-pid').value=p.obj?p.obj.id:'';
+  var nome=p.obj?p.obj.nome:(r?r.who:'');
+  document.getElementById('ss-sub').textContent=nome+' · '+(r?fmtDH(r):'Hoje (sessão não marcada)');
+  document.getElementById('ss-resumo').value=r&&r.resumo?r.resumo:'';
   document.getElementById('ss-tarefa-input').value='';
-  _ssTarefas=[];
+  _ssTarefas=[]; ssSetEstado('realizada');
   renderSsTarefas();
+  var isMent=p.tipo==='mentorado'&&p.obj;
+  document.getElementById('ss-ment-wrap').style.display=isMent?'block':'none';
+  if(isMent){
+    var m=p.obj, sem=m.semana||0;
+    document.getElementById('ss-fase-label').textContent='Semana '+sem+' — '+(SEMANAS[sem]?SEMANAS[sem].l:'Concluído');
+    var prox=SEMANAS[sem+1];
+    document.getElementById('ss-avancar-wrap').style.display=prox?'flex':'none';
+    document.getElementById('ss-avancar').checked=false;
+    document.getElementById('ss-avancar-label').textContent=prox?'Avançar para a semana '+prox.n+' — '+prox.l:'';
+    var pend=(m.tarefas||[]).filter(function(x){return !x.done;});
+    document.getElementById('ss-pendentes').innerHTML=pend.length
+      ? '<div class="fl" style="margin-bottom:5px">Tarefas anteriores <span style="font-weight:400;color:var(--g4)">— marque as que ela já fez</span></div>'
+        + pend.map(function(x){return '<label class="mt-tarefa" style="cursor:pointer"><input type="checkbox" data-tid="'+x.id+'" style="margin-top:2px;accent-color:var(--g)"><span class="mt-tarefa-texto">'+esc(x.txt)+'</span></label>';}).join('')
+      : '';
+  }
+  // Próxima sessão (sugere +7 dias à mesma hora)
+  var temProx=isMent && proxSessao(p.obj);
+  var base=r&&r.data&&r.data>=todayISO()?r.data:todayISO();
+  document.getElementById('ss-prox-on').checked=!!(isMent && !temProx);
+  document.getElementById('ss-prox-data').value=addDays(base,7);
+  document.getElementById('ss-prox-hora').value=(r&&r.hora)||'19:30';
+  document.getElementById('ss-prox-info').textContent=temProx?'Já tem sessão marcada: '+fmtDH(temProx):'';
+  ssToggleProx();
   document.getElementById('modal-sessao').classList.add('open');
 }
+function ssSetEstado(v){
+  _ssEstado=v;
+  document.querySelectorAll('#ss-estado-btns button').forEach(function(b){
+    var on=b.dataset.val===v;
+    b.style.borderColor=on?'var(--g)':'var(--g6)';
+    b.style.background=on?'var(--gl)':'#fff';
+    b.style.color=on?'#007A5A':'var(--g3)';
+  });
+  document.getElementById('ss-resumo-wrap').style.display=v==='realizada'?'block':'none';
+}
+function ssToggleProx(){
+  document.getElementById('ss-prox-campos').style.display=document.getElementById('ss-prox-on').checked?'grid':'none';
+}
 function ssAddTarefa(){
-  const inp=document.getElementById('ss-tarefa-input');
-  const txt=inp.value.trim(); if(!txt) return;
-  _ssTarefas.push({txt,done:false});
+  var inp=document.getElementById('ss-tarefa-input');
+  var txt=inp.value.trim(); if(!txt) return;
+  _ssTarefas.push({txt:txt});
   inp.value='';
   renderSsTarefas();
 }
 function ssRemoveTarefa(i){ _ssTarefas.splice(i,1); renderSsTarefas(); }
 function renderSsTarefas(){
-  document.getElementById('ss-tarefas-list').innerHTML=_ssTarefas.length?_ssTarefas.map((t,i)=>
-    '<div class="ss-tarefa-item"><span style="flex:1">'+t.txt+'</span><span style="cursor:pointer;color:var(--re);font-size:14px" onclick="ssRemoveTarefa('+i+')">×</span></div>'
-  ).join(''):'<div style="font-size:11px;color:var(--g4);padding:4px 0">Nenhuma tarefa adicionada ainda</div>';
+  document.getElementById('ss-tarefas-list').innerHTML=_ssTarefas.map(function(t,i){
+    return '<div class="ss-tarefa-item"><span style="flex:1">'+esc(t.txt)+'</span><span style="cursor:pointer;color:var(--re);font-size:14px" onclick="ssRemoveTarefa('+i+')">×</span></div>';
+  }).join('');
 }
-function saveSessao(){
-  const mentId=parseInt(document.getElementById('ss-mentid').value);
-  const resumo=document.getElementById('ss-resumo').value.trim();
-  const m=DB.mentorados.find(x=>x.id===mentId); if(!m) return;
-  if(!m.sessoes) m.sessoes=[];
-  if(!m.tarefas) m.tarefas=[];
-  const semana=m.semana||0;
-  const sessaoId=Date.now();
-  m.sessoes.push({id:sessaoId,semana,data:todayISO(),resumo,tarefaIds:_ssTarefas.map((_,i)=>sessaoId+i)});
-  _ssTarefas.forEach((t,i)=>{ m.tarefas.push({id:sessaoId+i,sessaoId,semana,txt:t.txt,done:false,data:todayISO()}); });
-  save();cm('sessao');renderAll();
-  toast('✓ Sessão registada'+((_ssTarefas.length>0)?(' · '+_ssTarefas.length+' tarefa'+(_ssTarefas.length>1?'s':'')+" atribuída"+(_ssTarefas.length>1?'s':'')):''));
+function saveConcluir(){
+  var rid=parseInt(document.getElementById('ss-rid').value)||0;
+  var ptype=document.getElementById('ss-ptype').value;
+  var pid=parseInt(document.getElementById('ss-pid').value)||0;
+  var resumo=document.getElementById('ss-resumo').value.trim();
+  // tarefa escrita mas não adicionada também conta
+  var pendTxt=document.getElementById('ss-tarefa-input').value.trim();
+  if(pendTxt) _ssTarefas.push({txt:pendTxt});
+  var r=rid?DB.reunioes.find(function(x){return x.id===rid;}):null;
+  var m=ptype==='mentorado'?DB.mentorados.find(function(x){return x.id===pid;}):null;
+  if(!r){
+    if(!m) return;
+    r={id:uid(),who:m.nome,personType:'mentorado',personId:m.id,data:todayISO(),hora:nowHM(),tipo:'Sessão de acompanhamento',notas:'',formato:'',estado:'agendada'};
+    DB.reunioes.push(r);
+  }
+  r.estado=_ssEstado;
+  r.resumo=_ssEstado==='realizada'?resumo:'';
+  r.concluidaEm=new Date().toISOString();
+  var msgs=[R_ESTADOS[_ssEstado].l];
+  if(m){
+    if(!m.tarefas) m.tarefas=[];
+    document.querySelectorAll('#ss-pendentes input[data-tid]').forEach(function(cb){
+      if(!cb.checked) return;
+      var t=m.tarefas.find(function(x){return String(x.id)===cb.dataset.tid;});
+      if(t){ t.done=true; t.doneEm=todayISO(); }
+    });
+    _ssTarefas.forEach(function(t){
+      m.tarefas.push({id:uid(),reuniaoId:r.id,semana:m.semana||0,txt:t.txt,done:false,data:todayISO()});
+    });
+    if(_ssTarefas.length) msgs.push(_ssTarefas.length+' tarefa'+(_ssTarefas.length>1?'s':''));
+    if(document.getElementById('ss-avancar').checked && (m.semana||0)<12){ m.semana=(m.semana||0)+1; msgs.push('semana '+m.semana); }
+  }
+  if(document.getElementById('ss-prox-on').checked){
+    var d=document.getElementById('ss-prox-data').value, h=document.getElementById('ss-prox-hora').value;
+    if(d){
+      var existe=DB.reunioes.find(function(x){return x.personType===r.personType&&x.personId===r.personId&&x.data===d&&rEstado(x)==='agendada';});
+      if(!existe){
+        DB.reunioes.push({id:uid(),who:r.who,personType:r.personType||null,personId:r.personId||null,data:d,hora:h,tipo:r.tipo||'Sessão de acompanhamento',notas:'',formato:r.formato||'Google Meet',waNum:r.waNum||'',mapsAddr:r.mapsAddr||'',estado:'agendada'});
+        msgs.push('próxima '+fmtDate(d));
+      }
+    }
+  }
+  _ssTarefas=[];
+  save(); cm('sessao'); renderAll();
+  toast('✓ '+msgs.join(' · '));
 }
+
+/* ── TAREFAS DO MENTORADO ── */
 function toggleTarefaMentorado(mentId,tarefaId){
-  const m=DB.mentorados.find(x=>x.id===mentId); if(!m||!m.tarefas) return;
-  const t=m.tarefas.find(x=>x.id===tarefaId); if(!t) return;
-  t.done=!t.done;
-  save();renderAll();
+  var m=DB.mentorados.find(function(x){return x.id===mentId;}); if(!m||!m.tarefas) return;
+  var t=m.tarefas.find(function(x){return x.id===tarefaId;}); if(!t) return;
+  t.done=!t.done; t.doneEm=t.done?todayISO():null;
+  save(); renderAll();
 }
-function deleteMentorado(id){ if(!confirm('Apagar?'))return; DB.mentorados=DB.mentorados.filter(x=>x.id!==id); save();renderAll();toast('Removido','#C0392B'); }
+function addTarefaMentorado(mentId){
+  var m=DB.mentorados.find(function(x){return x.id===mentId;}); if(!m) return;
+  var txt=prompt('Nova tarefa para '+m.nome+':'); if(!txt||!txt.trim()) return;
+  if(!m.tarefas) m.tarefas=[];
+  m.tarefas.push({id:uid(),semana:m.semana||0,txt:txt.trim(),done:false,data:todayISO()});
+  save(); renderAll();
+}
+
+/* ── HISTÓRICO ── */
+function openHistorico(mentId){
+  var m=DB.mentorados.find(function(x){return x.id===mentId;}); if(!m) return;
+  var ss=sessoesDe(m).slice().reverse();
+  var feitas=ss.filter(function(r){return rEstado(r)==='realizada';}).length;
+  var tarefas=m.tarefas||[];
+  var pagos=DB.pagamentos.filter(function(p){return p.cliente===m.nome&&p.estado==='Pago';}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
+  document.getElementById('hs-title').textContent='🕑 '+m.nome;
+  document.getElementById('hs-sub').textContent=feitas+' sessões realizadas · '+tarefas.filter(function(t){return t.done;}).length+'/'+tarefas.length+' tarefas feitas · €'+pagos.toFixed(0)+' pago';
+  document.getElementById('hs-list').innerHTML=ss.length?ss.map(function(r){
+    var e=R_ESTADOS[rEstado(r)]||R_ESTADOS.agendada;
+    var tr=tarefas.filter(function(t){return t.reuniaoId===r.id;});
+    return '<div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--g6)">'
+      +'<div style="min-width:70px;font-size:11px;color:var(--g4)">'+fmtDate(r.data)+(r.hora?'<br><b style="color:var(--bk)">'+r.hora+'</b>':'')+'</div>'
+      +'<div style="flex:1;min-width:0"><span class="tag '+(rPorFechar(r)?'ty':e.cls)+'" style="font-size:9.5px">'+(rPorFechar(r)?'Por fechar':e.l)+'</span>'
+      +(r.resumo?'<div style="font-size:12px;margin-top:4px">'+esc(r.resumo)+'</div>':'')
+      +(r.notas&&!r.resumo?'<div style="font-size:11px;color:var(--g4);margin-top:3px">'+esc(r.notas)+'</div>':'')
+      +(tr.length?'<div style="font-size:11px;color:var(--g3);margin-top:4px">'+tr.map(function(t){return (t.done?'✓ ':'○ ')+esc(t.txt);}).join('<br>')+'</div>':'')
+      +'</div>'
+      +(rEstado(r)==='agendada'?'<button class="btn bs bsm" onclick="cm(\'historico\');editReuniao('+r.id+')">✏️</button>':'')
+      +'</div>';
+  }).join(''):'<div class="empty">Ainda sem sessões</div>';
+  om('historico');
+}
+
+/* ── PROCESSO (fases) ── */
+function deleteMentorado(id){ if(!confirm('Apagar este mentorado? As sessões ficam no histórico da agenda.'))return; DB.mentorados=DB.mentorados.filter(function(x){return x.id!==id;}); save();renderAll();toast('Removido','#C0392B'); }
 function openProcesso(id){ window._procId=id; om('processo'); renderProcesso(); }
 function renderProcesso(){
-  const m=DB.mentorados.find(x=>x.id===window._procId); if(!m) return;
-  const sem=m.semana||0;
+  var m=DB.mentorados.find(function(x){return x.id===window._procId;}); if(!m) return;
+  var sem=m.semana||0;
   document.getElementById('pr-title').textContent='Processo 90D — '+m.nome;
-  document.getElementById('pr-sub').textContent=`Semana ${sem} de 12 · ${SEMANAS[sem]?SEMANAS[sem].l:'Concluído'}`;
-  document.getElementById('pr-semanas').innerHTML=SEMANAS.map(s=>{
-    const done=s.n<sem,cur=s.n===sem,fut=s.n>sem;
-    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;opacity:${fut?.45:1};
-      background:${cur?'#E6F1FB':done?'#F0FBF6':'var(--g7)'};border:${cur?'1.5px solid #0C447C':'1px solid var(--g6)'}">
-      <span style="font-size:11px;color:${done?'#0B6E4F':cur?'#0C447C':'var(--g4)'}">${done?'✓':cur?'▶':'○'}</span>
-      <div style="width:18px;height:18px;border-radius:50%;background:${cur?'#0C447C':done?'#0B6E4F':'var(--g6)'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff;flex-shrink:0">${s.n}</div>
-      <div style="flex:1;font-size:12px;font-weight:${cur?600:400}">${s.e} ${s.l}</div>
-      ${cur?'<span class="tag tb">Atual</span>':''}
-    </div>`;
+  document.getElementById('pr-sub').textContent='Semana '+sem+' de 12 · '+(SEMANAS[sem]?SEMANAS[sem].l:'Concluído');
+  document.getElementById('pr-semanas').innerHTML=SEMANAS.map(function(s){
+    var done=s.n<sem,cur=s.n===sem,fut=s.n>sem;
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;opacity:'+(fut?.45:1)+';background:'+(cur?'#E6F1FB':done?'#F0FBF6':'var(--g7)')+';border:'+(cur?'1.5px solid #0C447C':'1px solid var(--g6)')+'">'
+      +'<span style="font-size:11px;color:'+(done?'#0B6E4F':cur?'#0C447C':'var(--g4)')+'">'+(done?'✓':cur?'▶':'○')+'</span>'
+      +'<div style="flex:1;font-size:12px;font-weight:'+(cur?600:400)+'">'+s.e+' '+s.n+' · '+s.l+'</div>'
+      +(cur?'<span class="tag tb">Atual</span>':'')+'</div>';
   }).join('');
 }
 function moverSemana(dir){
-  const m=DB.mentorados.find(x=>x.id===window._procId); if(!m) return;
-  const nova=(m.semana||0)+dir;
+  var m=DB.mentorados.find(function(x){return x.id===window._procId;}); if(!m) return;
+  var nova=(m.semana||0)+dir;
   if(nova<0||nova>12){toast(nova<0?'Já está na semana 0':'Processo completo! 🎉');return;}
-  // Block advance if pending tasks for current week
-  if(dir>0){
-    const pendentes=(m.tarefas||[]).filter(t=>t.semana===(m.semana||0)&&!t.done);
-    if(pendentes.length>0){
-      toast('⚠ '+pendentes.length+' tarefa'+(pendentes.length>1?'s':'')+' por concluir nesta semana — verifica antes de avançar','#B7791F');
-      if(!confirm('Existem '+pendentes.length+' tarefa(s) por concluir nesta semana. Avançar mesmo assim?')) return;
-    }
-  }
   m.semana=nova;
   save();renderAll();renderProcesso();
   toast(dir>0?'✓ Semana '+nova+': '+(SEMANAS[nova]?SEMANAS[nova].l:''):'← Semana '+nova);
 }
+
+/* ── CARTÃO DO MENTORADO ── */
 function renderMentorados(){
   document.getElementById('nb-ment').textContent=DB.mentorados.length;
-  document.getElementById('mentorados-list').innerHTML = DB.mentorados.length ? DB.mentorados.map(m=>{
-    const prox=DB.reunioes.filter(r=>r.who===m.nome&&r.data>=todayISO()).sort((a,b)=>a.data.localeCompare(b.data))[0];
-    const totalPago=DB.pagamentos.filter(p=>p.cliente===m.nome&&p.estado==='Pago').reduce((s,p)=>s+parseFloat(p.valor||0),0);
-    const sem=SEMANAS[m.semana||0];
-    const viaPipeline=m.origemLeadId?true:false;
-    const tarefas=(m.tarefas||[]);
-    const tarefasPendentes=tarefas.filter(t=>!t.done);
-    const tarefasConcluidas=tarefas.filter(t=>t.done);
-    const semAtual=m.semana||0;
-    const tarefasSemAtual=tarefas.filter(t=>t.semana===semAtual);
-    const pendSemAtual=tarefasSemAtual.filter(t=>!t.done);
-    const pctTarefas=tarefasSemAtual.length?Math.round(tarefasConcluidas.filter(t=>t.semana===semAtual).length/tarefasSemAtual.length*100):100;
-    const podeAvancar=pendSemAtual.length===0;
-    return `<div class="card" style="margin-bottom:10px;border-left:3px solid ${estadoCls[m.estado]==='tr'?'var(--re)':estadoCls[m.estado]==='ty'?'var(--ye)':'var(--g)'}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
-        <div style="display:flex;gap:10px;align-items:center">
-          <div class="av" style="background:${avatarColors[DB.mentorados.indexOf(m)%avatarColors.length]}">${initials(m.nome)}</div>
-          <div>
-            <div style="font-size:13px;font-weight:600">${m.nome} ${viaPipeline?'<span class="tag tg" style="font-size:9px">pipeline</span>':''}</div>
-            <div style="font-size:11px;color:var(--g4);display:flex;align-items:center;gap:8px">
-              ${m.nicho||'—'} · ${m.produto}
-              ${(m.tel||m.contacto)?'<a href="https://wa.me/'+normalizeTel(m.tel||m.contacto)+'" target="_blank" style="color:#25D366;font-size:10px;display:inline-flex;align-items:center;gap:3px;text-decoration:none">📱 '+normalizeTel(m.tel||m.contacto)+'</a>':'<span style="color:var(--re);font-size:10px">⚠ sem telefone</span>'}
-            </div>
-          </div>
-        </div>
-        <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
-          <span class="tag ${estadoCls[m.estado]||'tgr'}">${m.estado}</span>
-          <strong style="font-size:12px;color:${scoreColor[m.score]}">Score ${m.score}</strong>
-          <button class="btn bs bsm" onclick="openSessao(${m.id})" title="Registar sessão + tarefas">📋 Sessão</button>
-          <button class="btn bs bsm" onclick="openProxEncontro(${m.id})">📅 Agendar</button>
-          <button class="btn bs bsm" onclick="openProcesso(${m.id})">Processo</button>
-          <button class="btn bs bsm" onclick="editMentorado(${m.id})">✏️</button>
-          <button class="btn bd bsm" onclick="deleteMentorado(${m.id})">×</button>
-        </div>
-      </div>
-
-      <div style="margin-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-        <div>
-          <div style="font-size:10px;color:var(--g4);margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em">Fase</div>
-          <div style="font-size:12px;font-weight:500">${sem?sem.e+' ':''} Semana ${semAtual}</div>
-          <div style="font-size:11px;color:var(--g4)">${sem?sem.l:'Concluído'}</div>
-          <div style="display:flex;align-items:center;gap:5px;margin-top:5px">
-            <div class="sbw" style="width:80px"><div class="sbb" style="width:${Math.round(semAtual/12*100)}%;background:var(--g)"></div></div>
-            <span style="font-size:10px;color:var(--g4)">${Math.round(semAtual/12*100)}%</span>
-          </div>
-        </div>
-        <div onclick="openProxEncontro(${m.id})" style="cursor:pointer">
-          <div style="font-size:10px;color:var(--g4);margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em">Próxima sessão ✎</div>
-          <div style="font-size:12px">${prox?fmtDate(prox.data)+' às '+(prox.hora||'—'):'<span style=\"color:var(--re)\">+ Agendar</span>'}</div>
-          ${prox?'<div style=\"font-size:10px;color:var(--g4)\">'+( prox.notas||prox.tipo||'')+'</div>':''}
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--g4);margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em">Valor pago</div>
-          <div style="font-size:13px;font-weight:600;color:var(--g)">€${totalPago.toFixed(0)}</div>
-        </div>
-      </div>
-
-      ${tarefasSemAtual.length>0?`
-      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--g6)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
-          <div style="font-size:10px;font-weight:600;color:var(--g3);text-transform:uppercase;letter-spacing:.06em">
-            Tarefas — Semana ${semAtual}
-          </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <span style="font-size:10px;color:${podeAvancar?'var(--g)':'var(--ye)'}">${tarefasConcluidas.filter(t=>t.semana===semAtual).length}/${tarefasSemAtual.length} feitas</span>
-            ${podeAvancar?
-              '<span class="tag tg" style="font-size:9.5px">✓ Pronto para avançar</span>':
-              '<span class="tag ty" style="font-size:9.5px">⚠ Tarefas pendentes</span>'
-            }
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:5px;margin-bottom:8px">
-          <div class="sbw"><div class="sbb" style="width:${pctTarefas}%;background:${podeAvancar?'var(--g)':'var(--ye)'}"></div></div>
-          <span style="font-size:10px;color:var(--g4);min-width:28px">${pctTarefas}%</span>
-        </div>
-        ${tarefasSemAtual.map(t=>`
-          <div class="mt-tarefa ${t.done?'done':''}">
-            <input type="checkbox" ${t.done?'checked':''} style="margin-top:2px;cursor:pointer;accent-color:var(--g)" 
-              onchange="toggleTarefaMentorado(${m.id},${t.id})">
-            <span class="mt-tarefa-texto">${t.txt}</span>
-          </div>`).join('')}
-        ${!podeAvancar?`<div class="al" style="background:#FFFBEA;border:1px solid #FEF08A;color:#854D0E;margin-top:8px;font-size:11px;padding:7px 10px">
-          ⚠ Há ${pendSemAtual.length} tarefa${pendSemAtual.length>1?'s':''}  por concluir antes de avançar para a próxima fase.
-        </div>`:''}
-      </div>`:''}
-
-      ${m.notas?`<div style="margin-top:8px;padding:7px 10px;background:var(--g7);border-radius:7px;font-size:11px;color:var(--g3)">${m.notas}</div>`:''}
-    </div>`;
+  document.getElementById('mentorados-list').innerHTML = DB.mentorados.length ? DB.mentorados.map(function(m,idx){
+    var prox=proxSessao(m), ult=ultimaSessao(m), aberta=sessaoPorFechar(m);
+    var totalPago=DB.pagamentos.filter(function(p){return p.cliente===m.nome&&p.estado==='Pago';}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
+    var sem=m.semana||0, fase=SEMANAS[sem];
+    var pend=(m.tarefas||[]).filter(function(t){return !t.done;});
+    var dUlt=ult?diasDesde(ult.data):null;
+    var tel=m.tel||m.contacto;
+    var corBorda=estadoCls[m.estado]==='tr'?'var(--re)':estadoCls[m.estado]==='ty'?'var(--ye)':'var(--g)';
+    return '<div class="card" style="margin-bottom:10px;border-left:3px solid '+corBorda+'">'
+      // Cabeçalho
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">'
+        +'<div style="display:flex;gap:10px;align-items:center">'
+          +'<div class="av" style="background:'+avatarColors[idx%avatarColors.length]+'">'+initials(m.nome)+'</div>'
+          +'<div><div style="font-size:13px;font-weight:600">'+esc(m.nome)+' <span class="tag '+(estadoCls[m.estado]||'tgr')+'" style="font-size:9px">'+esc(m.estado)+'</span></div>'
+          +'<div style="font-size:11px;color:var(--g4)">'+esc(m.nicho||'—')+' · '+esc(m.produto)
+          +(tel?' · <a href="https://wa.me/'+normalizeTel(tel)+'" target="_blank" style="color:#25D366;text-decoration:none">📱 WhatsApp</a>':' · <span style="color:var(--re)">⚠ sem telefone</span>')
+          +'</div></div>'
+        +'</div>'
+        +'<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">'
+          +'<button class="btn '+(aberta?'bp':'bs')+' bsm" onclick="concluirMentorado('+m.id+')">✅ Concluir sessão</button>'
+          +'<button class="btn bs bsm" onclick="openMarcar(\'mentorado\','+m.id+')">📅 Marcar</button>'
+          +'<button class="btn bs bsm" onclick="openHistorico('+m.id+')">🕑 Histórico</button>'
+          +'<button class="btn bs bsm" onclick="openProcesso('+m.id+')" title="Fases do processo">Fases</button>'
+          +'<button class="btn bs bsm" onclick="editMentorado('+m.id+')">✏️</button>'
+          +'<button class="btn bd bsm" onclick="deleteMentorado('+m.id+')">×</button>'
+        +'</div>'
+      +'</div>'
+      // Sessão por fechar
+      +(aberta?'<div class="al" style="background:#FFFBEA;border:1px solid #FEF08A;color:#854D0E;margin:10px 0 0;font-size:11.5px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center;gap:8px">'
+        +'<span>⚠ Sessão de '+fmtDH(aberta)+' por fechar</span><button class="btn bp bsm" onclick="openConcluir('+aberta.id+')">Concluir</button></div>':'')
+      // Grelha
+      +'<div class="mt-grid" style="margin-top:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">'
+        +'<div><div class="mt-lbl">Fase</div><div style="font-size:12px;font-weight:500">'+(fase?fase.e+' ':'')+'Semana '+sem+'</div>'
+          +'<div style="font-size:11px;color:var(--g4)">'+(fase?fase.l:'Concluído')+'</div>'
+          +'<div class="sbw" style="width:80px;margin-top:5px"><div class="sbb" style="width:'+Math.round(sem/12*100)+'%;background:var(--g)"></div></div></div>'
+        +'<div><div class="mt-lbl">Próxima sessão</div>'
+          +(prox?'<div style="font-size:12px;font-weight:500;cursor:pointer" onclick="editReuniao('+prox.id+')">'+fmtDH(prox)+'</div><div style="font-size:10.5px;color:var(--g4)">'+esc(prox.formato||'')+'</div>'
+               :'<div style="font-size:12px;color:var(--re);cursor:pointer" onclick="openMarcar(\'mentorado\','+m.id+')">+ Marcar</div>')
+        +'</div>'
+        +'<div><div class="mt-lbl">Última sessão</div>'
+          +(ult?'<div style="font-size:12px;font-weight:500">'+fmtDate(ult.data)+'</div><div style="font-size:10.5px;color:'+(dUlt>30?'var(--re)':'var(--g4)')+'">'+(dUlt===0?'hoje':dUlt===1?'ontem':'há '+dUlt+' dias')+'</div>'
+               :'<div style="font-size:12px;color:var(--g4)">—</div>')
+        +'</div>'
+        +'<div><div class="mt-lbl">Valor pago</div><div style="font-size:13px;font-weight:600;color:var(--g)">€'+totalPago.toFixed(0)+'</div></div>'
+      +'</div>'
+      // Tarefas por fazer
+      +'<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--g6)">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+          +'<div class="mt-lbl" style="margin:0">Tarefas por fazer · '+pend.length+'</div>'
+          +'<button class="btn bs bsm" style="font-size:10.5px;padding:3px 8px" onclick="addTarefaMentorado('+m.id+')">+ Tarefa</button>'
+        +'</div>'
+        +(pend.length?pend.slice(0,5).map(function(t){
+            return '<label class="mt-tarefa" style="cursor:pointer"><input type="checkbox" style="margin-top:2px;cursor:pointer;accent-color:var(--g)" onchange="toggleTarefaMentorado('+m.id+','+t.id+')"><span class="mt-tarefa-texto">'+esc(t.txt)+'</span></label>';
+          }).join('')+(pend.length>5?'<div style="font-size:11px;color:var(--g4);cursor:pointer" onclick="openHistorico('+m.id+')">+ '+(pend.length-5)+' tarefas…</div>':'')
+          :'')
+      +'</div>'
+      +(m.notas?'<div style="margin-top:8px;padding:7px 10px;background:var(--g7);border-radius:7px;font-size:11px;color:var(--g3)">'+esc(m.notas)+'</div>':'')
+    +'</div>';
   }).join('') : '<div class="empty"><div class="ei">👥</div>Nenhum mentorado ainda</div>';
 }
 
@@ -2246,6 +2496,8 @@ function rnSearchWho(q){
 function rnSelectWho(idx){
   var r=(window._rnResults||[])[idx]; if(!r) return;
   document.getElementById('rn-who').value=r.nome;
+  document.getElementById('rn-ptype').value=r.tipo;
+  document.getElementById('rn-pid').value=r.obj&&r.obj.id!=null?r.obj.id:'';
   document.getElementById('rn-dropdown').style.display='none';
   // Show context
   var ctx=document.getElementById('rn-pessoa-ctx');
@@ -2302,8 +2554,7 @@ function rnGetActionBtn(r){
   var fmt=r.formato||'';
   var who=r.who||'';
   // get phone from lead contacto field
-  var lead=DB.leads.find(function(l){return l.nome===who;});
-  var phone=(lead&&lead.contacto)?lead.contacto.replace(/\D/g,''):(r.waNum||'');
+  var phone=rTel(r);
   if(fmt==='Google Meet'){
     // Build a Google Meet link — use stored link or generic new meeting
     var link=r.meetLink||'https://meet.google.com/new';
@@ -2328,37 +2579,46 @@ function rnGetActionBtn(r){
 }
 
 function editReuniao(id){
-  const r=DB.reunioes.find(x=>x.id===id); if(!r) return;
+  var r=DB.reunioes.find(function(x){return x.id===id;}); if(!r) return;
   om('reuniao');
   document.getElementById('rn-id').value=r.id;
   document.getElementById('rn-who').value=r.who;
+  document.getElementById('rn-ptype').value=r.personType||'';
+  document.getElementById('rn-pid').value=r.personId||'';
   document.getElementById('rn-data').value=r.data;
   document.getElementById('rn-hora').value=r.hora||'10:00';
   document.getElementById('rn-notas').value=r.notas||'';
-  document.getElementById('rn-title').textContent='✏️ Editar Reunião';
+  var e=R_ESTADOS[rEstado(r)]||R_ESTADOS.agendada;
+  document.getElementById('rn-title').textContent='✏️ '+(rPorFechar(r)?'Sessão por fechar':e.l==='Agendada'?'Editar reunião':'Reunião · '+e.l);
+  document.getElementById('rn-submit').textContent='Guardar';
   document.getElementById('rn-delete').style.display='inline-flex';
+  document.getElementById('rn-concluir').style.display=rEstado(r)==='agendada'?'inline-flex':'none';
+  document.getElementById('rn-concluir').className='btn '+(rPorFechar(r)?'bp':'bs');
   document.getElementById('rn-pessoa-ctx').style.display='none';
-  document.getElementById('rn-ctx').textContent='';
+  document.getElementById('rn-ctx').textContent=r.resumo?'Resumo: '+r.resumo:'';
   rnRenderTipos(r.tipo);
   rnUpdateSugestoes(r.tipo);
   rnRenderFormatos(r.formato||'Google Meet');
   if(r.waNum) document.getElementById('rn-wa-num').value=r.waNum;
   if(r.mapsAddr) document.getElementById('rn-maps-addr').value=r.mapsAddr;
-  // show action button
   var btn=rnGetActionBtn(r);
   var ab=document.getElementById('rn-action-btn');
-  if(btn){ ab.innerHTML=btn; ab.style.display='block'; }
+  if(btn&&rEstado(r)==='agendada'){ ab.innerHTML=btn; ab.style.display='block'; }
 }
 function resetReuniaoModal(presetData){
   document.getElementById('rn-id').value='';
   document.getElementById('rn-who').value='';
+  document.getElementById('rn-ptype').value='';
+  document.getElementById('rn-pid').value='';
   document.getElementById('rn-data').value=presetData||todayISO();
   document.getElementById('rn-hora').value='10:00';
   document.getElementById('rn-notas').value='';
   document.getElementById('rn-wa-num').value='';
   document.getElementById('rn-maps-addr').value='';
-  document.getElementById('rn-title').textContent='📅 Nova Reunião';
+  document.getElementById('rn-title').textContent='📅 Marcar reunião';
+  document.getElementById('rn-submit').textContent='Marcar';
   document.getElementById('rn-delete').style.display='none';
+  document.getElementById('rn-concluir').style.display='none';
   document.getElementById('rn-pessoa-ctx').style.display='none';
   document.getElementById('rn-ctx').textContent='';
   document.getElementById('rn-sugestoes').style.display='none';
@@ -2368,82 +2628,122 @@ function resetReuniaoModal(presetData){
   rnUpdateSugestoes('Sessão de acompanhamento');
   rnRenderFormatos('Google Meet');
 }
+function rnResolverPessoa(who){
+  var ptype=document.getElementById('rn-ptype').value;
+  var pid=parseInt(document.getElementById('rn-pid').value)||null;
+  if(ptype&&pid) return {ptype:ptype,pid:pid};
+  var m=DB.mentorados.find(function(x){return x.nome===who;}); if(m) return {ptype:'mentorado',pid:m.id};
+  var l=DB.leads.find(function(x){return x.nome===who;}); if(l) return {ptype:'lead',pid:l.id};
+  var e=DB.equipa.find(function(x){return x.nome===who;}); if(e) return {ptype:'equipa',pid:e.id};
+  return {ptype:null,pid:null};
+}
 function saveReuniao(){
-  const id=document.getElementById('rn-id').value;
-  const who=document.getElementById('rn-who').value.trim();
-  const data=document.getElementById('rn-data').value;
+  var id=parseInt(document.getElementById('rn-id').value)||0;
+  var who=document.getElementById('rn-who').value.trim();
+  var data=document.getElementById('rn-data').value;
+  var hora=document.getElementById('rn-hora').value;
   if(!who||!data){toast('Preenche com quem e a data','#C0392B');return;}
-  const fmt=document.getElementById('rn-formato').value;
-  const waNum=document.getElementById('rn-wa-num').value.replace(/\D/g,'');
-  const mapsAddr=document.getElementById('rn-maps-addr').value.trim();
-  var leadRef2=findLeadByPerson(who);
-  var leadId2=leadRef2?leadRef2.id:null;
-  var telRef=leadRef2?normalizeTel(leadRef2.contacto||''):(waNum||'');
-  const obj={who,leadId:leadId2,tel:telRef,data,hora:document.getElementById('rn-hora').value,tipo:document.getElementById('rn-tipo').value,notas:document.getElementById('rn-notas').value,formato:fmt,waNum:waNum||telRef,mapsAddr};
-  if(id){ Object.assign(DB.reunioes.find(x=>x.id===parseInt(id)),obj); }
-  else { DB.reunioes.push({...obj,id:uid()}); }
-  save(); renderAll();
-  // Show action button in modal
-  var r=DB.reunioes.find(function(x){return x.who===who&&x.data===data;});
-  if(r){ var btn=rnGetActionBtn(r); var ab=document.getElementById('rn-action-btn'); if(btn){ab.innerHTML=btn;ab.style.display='block';} }
-  toast(id?'✓ Atualizada':'✓ Reunião agendada com '+who);
+  var pp=rnResolverPessoa(who);
+  var fmt=document.getElementById('rn-formato').value;
+  var waNum=document.getElementById('rn-wa-num').value.replace(/\D/g,'');
+  var mapsAddr=document.getElementById('rn-maps-addr').value.trim();
+  var obj={who:who,personType:pp.ptype,personId:pp.pid,data:data,hora:hora,tipo:document.getElementById('rn-tipo').value,notas:document.getElementById('rn-notas').value,formato:fmt,waNum:waNum,mapsAddr:mapsAddr};
+  if(!id){
+    // Evita duplicados: mesma pessoa, mesmo dia e hora → atualiza
+    var dup=DB.reunioes.find(function(x){return rEstado(x)==='agendada'&&x.data===data&&(x.hora||'')===(hora||'')&&((pp.pid&&x.personType===pp.ptype&&x.personId===pp.pid)||x.who===who);});
+    if(dup) id=dup.id;
+  }
+  if(id){ Object.assign(DB.reunioes.find(function(x){return x.id===id;}),obj); }
+  else { DB.reunioes.push(Object.assign({id:uid(),estado:'agendada'},obj)); }
+  // Se for lead, o próximo contacto passa a ser esta reunião
+  if(pp.ptype==='lead'){ var l=DB.leads.find(function(x){return x.id===pp.pid;}); if(l&&(!l.proxData||l.proxData<=data)){ l.proxData=data; l.proxTipo='Reunião'; } }
+  save(); cm('reuniao'); renderAll();
+  toast(id?'✓ Reunião atualizada':'✓ Marcada com '+who+' · '+fmtDate(data)+(hora?' às '+hora:''));
 }
 function deleteReuniao(){
-  const id=parseInt(document.getElementById('rn-id').value);
-  DB.reunioes=DB.reunioes.filter(x=>x.id!==id);
-  save();cm('reuniao');renderAll();toast('Reunião removida','#C0392B');
+  var id=parseInt(document.getElementById('rn-id').value);
+  var r=DB.reunioes.find(function(x){return x.id===id;}); if(!r) return;
+  if(!confirm('Apagar a reunião com '+r.who+' de '+fmtDH(r)+'?')) return;
+  DB.reunioes=DB.reunioes.filter(function(x){return x.id!==id;});
+  save();cm('reuniao');renderAll();toast('Reunião apagada','#C0392B');
+}
+function rnConcluirAtual(){
+  var id=parseInt(document.getElementById('rn-id').value); if(!id) return;
+  openConcluir(id);
+}
+function leadsFollowUp(ateISO){
+  return DB.leads.filter(function(l){return l.proxData&&l.proxData<=ateISO&&!['fechado','perdido','standby'].includes(l.etapa);})
+    .sort(function(a,b){return a.proxData.localeCompare(b.proxData);});
+}
+function rAcaoLink(r){
+  var fmt=r.formato||'';
+  if(fmt==='Google Meet') return {txt:'📹 Meet',href:r.meetLink||'https://meet.google.com/new'};
+  if(fmt==='WhatsApp'){ var n=rTel(r); return {txt:'💬 WhatsApp',href:n?'https://wa.me/'+n+'?text='+encodeURIComponent('Olá '+r.who+'! Confirmo a nossa sessão '+(r.data===todayISO()?'hoje':'a '+fmtDate(r.data))+(r.hora?' às '+r.hora:'')+'.'):'https://web.whatsapp.com'}; }
+  if(fmt==='Presencial') return {txt:'📍 Maps',href:'https://maps.google.com/?q='+encodeURIComponent(r.mapsAddr||r.who+' Lisboa')};
+  return null;
 }
 const etaColors={'Sessão de acompanhamento':'#0B6E4F','Aula ao vivo — Comunidade':'#5B4FCF','Chamada SDR':'#C05621','Chamada Closer':'#B7791F','Reunião de equipa':'#444','Outro':'#444'};
 function renderAgenda(){
-  const days=weekDays(weekOffset);
-  document.getElementById('ag-range').textContent=`${fmtDate(days[0])} — ${fmtDate(days[6])}`;
-  document.getElementById('ag-week').innerHTML=days.map(d=>{
-    const evs=DB.reunioes.filter(r=>r.data===d).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
-    const isToday=d===todayISO();
-    return `<div class="day-col" style="${isToday?'border:1.5px solid #0C447C;background:#E6F1FB':''}">
-      <div style="font-size:10px;font-weight:600;color:${isToday?'#0C447C':'var(--g4)'};margin-bottom:5px;text-align:center">${dayLabel(d)}</div>
-      ${evs.length===0?'<div style="font-size:10px;color:var(--g4);text-align:center;padding:4px 0">—</div>':''}
-      ${evs.map(r=>{const c=etaColors[r.tipo]||'#444';var fmtIc=r.formato==='Google Meet'?'📹':r.formato==='WhatsApp'?'💬':r.formato==='Presencial'?'📍':'';
-          return `<div class="event-chip" style="background:${c}18;color:${c}" onclick="editReuniao(${r.id})"><div style="font-weight:600">${r.hora} ${r.who} ${fmtIc}</div><div style="font-size:10px;opacity:.8">${r.tipo}</div></div>`;}).join('')}
-      <button style="width:100%;margin-top:4px;padding:2px 0;font-size:10px;border:1px dashed var(--g6);border-radius:6px;background:transparent;cursor:pointer;color:var(--g4)" onclick="resetReuniaoModal('${d}');om('reuniao')">+</button>
-    </div>`;
+  var hoje=todayISO();
+  // ── HOJE ──
+  var abertas=porFecharTodas();
+  var deHoje=DB.reunioes.filter(function(r){return r.data===hoje&&rEstado(r)==='agendada'&&!rPorFechar(r);}).sort(byDT);
+  var follow=leadsFollowUp(hoje);
+  var linha=function(r,botoes){
+    var a=rAcaoLink(r);
+    return '<div class="ag-row"><div class="ag-when">'+(r.data===hoje?'':fmtDate(r.data)+'<br>')+'<b>'+(r.hora||'—')+'</b></div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600">'+esc(r.who)+'</div><div style="font-size:10.5px;color:var(--g4)">'+esc(r.tipo||'')+(r.formato?' · '+esc(r.formato):'')+'</div></div>'
+      +(a&&botoes!=='so-concluir'?'<a class="btn bs bsm" href="'+a.href+'" target="_blank" style="text-decoration:none">'+a.txt+'</a>':'')
+      +'<button class="btn bp bsm" onclick="openConcluir('+r.id+')">✅ Concluir</button></div>';
+  };
+  var h='';
+  if(abertas.length) h+='<div class="ag-sec" style="color:#854D0E">⚠ Por fechar · '+abertas.length+'</div>'+abertas.map(function(r){return linha(r,'so-concluir');}).join('');
+  h+='<div class="ag-sec">Hoje · '+deHoje.length+'</div>'+(deHoje.length?deHoje.map(function(r){return linha(r);}).join(''):'<div style="font-size:11.5px;color:var(--g4);padding:4px 0 8px">Sem reuniões hoje</div>');
+  if(follow.length) h+='<div class="ag-sec">Follow-ups de leads · '+follow.length+'</div>'+follow.map(function(l){
+      var tel=normalizeTel(l.contacto||'');
+      var atras=l.proxData<hoje;
+      return '<div class="ag-row"><div class="ag-when" style="color:'+(atras?'var(--re)':'var(--g4)')+'">'+fmtDate(l.proxData)+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600">'+esc(l.nome)+'</div><div style="font-size:10.5px;color:var(--g4)">'+esc(l.proxTipo||'Contacto')+' · '+((ETAPAS.find(function(e){return e.id===l.etapa;})||{l:l.etapa}).l)+'</div></div>'
+        +(tel?'<a class="btn bs bsm" href="https://wa.me/'+tel+'" target="_blank" style="text-decoration:none">💬</a>':'')
+        +'<button class="btn bs bsm" onclick="openMarcar(\'lead\','+l.id+')" title="Marcar reunião">📅</button>'
+        +'<button class="btn bp bsm" onclick="openProxContacto('+l.id+')">Feito → próximo</button></div>';
+    }).join('');
+  document.getElementById('ag-hoje').innerHTML=h;
+
+  // ── SEMANA ──
+  var days=weekDays(weekOffset);
+  document.getElementById('ag-range').textContent=fmtDate(days[0])+' — '+fmtDate(days[6]);
+  document.getElementById('ag-week').innerHTML=days.map(function(d){
+    var evs=DB.reunioes.filter(function(r){return r.data===d&&rEstado(r)!=='cancelada';}).sort(byDT);
+    var fus=DB.leads.filter(function(l){return l.proxData===d&&!['fechado','perdido','standby'].includes(l.etapa);});
+    var isToday=d===hoje;
+    return '<div class="day-col" style="'+(isToday?'border:1.5px solid #0C447C;background:#E6F1FB':'')+'">'
+      +'<div style="font-size:10px;font-weight:600;color:'+(isToday?'#0C447C':'var(--g4)')+';margin-bottom:5px;text-align:center">'+dayLabel(d)+'</div>'
+      +evs.map(function(r){
+        var c=etaColors[r.tipo]||'#444', est=rEstado(r), aberta=rPorFechar(r);
+        var ic=est==='realizada'?'✓ ':est==='faltou'?'✗ ':aberta?'⚠ ':'';
+        return '<div class="event-chip" style="background:'+c+'18;color:'+c+';'+(est!=='agendada'?'opacity:.55;':'')+(aberta?'outline:1.5px solid #E0B000;':'')+'" onclick="'+(aberta?'openConcluir':'editReuniao')+'('+r.id+')">'
+          +'<div style="font-weight:600">'+ic+(r.hora||'')+' '+esc(r.who)+'</div><div style="font-size:10px;opacity:.8">'+esc(r.tipo)+'</div></div>';
+      }).join('')
+      +fus.map(function(l){return '<div class="event-chip" style="border:1px dashed var(--g5,#bbb);color:var(--g3)" onclick="openProxContacto('+l.id+')"><div style="font-weight:600">↻ '+esc(l.nome)+'</div><div style="font-size:10px;opacity:.8">Follow-up</div></div>';}).join('')
+      +'<button style="width:100%;margin-top:4px;padding:2px 0;font-size:10px;border:1px dashed var(--g6);border-radius:6px;background:transparent;cursor:pointer;color:var(--g4)" onclick="openMarcar(null,null,\''+d+'\')">+</button>'
+      +'</div>';
   }).join('');
 
-  const upcoming=DB.reunioes.filter(r=>r.data>=todayISO()).sort((a,b)=>a.data.localeCompare(b.data)).slice(0,12);
-  document.getElementById('ag-upcoming').innerHTML = upcoming.length ? upcoming.map(r=>{
-    const c=etaColors[r.tipo]||'#444';
-    const isMentorado=DB.mentorados.find(m=>m.nome===r.who);
-    const isStandBy=DB.leads.find(l=>l.nome===r.who&&l.etapa==='standby');
-    const isLead=DB.leads.find(l=>l.nome===r.who&&!['fechado','perdido'].includes(l.etapa));
-    // action button
-    var fmtIcon='',fmtLink='',fmtColor='';
-    const lead2=DB.leads.find(l=>l.nome===r.who);
-    const phone2=(lead2&&lead2.contacto)?lead2.contacto.replace(/[^0-9]/g,''):(r.waNum||'');
-    if(r.formato==='Google Meet'){fmtIcon='📹';fmtLink=r.meetLink||'https://meet.google.com/new';fmtColor='var(--g)';}
-    else if(r.formato==='WhatsApp'){fmtIcon='💬';var wn=r.waNum||phone2;fmtLink=wn?'https://wa.me/'+wn+'?text='+encodeURIComponent('Olá '+r.who+'! Confirmo a nossa sessão às '+(r.hora||'')+' hoje.'):'https://web.whatsapp.com';fmtColor='#25D366';}
-    else if(r.formato==='Presencial'){fmtIcon='📍';fmtLink='https://maps.google.com/?q='+encodeURIComponent(r.mapsAddr||r.who+' Lisboa');fmtColor='var(--or)';}
-    return `<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--g6);align-items:flex-start">
-      <div style="min-width:66px;font-size:11px;color:var(--g4);text-align:right;padding-top:2px">${fmtDate(r.data)}<br><span style="font-weight:600;color:var(--bk)">${r.hora}</span></div>
-      <div style="width:3px;align-self:stretch;background:${c};border-radius:2px;flex-shrink:0"></div>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span style="font-size:12.5px;font-weight:600">${r.who}</span>
-          ${isMentorado?'<span class="tag tg" style="font-size:9.5px">Mentorado</span>':''}${isStandBy?'<span class="tag tb" style="font-size:9.5px">Stand By</span>':''}${isLead&&!isMentorado&&!isStandBy?'<span class="tag to" style="font-size:9.5px">Lead</span>':''}
-          ${r.formato?'<span style="font-size:10px;color:var(--g4)">'+( r.formato==='Google Meet'?'📹':r.formato==='WhatsApp'?'💬':r.formato==='Presencial'?'📍':'🌐')+' '+r.formato+'</span>':''}
-        </div>
-        <div style="font-size:11px;color:var(--g4);margin-top:1px">${r.tipo}</div>
-        ${r.notas?`<div style="font-size:11px;color:var(--g3);margin-top:3px;padding:4px 7px;background:var(--g7);border-radius:6px">${r.notas}</div>`:''}
-        ${fmtLink?`<div style="margin-top:7px"><a href="${fmtLink}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;font-size:11.5px;font-weight:600;text-decoration:none;background:${fmtColor}18;color:${fmtColor};border:1px solid ${fmtColor}40">${fmtIcon} ${r.formato==='Google Meet'?'Entrar no Meet':r.formato==='WhatsApp'?'Abrir WhatsApp':'Ver no Maps'}</a></div>`:''}
-      </div>
-      <button class="btn bd bsm" onclick="editReuniao(${r.id})">✏️</button>
-      <button class="btn bd bsm" onclick="DB.reunioes=DB.reunioes.filter(x=>x.id!==${r.id});save();renderAll()">×</button>
-    </div>`;
-  }).join('') : '<div class="empty">Sem reuniões próximas</div>';
-
-  const ovAg=document.getElementById('ov-agenda');
-  const weekNow=weekDays(0);
-  const html=weekNow.map(d=>{ const evs=DB.reunioes.filter(r=>r.data===d); if(!evs.length) return ''; return `<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--g4);font-weight:500;margin-bottom:3px">${dayLabel(d)}</div>${evs.map(r=>`<div style="font-size:11px;padding:4px 8px;background:#E6F1FB;border-radius:6px;margin-bottom:3px;color:#0C447C">${r.hora} · ${r.who}</div>`).join('')}</div>`; }).join('');
-  ovAg.innerHTML = html || '<div class="empty">Sem reuniões esta semana</div>';
+  // ── PRÓXIMAS ──
+  var upcoming=DB.reunioes.filter(function(r){return rEstado(r)==='agendada'&&!rPorFechar(r);}).sort(byDT).slice(0,12);
+  document.getElementById('ag-upcoming').innerHTML = upcoming.length ? upcoming.map(function(r){
+    var c=etaColors[r.tipo]||'#444', p=rPessoa(r), a=rAcaoLink(r);
+    var badge=p.tipo==='mentorado'?'<span class="tag tg" style="font-size:9.5px">Mentorado</span>':p.tipo==='lead'?'<span class="tag to" style="font-size:9.5px">Lead</span>':'';
+    return '<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--g6);align-items:center">'
+      +'<div style="min-width:66px;font-size:11px;color:var(--g4);text-align:right">'+fmtDate(r.data)+'<br><span style="font-weight:600;color:var(--bk)">'+(r.hora||'—')+'</span></div>'
+      +'<div style="width:3px;align-self:stretch;background:'+c+';border-radius:2px;flex-shrink:0"></div>'
+      +'<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-size:12.5px;font-weight:600">'+esc(r.who)+'</span>'+badge+'</div>'
+      +'<div style="font-size:11px;color:var(--g4);margin-top:1px">'+esc(r.tipo)+(r.formato?' · '+esc(r.formato):'')+'</div>'
+      +(r.notas?'<div style="font-size:11px;color:var(--g3);margin-top:3px">'+esc(r.notas)+'</div>':'')+'</div>'
+      +(a?'<a class="btn bs bsm" href="'+a.href+'" target="_blank" style="text-decoration:none">'+a.txt+'</a>':'')
+      +'<button class="btn bs bsm" onclick="editReuniao('+r.id+')">✏️</button></div>';
+  }).join('') : '<div class="empty">Sem reuniões marcadas</div>';
 }
 
 /* ═══ MARKETING ═══ */
@@ -2729,7 +3029,8 @@ function renderOverview(){
   const mes=DB.pagamentos.filter(function(p){return thisMonth(p.data)&&p.estado==='Pago';}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
   const desps=DB.despesas.filter(function(d){return thisMonth(d.data);}).reduce(function(s,d){return s+parseFloat(d.valor||0);},0);
   const abertos=DB.leads.filter(function(l){return !['fechado','perdido','standby'].includes(l.etapa);});
-  const proxR=DB.reunioes.filter(function(r){return r.data>=today;}).sort(function(a,b){return a.data.localeCompare(b.data);})[0];
+  const proxR=DB.reunioes.filter(function(r){return rEstado(r)==='agendada'&&!rPorFechar(r);}).sort(byDT)[0];
+  const abertasOv=porFecharTodas();
   const atrasados=DB.leads.filter(function(l){return l.proxData&&l.proxData<today&&!['fechado','perdido','standby'].includes(l.etapa);});
   const urgentes=DB.mentorados.filter(function(m){return m.estado==='Urgente';});
 
@@ -2741,7 +3042,8 @@ function renderOverview(){
   document.getElementById('ov-prox-sub').textContent=proxR?proxR.who:'';
 
   const alertsEl=document.getElementById('ov-alerts');
-  alertsEl.innerHTML=(atrasados.length||urgentes.length)?'<div class="al" style="background:#FEE8EB;color:var(--re);margin-bottom:12px">⚠ '+[...atrasados.map(function(l){return l.nome+' (contacto atrasado)';}), ...urgentes.map(function(m){return m.nome+' (urgente)';})].join(' · ')+'</div>':'';
+  alertsEl.innerHTML=(abertasOv.length?'<div class="al" style="background:#FFFBEA;border:1px solid #FEF08A;color:#854D0E;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer" onclick="document.querySelector(\'.ni[onclick*=agenda]\').click()"><span>⚠ '+abertasOv.length+' sessão'+(abertasOv.length>1?'ões':'')+' por fechar: '+abertasOv.map(function(r){return esc(r.who)+' ('+fmtDate(r.data)+')';}).join(' · ')+'</span><span class="btn bp bsm">Ver agenda</span></div>':'')
+    +((atrasados.length||urgentes.length)?'<div class="al" style="background:#FEE8EB;color:var(--re);margin-bottom:12px">⚠ '+[...atrasados.map(function(l){return esc(l.nome)+' (contacto atrasado)';}), ...urgentes.map(function(m){return esc(m.nome)+' (urgente)';})].join(' · ')+'</div>':'');
 
   // ── BAR CHART ── últimos 6 meses
   const meses6=[];
@@ -2836,10 +3138,11 @@ function renderOverview(){
   document.getElementById('ov-ment-semana').innerHTML=ativos.length?ativos.map(function(m){
     var sem=m.semana||0;
     var faseData=SEMANAS[sem];
-    var tarefasPend=(m.tarefas||[]).filter(function(t){return t.semana===sem&&!t.done;});
-    var tarefasOk=(m.tarefas||[]).filter(function(t){return t.semana===sem&&t.done;});
+    var tarefasPend=(m.tarefas||[]).filter(function(t){return !t.done;});
+    var tarefasOk=(m.tarefas||[]).filter(function(t){return t.done;});
+    var abertaM=sessaoPorFechar(m);
     var total=tarefasPend.length+tarefasOk.length;
-    var proxR2=DB.reunioes.filter(function(r){return r.who===m.nome&&r.data>=today;}).sort(function(a,b){return a.data.localeCompare(b.data);})[0];
+    var proxR2=proxSessao(m);
     var sugestoes=(PAUTA[sem]||[]).slice(0,3);
     return '<div style="padding:10px 12px;border-radius:10px;border:1px solid var(--g6);margin-bottom:8px;background:#FAFAFA">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
@@ -2848,9 +3151,10 @@ function renderOverview(){
       +'<div><div style="font-size:12.5px;font-weight:600">'+m.nome+'</div>'
       +'<div style="font-size:10.5px;color:var(--g4)">'+(faseData?faseData.e+' Sem. '+sem+' — '+faseData.l:'Concluído')+'</div></div></div>'
       +'<div style="display:flex;gap:5px;align-items:center">'
-      +(proxR2?'<span class="tag tb" style="font-size:9.5px">📅 '+fmtDate(proxR2.data)+'</span>':'')
+      +(abertaM?'<span class="tag ty" style="font-size:9.5px;cursor:pointer" onclick="openConcluir('+abertaM.id+')">⚠ por fechar</span>':'')
+      +(proxR2?'<span class="tag tb" style="font-size:9.5px">📅 '+fmtDate(proxR2.data)+'</span>':'<span class="tag tr" style="font-size:9.5px">sem sessão</span>')
       +(tarefasPend.length?'<span class="tag ty" style="font-size:9.5px">'+tarefasPend.length+' pendente'+(tarefasPend.length>1?'s':'')+'</span>':'<span class="tag tg" style="font-size:9.5px">✓ OK</span>')
-      +'<button class="btn bp bsm" style="font-size:10px;padding:3px 8px" onclick="openProxEncontro('+m.id+')">+ Sessão</button>'
+      +'<button class="btn bp bsm" style="font-size:10px;padding:3px 8px" onclick="openMarcar(\'mentorado\','+m.id+')">📅 Marcar</button>'
       +'</div></div>'
       // Progress bar
       +(total>0?'<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><div class="sbw"><div class="sbb" style="width:'+Math.round(tarefasOk.length/total*100)+'%;background:'+(tarefasPend.length?'var(--ye)':'var(--g)')+'"></div></div><span style="font-size:10px;color:var(--g4)">'+tarefasOk.length+'/'+total+' tarefas</span></div>':'')
@@ -2875,13 +3179,13 @@ function renderOverview(){
   // Agenda esta semana
   const weekNow=weekDays(0);
   const html=weekNow.map(function(d){
-    var evs=DB.reunioes.filter(function(r){return r.data===d;});
+    var evs=DB.reunioes.filter(function(r){return r.data===d&&rEstado(r)!=='cancelada';}).sort(byDT);
     if(!evs.length) return '';
     return '<div style="margin-bottom:7px">'
       +'<div style="font-size:10px;color:var(--g4);font-weight:500;margin-bottom:3px">'+dayLabel(d)+'</div>'
       +evs.map(function(r){
-        var isMent=DB.mentorados.find(function(m){return m.nome===r.who;});
-        return '<div style="font-size:11px;padding:4px 8px;border-radius:6px;margin-bottom:3px;background:'+(isMent?'var(--gl)':'#E6F1FB')+';color:'+(isMent?'#007A5A':'#0C447C')+'">'+r.hora+' · '+r.who+'</div>';
+        var isMent=rPessoa(r).tipo==='mentorado', est=rEstado(r);
+        return '<div style="font-size:11px;padding:4px 8px;border-radius:6px;margin-bottom:3px;cursor:pointer;background:'+(isMent?'var(--gl)':'#E6F1FB')+';color:'+(isMent?'#007A5A':'#0C447C')+(est!=='agendada'?';opacity:.55':'')+'" onclick="editReuniao('+r.id+')">'+(est==='realizada'?'✓ ':rPorFechar(r)?'⚠ ':'')+(r.hora||'')+' · '+esc(r.who)+'</div>';
       }).join('')+'</div>';
   }).join('');
   document.getElementById('ov-agenda').innerHTML=html||'<div class="empty">Sem reuniões</div>';
@@ -2891,7 +3195,7 @@ function renderCalendario(){
   var hoje=new Date();
   var limit=new Date(hoje); limit.setDate(limit.getDate()+30);
   var hojeISO=todayISO();
-  var limitISO=limit.toISOString().split('T')[0];
+  var limitISO=isoLocal(limit);
 
   // Entradas previstas
   var entradas=DB.pagamentos.filter(function(p){
@@ -2910,14 +3214,14 @@ function renderCalendario(){
   DB.despesas.filter(function(d){return d.recorrencia==='mensal'&&(!d.data||d.data<hojeISO);}).forEach(function(d){
     // project to this month
     var dt=new Date(hoje.getFullYear(),hoje.getMonth(),d.data?new Date(d.data+'T12:00:00').getDate():1);
-    var iso=dt.toISOString().split('T')[0];
+    var iso=isoLocal(dt);
     if(iso>=hojeISO&&iso<=limitISO&&!saidas.find(function(s){return s.desc===d.desc&&s.data===iso;})){
       saidas.push({data:iso,tipo:'saida',desc:d.desc+' 🔁',sub:d.categoria,valor:parseFloat(d.valor||0)});
     }
   });
 
   // Reuniões agendadas
-  var reunioes=DB.reunioes.filter(function(r){return r.data>=hojeISO&&r.data<=limitISO;}).map(function(r){
+  var reunioes=DB.reunioes.filter(function(r){return r.data>=hojeISO&&r.data<=limitISO&&rEstado(r)==='agendada';}).map(function(r){
     return {data:r.data,tipo:'reuniao',desc:r.who,sub:r.tipo+(r.hora?' · '+r.hora:''),valor:0};
   });
 
@@ -3077,6 +3381,8 @@ function saveVendaRapida(){
         notas:'Convertido do pipeline em '+todayISO()+' · Origem: '+(lead2.origem||'—'),
         origemLeadId:lead2.id
       });
+      var novoM=DB.mentorados[DB.mentorados.length-1];
+      DB.reunioes.forEach(function(r){ if(r.personType==='lead'&&r.personId===lead2.id){ r.personType='mentorado'; r.personId=novoM.id; } });
       novoMentorado=true;
     }
   }
@@ -3130,66 +3436,9 @@ const PAUTA_SEMANA={
   11:['Upsell e cross-sell','Fidelização de clientes','Aumentar ticket médio','Referidos e indicações'],
   12:['Balanço dos 90 dias','Plano de crescimento','Próximos objetivos','Celebração de resultados']
 };
-function peSetFormato(btn){
-  document.querySelectorAll('.pe-fmt-btn').forEach(b=>b.classList.remove('pe-fmt-on'));
-  btn.classList.add('pe-fmt-on');
-  document.getElementById('pe-tipo').value=btn.dataset.val;
-}
-function openProxEncontro(mentId){
-  const m=DB.mentorados.find(x=>x.id===mentId); if(!m) return;
-  document.getElementById('pe-mentid').value=mentId;
-  document.getElementById('pe-sub').textContent=m.nome+' · Semana '+(m.semana||0)+' de 12';
-  document.getElementById('pe-data').value=m.proxEncontro||todayISO();
-  document.getElementById('pe-hora').value=m.proxEncontroHora||'10:00';
-  document.getElementById('pe-assunto').value='';
-
-  // Set formato
-  const fmt=m.proxEncontroTipo||'Google Meet';
-  document.querySelectorAll('.pe-fmt-btn').forEach(b=>{
-    b.classList.toggle('pe-fmt-on', b.dataset.val===fmt);
-  });
-  document.getElementById('pe-tipo').value=fmt;
-
-  // Phase banner
-  const sem=m.semana||0;
-  const faseData=SEMANAS[sem];
-  const banner=document.getElementById('pe-fase-banner');
-  if(faseData){
-    document.getElementById('pe-fase-label').textContent=faseData.e+' '+faseData.l;
-    document.getElementById('pe-fase-semana').textContent='Semana '+sem+' de 12 — '+Math.round(sem/12*100)+'% concluído';
-    banner.style.display='block';
-  } else { banner.style.display='none'; }
-
-  // Suggestions
-  const sugs=PAUTA_SEMANA[sem]||[];
-  const sugWrap=document.getElementById('pe-sugestoes-wrap');
-  if(sugs.length){
-    document.getElementById('pe-sugestoes').innerHTML=sugs.map(function(s,i){ return '<button type="button" class="pe-sug-chip" onclick="peSelecionarPauta('+i+')">'+ s +'</button>'; }).join('');;
-    sugWrap.style.display='block';
-  } else { sugWrap.style.display='none'; }
-
-  document.getElementById('modal-prox-encontro').classList.add('open');
-}
-function peSelecionarPauta(idx){
-  var chips=document.getElementById('pe-sugestoes').querySelectorAll('.pe-sug-chip');
-  var texto=chips[idx]?chips[idx].textContent.trim():'';
-  if(!texto)return;
-  var el=document.getElementById('pe-assunto');
-  el.value=el.value?el.value+', '+texto:texto;
-}
-function saveProxEncontro(){
-  const mentId=parseInt(document.getElementById('pe-mentid').value);
-  const data=document.getElementById('pe-data').value;
-  const hora=document.getElementById('pe-hora').value;
-  const tipo=document.getElementById('pe-tipo').value;
-  const assunto=document.getElementById('pe-assunto').value.trim();
-  if(!data){toast('Escolhe uma data','#C0392B');return;}
-  const m=DB.mentorados.find(x=>x.id===mentId); if(!m) return;
-  m.proxEncontro=data; m.proxEncontroHora=hora; m.proxEncontroTipo=tipo;
-  DB.reunioes.push({id:uid(),who:m.nome,data:data,hora:hora,tipo:'Sessão de acompanhamento',notas:assunto||'Sessão '+tipo});
-  save();cm('prox-encontro');renderAll();toast('✓ Sessão agendada: '+fmtDate(data)+' às '+hora);
-}
-
+// Atalhos antigos → fluxo único
+function openProxEncontro(mentId){ openMarcar('mentorado',mentId); }
+function openSessao(mentId){ concluirMentorado(mentId); }
 
 /* ═══ PESQUISA DE CLIENTE (PAGAMENTO) ═══ */
 function pgBuildClientes(){
@@ -3330,49 +3579,85 @@ function mobNav(id){
 */
 var DB_MODE = (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_KEY) ? 'supabase' : 'local';
 
-async function dbSave(data){
-  // Local (sempre disponível)
-  try{ localStorage.setItem('hub_advance_v3_db', JSON.stringify(data)); }catch(e){}
-
-  // Supabase sync (quando configurado)
-  if(DB_MODE==='supabase'){
+/* ── PROTEÇÃO DOS DADOS ──
+   _loadOK só fica true quando os dados vieram mesmo da nuvem.
+   Enquanto for false, NADA é gravado (evita apagar o Supabase com uma base vazia). */
+var _loadOK=false, _lastSyncAt=null, _loadedTotal=0, _saveChain=Promise.resolve(), _conflito=false;
+function dbTotal(x){ x=x||{}; return (x.mentorados||[]).length+(x.leads||[]).length+(x.pagamentos||[]).length+(x.reunioes||[]).length; }
+function dbBanner(tipo){
+  var el=document.getElementById('db-banner'); if(!el) return;
+  if(!tipo){ el.style.display='none'; el.innerHTML=''; return; }
+  var msg = tipo==='load'
+    ? '⚠ Não foi possível carregar os dados da nuvem. Está a ver uma cópia local e <b>nada será gravado</b> até recarregar.'
+    : tipo==='conflito'
+    ? '⚠ Os dados foram alterados noutro dispositivo. A sua última alteração <b>não foi gravada</b> para não apagar a outra.'
+    : '⚠ Falha ao gravar na nuvem. Verifique a ligação à internet.';
+  el.innerHTML='<span style="flex:1">'+msg+'</span><button class="btn bp bsm" onclick="location.reload()">Recarregar</button>';
+  el.style.display='flex';
+}
+function dbSave(data){
+  if(DB_MODE==='supabase' && !_loadOK){ dbBanner('load'); toast('⚠ Nada foi gravado — dados não carregados','#C0392B'); return _saveChain; }
+  if(_conflito){ dbBanner('conflito'); toast('⚠ Recarregue antes de alterar','#C0392B'); return _saveChain; }
+  if(_loadedTotal>5 && dbTotal(data)===0){ toast('⚠ Gravação bloqueada: a base ficaria vazia','#C0392B'); return _saveChain; }
+  var payload=JSON.stringify(data);
+  try{ localStorage.setItem('hub_advance_v3_db', payload); }catch(e){}
+  if(DB_MODE!=='supabase') return _saveChain;
+  _saveChain=_saveChain.then(async function(){
+    var h={'apikey':CONFIG.SUPABASE_KEY,'Authorization':'Bearer '+CONFIG.SUPABASE_KEY};
     try{
-      await fetch(CONFIG.SUPABASE_URL+'/rest/v1/'+CONFIG.SUPABASE_TABLE+'?id=eq.1', {
+      // Conflito: alguém gravou noutro dispositivo depois do último carregamento?
+      var chk=await fetch(CONFIG.SUPABASE_URL+'/rest/v1/'+CONFIG.SUPABASE_TABLE+'?id=eq.1&select=updated_at',{headers:h,cache:'no-store'});
+      var cr=await chk.json();
+      var remoto=cr&&cr[0]&&cr[0].updated_at;
+      if(remoto && _lastSyncAt && new Date(remoto).getTime()>new Date(_lastSyncAt).getTime()+500){
+        _conflito=true; dbBanner('conflito'); return;
+      }
+      var agora=new Date().toISOString();
+      var res=await fetch(CONFIG.SUPABASE_URL+'/rest/v1/'+CONFIG.SUPABASE_TABLE+'?id=eq.1',{
         method:'PUT',
-        headers:{
-          'apikey':CONFIG.SUPABASE_KEY,
-          'Authorization':'Bearer '+CONFIG.SUPABASE_KEY,
-          'Content-Type':'application/json',
-          'Prefer':'resolution=merge-duplicates'
-        },
-        body:JSON.stringify({id:1,data:JSON.stringify(data),updated_at:new Date().toISOString()})
+        headers:Object.assign({'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},h),
+        body:JSON.stringify({id:1,data:payload,updated_at:agora})
       });
-    }catch(e){ console.warn('Supabase sync failed, using local:',e); }
-  }
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      _lastSyncAt=agora;
+    }catch(e){ console.warn('Supabase sync failed:',e); dbBanner('save'); }
+  });
+  return _saveChain;
 }
 
 async function dbLoad(){
-  // Try Supabase first
   if(DB_MODE==='supabase'){
-    try{
-      var res=await fetch(CONFIG.SUPABASE_URL+'/rest/v1/'+CONFIG.SUPABASE_TABLE+'?id=eq.1&select=data',{
-        headers:{'apikey':CONFIG.SUPABASE_KEY,'Authorization':'Bearer '+CONFIG.SUPABASE_KEY}
-      });
-      var rows=await res.json();
-      if(rows&&rows[0]&&rows[0].data){
-        var parsed=JSON.parse(rows[0].data);
-        Object.assign(DB,parsed);
-        document.getElementById('sb-db-badge').textContent='🟢 Supabase';
-        document.getElementById('sb-db-badge').style.color='#00B37A';
-        return;
-      }
-    }catch(e){ console.warn('Supabase load failed, falling back to local'); }
+    var h={'apikey':CONFIG.SUPABASE_KEY,'Authorization':'Bearer '+CONFIG.SUPABASE_KEY};
+    for(var tentativa=0;tentativa<3;tentativa++){
+      try{
+        var res=await fetch(CONFIG.SUPABASE_URL+'/rest/v1/'+CONFIG.SUPABASE_TABLE+'?id=eq.1&select=data,updated_at',{headers:h,cache:'no-store'});
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        var rows=await res.json();
+        if(Array.isArray(rows)){
+          if(rows[0]&&rows[0].data){
+            Object.assign(DB,JSON.parse(rows[0].data));
+            _lastSyncAt=rows[0].updated_at||null;
+          }
+          _loadOK=true; _loadedTotal=dbTotal(DB);
+          document.getElementById('sb-db-badge').textContent='🟢 Supabase';
+          document.getElementById('sb-db-badge').style.color='#00B37A';
+          dbBanner(null);
+          return;
+        }
+      }catch(e){ console.warn('Supabase load failed (tentativa '+(tentativa+1)+')',e); }
+      await new Promise(function(r){setTimeout(r,800*(tentativa+1));});
+    }
+    // Falhou: mostra cópia local só para consulta, sem gravar
+    _loadOK=false;
+    try{ var d=localStorage.getItem('hub_advance_v3_db'); if(d) Object.assign(DB,JSON.parse(d)); }catch(e){}
+    document.getElementById('sb-db-badge').textContent='🔴 Sem ligação';
+    document.getElementById('sb-db-badge').style.color='#C0392B';
+    dbBanner('load');
+    return;
   }
-  // Fallback: localStorage
-  try{
-    var d=localStorage.getItem('hub_advance_v3_db');
-    if(d) Object.assign(DB,JSON.parse(d));
-  }catch(e){}
+  _loadOK=true;
+  try{ var d2=localStorage.getItem('hub_advance_v3_db'); if(d2) Object.assign(DB,JSON.parse(d2)); }catch(e){}
+  _loadedTotal=dbTotal(DB);
   document.getElementById('sb-db-badge').textContent='● Local';
 }
 
@@ -3391,6 +3676,7 @@ function load(){ /* handled by initApp */ }
 async function initApp(){
   updateDbStatus();
   await dbLoad();
+  if(migrarDB() && _loadOK) save();
   rnRenderTipos('Sessão de acompanhamento');
   rnUpdateSugestoes('Sessão de acompanhamento');
   rnRenderFormatos('Google Meet');
@@ -3492,64 +3778,5 @@ window.addEventListener('appinstalled',function(){ pwaDismiss(); toast('✓ App 
   <button class="btn bp" style="width:100%" onclick="saveProxContacto()">Guardar</button>
 </div></div>
 
-<!-- MODAL PRÓXIMO ENCONTRO MENTORADO -->
-<div class="mo" id="modal-prox-encontro"><div class="mbox" style="max-width:420px">
-  <div class="mh">
-    <div>
-      <div class="mt">📅 Próximo encontro</div>
-      <div id="pe-sub" style="font-size:11px;color:var(--g4);margin-top:2px"></div>
-    </div>
-    <span class="mx" onclick="cm('prox-encontro')">✕</span>
-  </div>
-  <input type="hidden" id="pe-mentid">
-
-  <!-- Fase atual do mentorado -->
-  <div id="pe-fase-banner" style="display:none;border-radius:9px;padding:9px 12px;margin-bottom:12px;background:var(--g7);border:1px solid var(--g6)">
-    <div style="font-size:10px;color:var(--g4);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">Fase atual do processo</div>
-    <div id="pe-fase-label" style="font-size:13px;font-weight:600"></div>
-    <div id="pe-fase-semana" style="font-size:11px;color:var(--g4);margin-top:1px"></div>
-  </div>
-
-  <!-- Sugestões de pauta baseadas na fase -->
-  <div id="pe-sugestoes-wrap" style="display:none;margin-bottom:12px">
-    <div style="font-size:11px;color:var(--g4);margin-bottom:6px;font-weight:500">Sugestões de pauta para esta fase</div>
-    <div id="pe-sugestoes" style="display:flex;flex-wrap:wrap;gap:5px"></div>
-  </div>
-
-  <div class="fr fg">
-    <div><label class="fl">Data</label><input type="date" class="fi" id="pe-data"></div>
-    <div><label class="fl">Hora</label><input type="time" class="fi" id="pe-hora" value="10:00"></div>
-  </div>
-
-  <div class="fg">
-    <label class="fl">Formato</label>
-    <div style="display:flex;gap:6px;flex-wrap:wrap" id="pe-formato-btns">
-      <button type="button" class="pe-fmt-btn pe-fmt-on" data-val="Google Meet" onclick="peSetFormato(this)">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>
-        Google Meet
-      </button>
-      <button type="button" class="pe-fmt-btn" data-val="WhatsApp" onclick="peSetFormato(this)">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        WhatsApp
-      </button>
-      <button type="button" class="pe-fmt-btn" data-val="Presencial" onclick="peSetFormato(this)">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3"/><path d="M6 20v-1a6 6 0 0112 0v1"/></svg>
-        Presencial
-      </button>
-      <button type="button" class="pe-fmt-btn" data-val="Gravação enviada" onclick="peSetFormato(this)">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-        Gravação
-      </button>
-    </div>
-    <input type="hidden" id="pe-tipo" value="Google Meet">
-  </div>
-
-  <div class="fg">
-    <label class="fl">Pauta da sessão</label>
-    <textarea class="fi" id="pe-assunto" rows="2" placeholder="O que vai ser trabalhado nesta sessão..."></textarea>
-  </div>
-
-  <button class="btn bp" style="width:100%" onclick="saveProxEncontro()">Agendar encontro</button>
-</div></div>
 </body>
 </html>
