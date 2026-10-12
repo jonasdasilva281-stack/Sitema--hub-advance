@@ -9,10 +9,10 @@
 <meta name="apple-mobile-web-app-title" content="Hub Advance">
 <meta name="theme-color" content="#0C0C12">
 <link rel="manifest" id="pwa-manifest">
-<link rel="icon" href="/favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png?v=2">
-<link rel="apple-touch-icon" id="pwa-apple-icon" href="/apple-touch-icon.png?v=2">
+<link rel="icon" href="favicon.ico?v=2" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=2">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png?v=2">
+<link rel="apple-touch-icon" id="pwa-apple-icon" href="apple-touch-icon.png?v=2">
 <title>Hub Advance — Gestão Completa</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
@@ -4301,8 +4301,8 @@ window.addEventListener('load',function(){
     theme_color:'#0C0C12',
     orientation:'portrait',
     icons:[
-      {src:location.origin+'/icon-512.png',sizes:'512x512',type:'image/png'},
-      {src:location.origin+'/icon-192.png',sizes:'192x192',type:'image/png'}
+      {src:new URL('icon-512.png',location.href).href,sizes:'512x512',type:'image/png'},
+      {src:new URL('icon-192.png',location.href).href,sizes:'192x192',type:'image/png'}
     ]
   };
   var blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
