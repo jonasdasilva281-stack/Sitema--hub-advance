@@ -1755,6 +1755,42 @@ function migrarGestaoWeb(){
   return true;
 }
 
+/* ── MIGRAÇÃO 6: correção das compras dos clientes (confirmado pelo Jonas a 12/10/2026) ── */
+function migrarCorrecoesCompras(){
+  if((DB.schema||1)>=6) return false;
+  DB.vendas=DB.vendas||[];
+  var venda=function(g){return DB.vendas.find(function(v){return v.grupoId===g;});};
+  // Beatriz: os €30 eram a Comunidade, não a mentoria
+  var pb=DB.pagamentos.find(function(x){return x.id===337&&x.cliente==='Beatriz';});
+  var com=prodPorNome('Comunidade €30/mês');
+  if(com&&!com.entregaveis) com.entregaveis=[{u:'acesso',q:1,mensal:true}]; // o cliente recebe acesso; as 2h/mês são o seu tempo
+  if(pb&&com){
+    pb.produto=com.nome; pb.valorTotal=30;
+    var vb=venda(vendaGrupo(pb));
+    if(vb){ vb.produtoId=com.id; vb.produto=com.nome; vb.itens=entregaveisDe(com).map(function(e){return {u:e.u,q:e.q,mensal:!!e.mensal};}); vb.registos=[]; atualizarEstadoVenda(vb); }
+  }
+  // Dalva: os 2 livros digitais estão certos (acerta o total do de €20)
+  DB.pagamentos.forEach(function(x){ if(x.cliente==='Dalva Andrade'&&x.produto==='Livro Digital'&&parseFloat(x.valor)===20) x.valorTotal=20; });
+  // Dalva: 1ª parcela do acompanhamento (julho) foi paga
+  var temP1=DB.pagamentos.some(function(x){return x.grupoId===236&&x.parcela===1;});
+  if(!temP1&&DB.pagamentos.some(function(x){return x.grupoId===236;})){
+    DB.pagamentos.push({id:uid(),grupoId:236,cliente:'Dalva Andrade',data:'2026-07-05',produto:'Acompanhamento €697',valor:58.08,valorTotal:697,parcela:1,totalParcelas:12,estado:'Pago',formaPagamento:'Cartão de Débito'});
+    var vd=venda(236); if(vd) vd.data='2026-07-05';
+  }
+  // Mentorados sem compra: já pagaram tudo (data aproximada: entrada no sistema, 01/07)
+  [['Romario e Mara','Plano de Négocio'],['Daividson','Plano de Négocio'],['Elisabeth','Plano de Négocio'],['Cris Feliz','Acompanhamento €697']].forEach(function(c){
+    var cliente=c[0], prod=prodPorNome(c[1]); if(!prod) return;
+    if(DB.pagamentos.some(function(x){return x.cliente===cliente;})) return;
+    var g=uid();
+    DB.pagamentos.push({id:uid(),grupoId:g,cliente:cliente,data:'2026-07-01',produto:prod.nome,valor:prod.valor,valorTotal:prod.valor,parcela:1,totalParcelas:1,estado:'Pago',formaPagamento:'Outro'});
+    var v=criarVenda(g,cliente,prod.nome,'2026-07-01');
+    var m=DB.mentorados.find(function(x){return x.nome===cliente;});
+    if(m) sessoesDe(m).filter(function(r){return rEstado(r)==='realizada';}).forEach(function(r){ registarEncontroEntregue(m,r); });
+  });
+  DB.schema=6;
+  return true;
+}
+
 /* ── MARCAR (um só formulário para tudo) ── */
 function openMarcar(ptype,pid,presetData){
   resetReuniaoModal(presetData);
@@ -4105,7 +4141,7 @@ function load(){ /* handled by initApp */ }
 async function initApp(){
   updateDbStatus();
   await dbLoad();
-  var mudou=migrarDB(); mudou=migrarPrecos()||mudou; mudou=migrarVendas()||mudou; mudou=migrarGestaoWeb()||mudou;
+  var mudou=migrarDB(); mudou=migrarPrecos()||mudou; mudou=migrarVendas()||mudou; mudou=migrarGestaoWeb()||mudou; mudou=migrarCorrecoesCompras()||mudou;
   if(mudou && _loadOK) save();
   rnRenderTipos('Sessão de acompanhamento');
   rnUpdateSugestoes('Sessão de acompanhamento');
