@@ -845,7 +845,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
   </div>
   <div class="fr fg">
     <div><label class="fl">Score</label><select class="fi" id="mt-score"><option value="A">A — Excelente</option><option value="B">B — Médio</option><option value="C">C — Atenção</option></select></div>
-    <div><label class="fl">Estado</label><select class="fi" id="mt-estado"><option>Ativo</option><option>Atenção</option><option>Urgente</option></select></div>
+    <div><label class="fl">Estado</label><select class="fi" id="mt-estado"><option>Ativo</option><option>Atenção</option><option>Urgente</option><option>Stand by</option><option>Concluído</option></select></div>
   </div>
   <div class="fg"><label class="fl">Notas iniciais</label><textarea class="fi" id="mt-notas" placeholder="Contexto, objetivos, desafios principais..."></textarea></div>
   <button class="btn bp" style="width:100%" onclick="saveMentorado()">Guardar</button>
@@ -1565,7 +1565,7 @@ function renderPipeline(){
 
 /* ═══ MENTORADOS ═══ */
 const scoreColor={A:'#0B6E4F',B:'#B7791F',C:'#C0392B'};
-const estadoCls={Ativo:'tg',Atenção:'ty',Urgente:'tr'};
+const estadoCls={Ativo:'tg',Atenção:'ty',Urgente:'tr','Stand by':'tb','Concluído':'tgr'};
 function mtNichoChange(sel){
   document.getElementById('mt-nicho-outro').style.display=sel.value==='Outro'?'block':'none';
 }
@@ -1802,6 +1802,40 @@ function migrarCorrecoesCompras(){
   return true;
 }
 
+/* ── MIGRAÇÃO 8: acertos confirmados pelo Jonas a 12/10/2026 ── */
+function migrarAcertos2(){
+  if((DB.schema||1)>=8) return false;
+  // Dalva: só pagou a 1ª parcela; os livros saem; está em stand by
+  var livros=DB.pagamentos.filter(function(x){return x.cliente==='Dalva Andrade'&&x.produto==='Livro Digital';});
+  var gl=livros.map(vendaGrupo);
+  DB.pagamentos=DB.pagamentos.filter(function(x){return livros.indexOf(x)<0;});
+  DB.vendas=(DB.vendas||[]).filter(function(v){return gl.indexOf(v.grupoId)<0;});
+  var dalva=DB.mentorados.find(function(x){return x.nome==='Dalva Andrade';}); if(dalva) dalva.estado='Stand by';
+  // Planos de Negócio pagos à vista: um por cada mês sem faturação
+  [['Romario e Mara','2026-03-01'],['Daividson','2026-04-01'],['Elisabeth','2026-05-01']].forEach(function(c){
+    var ps=DB.pagamentos.filter(function(x){return x.cliente===c[0]&&x.produto==='Plano de Négocio';});
+    ps.forEach(function(x){ x.data=c[1]; x.estado='Pago'; });
+    (DB.vendas||[]).forEach(function(v){ if(v.cliente===c[0]&&v.produto==='Plano de Négocio') v.data=c[1]; });
+  });
+  // Cris Feliz: acompanhamento oferecido para testar o método (€0), de janeiro a abril — concluído
+  var cris=DB.mentorados.find(function(x){return x.nome==='Cris Feliz';});
+  var pc=DB.pagamentos.filter(function(x){return x.cliente==='Cris Feliz';});
+  var g=pc.length?vendaGrupo(pc[0]):uid();
+  pc.forEach(function(x){ x.valor=0; x.valorTotal=0; x.data='2026-01-01'; x.estado='Pago'; x.formaPagamento='Oferta'; });
+  if(!pc.length) DB.pagamentos.push({id:uid(),grupoId:g,cliente:'Cris Feliz',data:'2026-01-01',produto:'Acompanhamento €697',valor:0,valorTotal:0,parcela:1,totalParcelas:1,estado:'Pago',formaPagamento:'Oferta'});
+  var vc=(DB.vendas||[]).find(function(v){return v.grupoId===g;}) || criarVenda(g,'Cris Feliz','Acompanhamento €697','2026-01-01');
+  vc.data='2026-01-01'; vc.oferta=true; vc.valorTotal=0;
+  vc.itens.forEach(function(it,i){
+    if(it.mensal||it.u==='acesso') return;
+    var falta=it.q-itemFeito(vc,i);
+    if(falta>0) vc.registos.push({id:uid(),i:i,q:falta,data:'2026-04-30',nota:'Processo finalizado em abril (oferta para testar o método)'});
+  });
+  atualizarEstadoVenda(vc);
+  if(cris){ cris.estado='Concluído'; cris.semana=12; }
+  DB.schema=8;
+  return true;
+}
+
 /* ── MARCAR (um só formulário para tudo) ── */
 function openMarcar(ptype,pid,presetData){
   resetReuniaoModal(presetData);
@@ -2022,7 +2056,9 @@ function moverSemana(dir){
 /* ── CARTÃO DO MENTORADO ── */
 function renderMentorados(){
   document.getElementById('nb-ment').textContent=DB.mentorados.length;
-  document.getElementById('mentorados-list').innerHTML = DB.mentorados.length ? DB.mentorados.map(function(m,idx){
+  var ordemEst={'Urgente':0,'Atenção':1,'Ativo':2,'Stand by':3,'Concluído':4,'Inativo':5};
+  var lista=DB.mentorados.slice().sort(function(a,b){return (ordemEst[a.estado]==null?2:ordemEst[a.estado])-(ordemEst[b.estado]==null?2:ordemEst[b.estado]);});
+  document.getElementById('mentorados-list').innerHTML = lista.length ? lista.map(function(m,idx){
     var prox=proxSessao(m), ult=ultimaSessao(m), aberta=sessaoPorFechar(m);
     var totalPago=DB.pagamentos.filter(function(p){return p.cliente===m.nome&&p.estado==='Pago';}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
     var sem=m.semana||0, fase=SEMANAS[sem];
@@ -2030,7 +2066,10 @@ function renderMentorados(){
     var dUlt=ult?diasDesde(ult.data):null;
     var tel=m.tel||m.contacto;
     var corBorda=estadoCls[m.estado]==='tr'?'var(--re)':estadoCls[m.estado]==='ty'?'var(--ye)':'var(--g)';
-    return '<div class="card" style="margin-bottom:10px;border-left:3px solid '+corBorda+'">'
+    var parado=m.estado==='Concluído'||m.estado==='Stand by';
+    if(m.estado==='Stand by') corBorda='#0C447C';
+    if(m.estado==='Concluído') corBorda='var(--g6)';
+    return '<div class="card" style="margin-bottom:10px;border-left:3px solid '+corBorda+(parado?';opacity:.75':'')+'">'
       // Cabeçalho
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">'
         +'<div style="display:flex;gap:10px;align-items:center">'
@@ -3400,7 +3439,7 @@ function renderOverview(){
 
   // ── MENTORADOS ESTA SEMANA ──
   const PAUTA=PAUTA_SEMANA||{};
-  const ativos=DB.mentorados.filter(function(m){return m.estado!=='Inativo';});
+  const ativos=DB.mentorados.filter(function(m){return ['Inativo','Concluído','Stand by'].indexOf(m.estado)<0;});
   document.getElementById('ov-ment-sub').textContent=ativos.length+' mentorado'+(ativos.length!==1?'s':'');
   document.getElementById('ov-ment-semana').innerHTML=ativos.length?ativos.map(function(m){
     var sem=m.semana||0;
@@ -3759,7 +3798,7 @@ function renderEntregas(){
     return '<div class="card" style="margin-bottom:10px">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-bottom:8px">'
         +'<div><div style="font-size:13px;font-weight:600">'+esc(v.cliente)+' '+est+'</div>'
-        +'<div style="font-size:11px;color:var(--g4)">'+esc(prodNomeC(v))+' · comprado a '+fmtDate(v.data)+' · pago <b style="color:var(--g)">€'+pago.toFixed(0)+'</b> de €'+total.toFixed(0)+'</div></div>'
+        +'<div style="font-size:11px;color:var(--g4)">'+esc(prodNomeC(v))+' · comprado a '+fmtDate(v.data)+(v.oferta?' · <b>oferta</b>':' · pago <b style="color:var(--g)">€'+pago.toFixed(0)+'</b> de €'+total.toFixed(0))+'</div></div>'
         +'<button class="btn bs bsm" onclick="terminarVenda('+v.id+')">'+(v.estado==='terminada'?'Reabrir':'Terminar')+'</button>'
       +'</div>'
       +(!v.produtoId?'<div class="fg"><select class="fi" onchange="ligarVendaProduto('+v.id+',this)"><option value="">— Escolher produto —</option>'+prodOpts+'</select></div>':'')
@@ -4152,7 +4191,7 @@ function load(){ /* handled by initApp */ }
 async function initApp(){
   updateDbStatus();
   await dbLoad();
-  var mudou=migrarDB(); mudou=migrarPrecos()||mudou; mudou=migrarVendas()||mudou; mudou=migrarGestaoWeb()||mudou; mudou=migrarCorrecoesCompras()||mudou;
+  var mudou=migrarDB(); mudou=migrarPrecos()||mudou; mudou=migrarVendas()||mudou; mudou=migrarGestaoWeb()||mudou; mudou=migrarCorrecoesCompras()||mudou; mudou=migrarAcertos2()||mudou;
   if(mudou && _loadOK) save();
   rnRenderTipos('Sessão de acompanhamento');
   rnUpdateSugestoes('Sessão de acompanhamento');
