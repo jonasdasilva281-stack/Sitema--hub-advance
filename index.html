@@ -481,7 +481,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
         <div style="font-size:16px;margin-bottom:3px">🎯</div>
         <div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:2px">Mentoria Individual</div>
         <div style="font-size:15px;font-weight:700;color:#fff">€997</div>
-        <div style="font-size:9px;color:rgba(255,255,255,.65);margin-top:2px">6 meses · 1 encontro/mês</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.65);margin-top:2px">12 encontros · 6 meses</div>
         <div style="font-size:9px;color:rgba(255,255,255,.45)">Inclui Curso + Comunidade</div>
       </div>
     </div>
@@ -688,7 +688,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
 
   <!-- PRODUTOS -->
   <div class="panel" id="p-produtos">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn bp" onclick="om('produto')">+ Produto</button></div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn bp" onclick="novoProduto()">+ Produto</button></div>
     <div class="g3" id="produtos-grid"></div>
   </div>
 
@@ -1047,11 +1047,22 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
 
 <!-- MODAL PRODUTO -->
 <div class="mo" id="modal-produto"><div class="mbox">
-  <div class="mh"><div class="mt">📦 Novo Produto</div><span class="mx" onclick="cm('produto')">✕</span></div>
+  <div class="mh"><div class="mt" id="pd-title">📦 Novo Produto</div><span class="mx" onclick="cm('produto')">✕</span></div>
+  <input type="hidden" id="pd-id">
   <div class="fg"><label class="fl">Nome</label><input class="fi" id="pd-nome"></div>
+  <div class="fg" style="background:var(--g7);border:1px solid var(--g6);border-radius:10px;padding:10px 12px">
+    <div style="font-size:12px;font-weight:600;margin-bottom:6px">🧮 Regra de preço <span style="font-weight:400;color:var(--g4)">— mínimo €25/h · recomendado €45/h</span></div>
+    <div class="fr">
+      <div><label class="fl">Horas para criar/entregar</label><input type="number" class="fi" id="pd-horas" min="0" step="0.5" placeholder="Ex: 6" oninput="pdCalcPreco()"></div>
+      <div><label class="fl">Horas por mês depois</label><input type="number" class="fi" id="pd-horasmes" min="0" step="0.5" placeholder="0 se não tiver" oninput="pdCalcPreco()"></div>
+    </div>
+    <label style="display:flex;gap:7px;align-items:center;font-size:12px;margin-top:8px;cursor:pointer"><input type="checkbox" id="pd-digital" style="accent-color:var(--g)" onchange="pdCalcPreco()">Produto digital (cria uma vez, vende muitas vezes)</label>
+    <div class="fg" style="margin:8px 0 0"><label class="fl">Duração do serviço (meses) <span style="font-weight:400;color:var(--g4)">— para as prestações</span></label><input type="number" class="fi" id="pd-meses" min="0" placeholder="Ex: 6" oninput="pdCalcPreco()"></div>
+    <div id="pd-calc" style="font-size:11.5px;color:var(--g3);margin-top:8px;line-height:1.6"></div>
+  </div>
   <div class="fg"><label class="fl">Nome curto</label><input class="fi" id="pd-nomec"></div>
   <div class="fr fg">
-    <div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pd-valor-input" placeholder="0.00" oninput="pdCalcParcela()"></div>
+    <div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pd-valor-input" placeholder="0.00" oninput="pdCalcParcela();pdCalcPreco()"></div>
     <div><label class="fl">Tipo de cobrança</label>
       <select class="fi" id="pd-tipo" onchange="pdToggleTipo()">
         <option value="unico">Único — pagamento único</option>
@@ -1062,7 +1073,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
   </div>
   <!-- Parcelado: número de parcelas -->
   <div class="fr fg" id="pd-parcelas-wrap" style="display:none">
-    <div><label class="fl">Nº de parcelas</label><input type="number" class="fi" id="pd-parcelas" min="2" max="24" placeholder="Ex: 12" oninput="pdCalcParcela()"></div>
+    <div><label class="fl">Nº de parcelas</label><input type="number" class="fi" id="pd-parcelas" min="2" max="24" placeholder="Ex: 6" oninput="pdCalcParcela();pdCalcPreco()"></div>
     <div><label class="fl">Valor/parcela</label><div class="fi" id="pd-parcela-calc" style="background:var(--g7);color:var(--g4);display:flex;align-items:center;font-size:13px">—</div></div>
   </div>
   <!-- Recorrente: até quando -->
@@ -1081,7 +1092,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div id="pd-ate-wrap" style="display:none"><label class="fl">Até quando</label><input type="date" class="fi" id="pd-ate"></div>
   </div>
   <div class="fg"><label class="fl">Descrição</label><input class="fi" id="pd-desc" placeholder="O que está incluído..."></div>
-  <button class="btn bp" style="width:100%" onclick="saveProduto()">Criar</button>
+  <button class="btn bp" style="width:100%" id="pd-submit" onclick="saveProduto()">Criar</button>
 </div></div>
 
 <!-- MODAL MEMBRO -->
@@ -1665,6 +1676,31 @@ function migrarDB(){
   // 4) Reuniões passadas sem registo deixam de ficar "abertas"
   DB.reunioes.forEach(function(r){ if(!r.estado) r.estado = r.data<hoje ? 'sem_registo' : 'agendada'; });
   DB.schema=2;
+  return true;
+}
+
+/* ── MIGRAÇÃO 3: tabela de preços (12/10/2026) ── */
+function migrarPrecos(){
+  if((DB.schema||1)>=3) return false;
+  DB.produtos=DB.produtos||[];
+  var porNome=function(n){return DB.produtos.find(function(p){return p.nome===n;});};
+  var upd=function(nome,campos){ var p=porNome(nome); if(p) Object.assign(p,campos); };
+  upd('Curso €47',{horas:4,digital:true});
+  upd('Livro Digital',{digital:true});
+  upd('Comunidade €30/mês',{horasMes:2,desc:'Live 2h por mês, à quarta-feira'});
+  if(DB.produtos.find(function(p){return /^Kit Agenda Cheia/.test(p.nome);})) Object.assign(DB.produtos.find(function(p){return /^Kit Agenda Cheia/.test(p.nome);}),{horas:4,digital:true});
+  upd('Acompanhamento €697',{desc:'Antigo — só para clientes atuais. Novas vendas: Mentoria €997'});
+  [
+    {nome:'Mentoria €997',nomeC:'Mentoria Advance — 12 encontros',valor:997,tipo:'parcelado',parcelas:6,meses:6,horas:12,desc:'12 encontros de 15 em 15 dias · 6 meses · até 6x'},
+    {nome:'Mentoria + Landing Page €1.197',nomeC:'Mentoria + Landing Page',valor:1197,tipo:'parcelado',parcelas:6,meses:6,horas:18,horasMes:2,desc:'Mentoria (12 encontros) + landing page · 2 meses de manutenção incluídos, depois €59/mês'},
+    {nome:'Landing Page €297',nomeC:'Landing Page',valor:297,tipo:'unico',horas:6,horasMes:2,desc:'Manutenção à parte: €59/mês'},
+    {nome:'Manutenção Landing Page €59/mês',nomeC:'Manutenção Landing Page',valor:59,tipo:'recorrente',duracao:'',horasMes:2,desc:'Inclui até 2h/mês · extra €35/h'},
+    {nome:'Site Completo €597',nomeC:'Site Completo',valor:597,tipo:'unico',horas:12,horasMes:5,desc:'Manutenção à parte: €149/mês'},
+    {nome:'Manutenção Site €149/mês',nomeC:'Manutenção Site',valor:149,tipo:'recorrente',duracao:'',horasMes:5,desc:'Inclui até 5h/mês · extra €35/h'},
+    {nome:'Sistema à Medida €797',nomeC:'Sistema à Medida',valor:797,tipo:'unico',horas:16,horasMes:6,desc:'2 dias de trabalho · manutenção à parte: €197/mês'},
+    {nome:'Manutenção Sistema €197/mês',nomeC:'Manutenção Sistema',valor:197,tipo:'recorrente',duracao:'',horasMes:6,desc:'Inclui até 6h/mês · extra €35/h'}
+  ].forEach(function(n){ if(!porNome(n.nome)) DB.produtos.push(Object.assign({id:uid()},n)); });
+  DB.schema=3;
   return true;
 }
 
@@ -2336,7 +2372,72 @@ function pdCalcParcela(){
   if(el&&val&&parc>1) el.textContent='€'+(val/parc).toFixed(2)+'/mês';
   else if(el) el.textContent='—';
 }
+/* ── REGRA DE PREÇO ──
+   Mínimo €25/h (abaixo disto perde dinheiro). Recomendado €45/h (cobre o tempo que não é pago).
+   Manutenção: horas/mês × ~€30, com "até X horas; extra a €35/h".
+   Prestações: no máximo tantas quantos os meses de serviço. */
+const PRECO_REGRA={min:25,rec:45,manut:30,extra:35};
+function arredPreco(v){ if(v<=0) return 0; if(v<30) return Math.ceil(v)-0; if(v<100) return Math.ceil(v/10)*10-1; return Math.ceil(v/100)*100-3; }
+function pdCalcPreco(){
+  var el=document.getElementById('pd-calc'); if(!el) return;
+  var h=parseFloat(document.getElementById('pd-horas').value)||0;
+  var hm=parseFloat(document.getElementById('pd-horasmes').value)||0;
+  var meses=parseInt(document.getElementById('pd-meses').value)||0;
+  var val=parseFloat(document.getElementById('pd-valor-input').value)||0;
+  var tipo=document.getElementById('pd-tipo').value;
+  var parc=parseInt(document.getElementById('pd-parcelas').value)||1;
+  var out=[];
+  var digital=document.getElementById('pd-digital').checked;
+  if(digital){
+    if(h&&val) out.push('Tempo investido: €'+(h*PRECO_REGRA.min).toFixed(0)+' → recupera com <b>'+Math.ceil(h*PRECO_REGRA.min/val)+' venda'+(Math.ceil(h*PRECO_REGRA.min/val)>1?'s':'')+'</b>; depois é lucro');
+    else out.push('<span style="color:var(--g4)">Indique as horas de criação e o preço para ver quantas vendas pagam o seu tempo.</span>');
+    el.innerHTML=out.join('<br>'); return;
+  }
+  if(tipo==='recorrente'){
+    if(hm){
+      var minM=hm*PRECO_REGRA.min, sugM=arredPreco(hm*PRECO_REGRA.manut);
+      out.push('Mínimo: <b>€'+minM.toFixed(0)+'/mês</b> · Sugerido: <b>€'+sugM+'/mês</b> (inclui até '+hm+'h; extra €'+PRECO_REGRA.extra+'/h)');
+      if(val) out.push(val<minM?'<span style="color:var(--re)">⚠ Abaixo do mínimo — perde dinheiro</span>':'Ganho: <b>€'+(val/hm).toFixed(0)+'/h</b>');
+    }
+  } else if(h){
+    var min=h*PRECO_REGRA.min, rec=h*PRECO_REGRA.rec;
+    out.push('Mínimo: <b>€'+min.toFixed(0)+'</b> · Recomendado: <b>€'+rec.toFixed(0)+'</b> → sugestão <b>€'+arredPreco(rec)+'</b>');
+    if(val) out.push(val<min?'<span style="color:var(--re)">⚠ Abaixo do mínimo — perde dinheiro</span>':'Ganho: <b>€'+(val/h).toFixed(0)+'/h</b>'+(val<rec?' <span style="color:#B7791F">(abaixo do recomendado)</span>':' ✓'));
+    if(hm) out.push('Manutenção à parte: <b>€'+arredPreco(hm*PRECO_REGRA.manut)+'/mês</b> (até '+hm+'h; extra €'+PRECO_REGRA.extra+'/h)');
+  }
+  if(tipo==='parcelado' && meses && parc>meses) out.push('<span style="color:var(--re)">⚠ '+parc+' prestações para '+meses+' meses de serviço — máximo recomendado: '+meses+'x</span>');
+  el.innerHTML=out.join('<br>');
+}
+function novoProduto(){
+  document.getElementById('pd-id').value='';
+  ['pd-nome','pd-nomec','pd-desc','pd-valor-input','pd-parcelas','pd-horas','pd-horasmes','pd-meses'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('pd-digital').checked=false;
+  document.getElementById('pd-tipo').value='unico'; pdToggleTipo();
+  document.getElementById('pd-title').textContent='📦 Novo Produto';
+  document.getElementById('pd-submit').textContent='Criar';
+  om('produto'); pdCalcPreco();
+}
+function editProduto(id){
+  var p=DB.produtos.find(function(x){return x.id===id;}); if(!p) return;
+  om('produto');
+  document.getElementById('pd-id').value=p.id;
+  document.getElementById('pd-nome').value=p.nome;
+  document.getElementById('pd-nomec').value=p.nomeC||'';
+  document.getElementById('pd-valor-input').value=p.valor;
+  document.getElementById('pd-tipo').value=p.tipo||'unico'; pdToggleTipo();
+  document.getElementById('pd-parcelas').value=p.parcelas||'';
+  document.getElementById('pd-duracao').value=p.duracao||'';
+  document.getElementById('pd-desc').value=p.desc||'';
+  document.getElementById('pd-horas').value=p.horas||'';
+  document.getElementById('pd-horasmes').value=p.horasMes||'';
+  document.getElementById('pd-meses').value=p.meses||'';
+  document.getElementById('pd-digital').checked=!!p.digital;
+  document.getElementById('pd-title').textContent='✏️ Editar Produto';
+  document.getElementById('pd-submit').textContent='Guardar';
+  pdCalcParcela(); pdCalcPreco();
+}
 function saveProduto(){
+  var id=parseInt(document.getElementById('pd-id').value)||0;
   var nome=document.getElementById('pd-nome').value.trim();
   var valor=parseFloat(document.getElementById('pd-valor-input').value);
   if(!nome||!valor){toast('Preenche nome e valor','#C0392B');return;}
@@ -2344,18 +2445,32 @@ function saveProduto(){
   var parcelas=tipo==='parcelado'?parseInt(document.getElementById('pd-parcelas').value)||1:null;
   var duracao=tipo==='recorrente'?document.getElementById('pd-duracao').value:'';
   var ate=duracao==='custom'?document.getElementById('pd-ate').value:null;
-  DB.produtos.push({
-    id:uid(),nome,
-    nomeC:document.getElementById('pd-nomec').value||nome,
-    valor,tipo,parcelas,duracao,ate,
-    desc:document.getElementById('pd-desc').value
-  });
-  ['pd-nome','pd-nomec','pd-desc'].forEach(function(id){document.getElementById(id).value='';});
-  document.getElementById('pd-valor-input').value='';
-  document.getElementById('pd-parcelas').value='';
-  save();cm('produto');renderAll();toast('✓ Produto criado');
+  var obj={nome:nome,nomeC:document.getElementById('pd-nomec').value||nome,valor:valor,tipo:tipo,parcelas:parcelas,duracao:duracao,ate:ate,
+    desc:document.getElementById('pd-desc').value,
+    horas:parseFloat(document.getElementById('pd-horas').value)||null,
+    horasMes:parseFloat(document.getElementById('pd-horasmes').value)||null,
+    meses:parseInt(document.getElementById('pd-meses').value)||null,
+    digital:document.getElementById('pd-digital').checked};
+  if(id){
+    var p=DB.produtos.find(function(x){return x.id===id;});
+    var antigo=p.nome;
+    Object.assign(p,obj);
+    if(antigo!==nome){ // mantém as vendas e clientes ligados ao produto
+      DB.pagamentos.forEach(function(x){if(x.produto===antigo)x.produto=nome;});
+      DB.mentorados.forEach(function(x){if(x.produto===antigo)x.produto=nome;});
+      DB.leads.forEach(function(x){if(x.produto===antigo)x.produto=nome;});
+    }
+  } else {
+    DB.produtos.push(Object.assign({id:uid()},obj));
+  }
+  save();cm('produto');renderAll();toast(id?'✓ Produto atualizado':'✓ Produto criado');
 }
-function deleteProduto(id){ if(!confirm('Apagar?'))return; DB.produtos=DB.produtos.filter(p=>p.id!==id); save();renderAll(); }
+function deleteProduto(id){
+  var p=DB.produtos.find(function(x){return x.id===id;}); if(!p) return;
+  var n=DB.pagamentos.filter(function(x){return x.produto===p.nome;}).length;
+  if(!confirm('Apagar "'+(p.nomeC||p.nome)+'"?'+(n?' Tem '+n+' pagamentos registados (ficam guardados).':'')))return;
+  DB.produtos=DB.produtos.filter(function(x){return x.id!==id;}); save();renderAll();
+}
 function renderProdutos(){
   document.getElementById('produtos-grid').innerHTML=DB.produtos.map(function(p){
     var vendas=DB.pagamentos.filter(function(pg){return pg.produto===p.nome;});
@@ -2378,10 +2493,14 @@ function renderProdutos(){
     }
     return '<div class="card">'
       +'<div class="ch"><div><div style="font-size:13px;font-weight:600">'+( p.nomeC||p.nome)+'</div>'+tipoBadge+'</div>'
-      +'<button class="btn bd bsm" onclick="deleteProduto('+p.id+')">×</button></div>'
+      +'<div style="display:flex;gap:4px"><button class="btn bs bsm" onclick="editProduto('+p.id+')">✏️</button><button class="btn bd bsm" onclick="deleteProduto('+p.id+')">×</button></div></div>'
       +'<div style="font-size:24px;font-weight:700;color:var(--g);margin:8px 0 4px">'+precoStr+'</div>'
       +(duracaoStr?'<div style="font-size:10.5px;color:var(--g4);margin-bottom:4px">'+duracaoStr+'</div>':'')
-      +(p.desc?'<div style="font-size:11px;color:var(--g4);margin-bottom:8px">'+p.desc+'</div>':'')
+      +(p.desc?'<div style="font-size:11px;color:var(--g4);margin-bottom:8px">'+esc(p.desc)+'</div>':'')
+      +((p.horas||p.horasMes)?'<div style="font-size:10.5px;color:var(--g3);margin-bottom:8px">⏱ '+(p.horas?p.horas+'h para entregar':'')+(p.horas&&p.horasMes?' · ':'')+(p.horasMes?p.horasMes+'h/mês':'')
+        +((p.digital&&p.horas)?' · paga-se com <b style="color:var(--g)">'+Math.ceil(p.horas*PRECO_REGRA.min/p.valor)+' vendas</b>':'')
+        +((!p.digital&&p.tipo!=='recorrente'&&p.horas)?' · <b style="color:'+(p.valor/p.horas<PRECO_REGRA.min?'var(--re)':'var(--g)')+'">€'+(p.valor/p.horas).toFixed(0)+'/h</b>':'')
+        +((p.tipo==='recorrente'&&p.horasMes)?' · <b style="color:'+(p.valor/p.horasMes<PRECO_REGRA.min?'var(--re)':'var(--g)')+'">€'+(p.valor/p.horasMes).toFixed(0)+'/h</b>':'')+'</div>':'')
       +'<div class="div"></div>'
       +'<div style="display:flex;justify-content:space-between;font-size:11px">'
         +'<span style="color:var(--g4)">'+nVendas+' venda'+(nVendas!==1?'s':'')+'</span>'
@@ -3676,7 +3795,8 @@ function load(){ /* handled by initApp */ }
 async function initApp(){
   updateDbStatus();
   await dbLoad();
-  if(migrarDB() && _loadOK) save();
+  var mudou=migrarDB(); mudou=migrarPrecos()||mudou;
+  if(mudou && _loadOK) save();
   rnRenderTipos('Sessão de acompanhamento');
   rnUpdateSugestoes('Sessão de acompanhamento');
   rnRenderFormatos('Google Meet');
