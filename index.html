@@ -2113,8 +2113,8 @@ function renderMentorados(){
           +'</div></div>'
         +'</div>'
         +'<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">'
-          +'<button class="btn '+(aberta?'bp':'bs')+' bsm" onclick="concluirMentorado('+m.id+')">✅ Concluir sessão</button>'
-          +'<button class="btn bs bsm" onclick="openMarcar(\'mentorado\','+m.id+')">📅 Marcar</button>'
+          +(m.estado==='Concluído'?'':'<button class="btn '+(aberta?'bp':'bs')+' bsm" onclick="concluirMentorado('+m.id+')">✅ Concluir sessão</button>'
+          +'<button class="btn bs bsm" onclick="openMarcar(\'mentorado\','+m.id+')">📅 Marcar</button>')
           +'<button class="btn bs bsm" onclick="openHistorico('+m.id+')">🕑 Histórico</button>'
           +'<button class="btn bs bsm" onclick="openProcesso('+m.id+')" title="Fases do processo">Fases</button>'
           +'<button class="btn bs bsm" onclick="editMentorado('+m.id+')">✏️</button>'
@@ -2130,7 +2130,8 @@ function renderMentorados(){
           +'<div style="font-size:11px;color:var(--g4)">'+(fase?fase.l:'Concluído')+'</div>'
           +'<div class="sbw" style="width:80px;margin-top:5px"><div class="sbb" style="width:'+Math.round(sem/12*100)+'%;background:var(--g)"></div></div></div>'
         +'<div><div class="mt-lbl">Próxima sessão</div>'
-          +(prox?'<div style="font-size:12px;font-weight:500;cursor:pointer" onclick="editReuniao('+prox.id+')">'+proxSessaoTexto(prox)+'</div><div style="font-size:10.5px;color:var(--g4)">'+esc(prox.formato||'')+'</div>'
+          +(m.estado==='Concluído'?'<div style="font-size:12px;font-weight:600;color:var(--g)">✓ Concluído</div>'
+           :prox?'<div style="font-size:12px;font-weight:500;cursor:pointer" onclick="editReuniao('+prox.id+')">'+proxSessaoTexto(prox)+'</div><div style="font-size:10.5px;color:var(--g4)">'+esc(prox.formato||'')+'</div>'
                :'<div style="font-size:12px;color:var(--re);cursor:pointer;font-weight:500" onclick="openMarcar(\'mentorado\','+m.id+')">📅 Agendar</div>')
         +'</div>'
         +'<div><div class="mt-lbl">Última sessão</div>'
