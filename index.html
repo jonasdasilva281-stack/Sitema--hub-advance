@@ -4400,13 +4400,13 @@ window.addEventListener('appinstalled',function(){ pwaDismiss(); toast('✓ App 
 #area-screen::before{content:'';position:fixed;inset:0;pointer-events:none;
   background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
   background-size:48px 48px;-webkit-mask-image:radial-gradient(ellipse at 50% 30%,#000 30%,transparent 75%);mask-image:radial-gradient(ellipse at 50% 30%,#000 30%,transparent 75%)}
-.as-inner{position:relative;max-width:1040px;margin:0 auto;padding:36px 28px 40px;min-height:100%;display:flex;flex-direction:column}
-.as-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:auto}
-.as-top img{height:auto;width:96px;margin:-18px 0 -18px -14px;filter:brightness(0) invert(1);opacity:.95}
+.as-inner{position:relative;max-width:1040px;margin:0 auto;padding:96px 28px 64px;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:center}
+.as-top{position:absolute;top:28px;left:28px;right:28px;display:flex;align-items:center;justify-content:space-between}
+.as-top img{height:auto;width:112px;margin:-22px 0 -22px -16px;filter:brightness(0) invert(1);opacity:.95}
 .as-out{display:inline-flex;align-items:center;gap:7px;background:transparent;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.6);
   padding:7px 13px;border-radius:9px;font:500 12px 'Inter',sans-serif;cursor:pointer;transition:all .15s}
 .as-out:hover{color:#fff;border-color:rgba(255,255,255,.28)}
-.as-head{margin:64px 0 34px}
+.as-head{margin:0 0 32px}
 .as-eyebrow{font-size:12px;font-weight:500;color:rgba(255,255,255,.45);letter-spacing:.02em;margin-bottom:12px}
 .as-h1{font-size:40px;line-height:1.08;font-weight:600;letter-spacing:-.035em;margin:0}
 .as-h1 span{color:rgba(255,255,255,.42)}
@@ -4418,12 +4418,14 @@ window.addEventListener('appinstalled',function(){ pwaDismiss(); toast('✓ App 
   background:radial-gradient(420px 220px at 85% 0%,var(--ac-glow),transparent 70%)}
 .as-card:hover,.as-card:focus-visible{transform:translateY(-3px);border-color:var(--ac-line)}
 .as-card:hover::after,.as-card:focus-visible::after{opacity:1}
-.as-card[data-a="solutions"]{--ac:#60A5FA;--ac-bg:rgba(59,130,246,.14);--ac-line:rgba(96,165,250,.45);--ac-glow:rgba(59,130,246,.22)}
-.as-card[data-a="mentorias"]{--ac:#34D399;--ac-bg:rgba(16,185,129,.14);--ac-line:rgba(52,211,153,.45);--ac-glow:rgba(16,185,129,.2)}
-.as-card[data-a="geral"]{--ac:#E5E7EB;--ac-bg:rgba(255,255,255,.08);--ac-line:rgba(255,255,255,.3);--ac-glow:rgba(255,255,255,.08)}
+.as-card[data-a="solutions"]{--m1:#60A5FA;--m2:#1D4ED8;--ac:#60A5FA;--ac-bg:rgba(59,130,246,.14);--ac-line:rgba(96,165,250,.45);--ac-glow:rgba(59,130,246,.22)}
+.as-card[data-a="mentorias"]{--m1:#34D399;--m2:#047857;--ac:#34D399;--ac-bg:rgba(16,185,129,.14);--ac-line:rgba(52,211,153,.45);--ac-glow:rgba(16,185,129,.2)}
+.as-card[data-a="geral"]{--m1:#FFFFFF;--m2:#9CA3AF;--ac:#E5E7EB;--ac-bg:rgba(255,255,255,.08);--ac-line:rgba(255,255,255,.3);--ac-glow:rgba(255,255,255,.08)}
 .as-row{display:flex;align-items:flex-start;justify-content:space-between;position:relative;z-index:1}
-.as-ico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--ac-bg);color:var(--ac)}
-.as-ico svg{width:21px;height:21px}
+.as-ico{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;
+  font:650 21px/1 'Inter',sans-serif;letter-spacing:-.04em;color:#fff;background:linear-gradient(150deg,var(--m1),var(--m2));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(0,0,0,.25),0 10px 28px -10px var(--ac-glow)}
+.as-ico::after{content:'';position:absolute;inset:0;border-radius:13px;border:1px solid rgba(255,255,255,.14);pointer-events:none}
 .as-key{font:500 11px 'Inter',sans-serif;color:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:2px 7px}
 .as-brand{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.4);margin:26px 0 5px;position:relative;z-index:1}
 .as-name{font-size:26px;font-weight:600;letter-spacing:-.025em;position:relative;z-index:1}
@@ -4439,6 +4441,7 @@ window.addEventListener('appinstalled',function(){ pwaDismiss(); toast('✓ App 
 .as-card:hover .as-go,.as-card:focus-visible .as-go{opacity:1;transform:none}
 .as-card:hover .as-stats,.as-card:focus-visible .as-stats{padding-right:44px}
 .as-wide{grid-column:1/-1;min-height:0;flex-direction:row;align-items:center;gap:18px;padding:20px 24px}
+.as-card[data-a="geral"] .as-ico{color:#0B0E14}
 .as-wide .as-txt{flex:1;position:relative;z-index:1}
 .as-wide .as-name{font-size:18px}
 .as-wide .as-desc{margin-top:2px;max-width:none}
@@ -4448,8 +4451,9 @@ window.addEventListener('appinstalled',function(){ pwaDismiss(); toast('✓ App 
 .as-wide:hover .as-stats{padding-right:0}
 .as-foot{margin-top:28px;font-size:12px;color:rgba(255,255,255,.32);display:flex;gap:18px;flex-wrap:wrap}
 @media(max-width:760px){
-  .as-inner{padding:22px 16px 28px}
-  .as-head{margin:40px 0 24px}.as-h1{font-size:30px}
+  .as-inner{padding:84px 16px 28px;justify-content:flex-start}
+  .as-top{top:18px;left:16px;right:16px}
+  .as-head{margin:0 0 22px}.as-h1{font-size:30px}
   .as-grid{grid-template-columns:1fr}
   .as-card{min-height:0;padding:22px}
   .as-go{opacity:1;transform:none}
@@ -4492,7 +4496,7 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     <div class="as-grid">
       <div class="as-card" data-a="solutions" tabindex="0" onclick="haSetArea('solutions')">
         <div class="as-row">
-          <div class="as-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M10 13l-2 2 2 2M14 13l2 2-2 2"/></svg></div>
+          <div class="as-ico" aria-hidden="true">S</div>
           <span class="as-key">1</span>
         </div>
         <div class="as-brand">Hub Advance</div>
@@ -4503,7 +4507,7 @@ body.area-solutions .ha-mentoria-only{display:none!important}
       </div>
       <div class="as-card" data-a="mentorias" tabindex="0" onclick="haSetArea('mentorias')">
         <div class="as-row">
-          <div class="as-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9L12 4 2 9l10 5 10-5z"/><path d="M6 11.2V16c3.5 2.5 8.5 2.5 12 0v-4.8"/><path d="M22 9v5"/></svg></div>
+          <div class="as-ico" aria-hidden="true">M</div>
           <span class="as-key">2</span>
         </div>
         <div class="as-brand">Hub Advance</div>
@@ -4513,7 +4517,7 @@ body.area-solutions .ha-mentoria-only{display:none!important}
         <div class="as-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
       </div>
       <div class="as-card as-wide" data-a="geral" tabindex="0" onclick="haSetArea('geral')">
-        <div class="as-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg></div>
+        <div class="as-ico" aria-hidden="true">G</div>
         <div class="as-txt">
           <div class="as-name">Visão geral</div>
           <div class="as-desc">As duas áreas num só painel — receita, agenda e pipeline.</div>
