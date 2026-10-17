@@ -4383,5 +4383,242 @@ window.addEventListener('appinstalled',function(){ pwaDismiss(); toast('✓ App 
   <button class="btn bp" style="width:100%" onclick="saveProxContacto()">Guardar</button>
 </div></div>
 
+<!-- ═══════════════════════════════════════════════════════════════
+     BLOCO 5 — ÁREAS: Hub Advance Solutions · Hub Advance Mentorias · Geral
+     Colar ANTES de </body>, a seguir aos blocos 1 a 4.
+     Na 1ª abertura, produtos de serviços (site, landing page, sistema…) e o que
+     está ligado a eles passam para a Solutions; o resto fica na Mentorias.
+     Em Produtos, cada cartão tem botões para Mover ou Copiar para a outra área.
+     ═══════════════════════════════════════════════════════════════ -->
+<style>
+#area-screen{position:fixed;inset:0;background:#0C0C12;z-index:9998;display:none;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
+#area-screen.show{display:flex}
+.area-wrap{width:100%;max-width:780px}
+.area-title{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;color:#fff;text-align:center;margin-bottom:6px;letter-spacing:-.3px}
+.area-subt{font-size:13px;color:rgba(255,255,255,.45);text-align:center;margin-bottom:28px}
+.area-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.area-card{border-radius:16px;padding:24px 22px;cursor:pointer;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);transition:all .18s;color:#fff;font-family:'Inter',sans-serif}
+.area-card:hover{transform:translateY(-2px);background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.18)}
+.area-card .ac-ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px;flex-shrink:0}
+.area-card .ac-k{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:4px}
+.area-card .ac-n{font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700;margin-bottom:6px}
+.area-card .ac-d{font-size:12.5px;color:rgba(255,255,255,.55);line-height:1.5}
+.area-geral{display:flex;align-items:center;gap:16px;padding:16px 22px}
+.area-geral .ac-ico{margin:0}
+@media(max-width:640px){.area-grid{grid-template-columns:1fr}.area-title{font-size:20px}}
+#area-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid var(--gl);font-family:'Inter',sans-serif;background:var(--gf);color:var(--g);white-space:nowrap}
+body.area-geral #area-chip{background:#F4F4F8;color:#0D0D14;border-color:#E8E8F0}
+/* Solutions = azul · Mentorias = verde (original) · Geral = original */
+body.area-solutions{--g:#2563EB;--gm:#3B82F6;--gl:#DBEAFE;--gf:#EFF6FF}
+body.area-solutions .bp{background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);box-shadow:0 2px 8px rgba(37,99,235,.3)}
+body.area-solutions .ni.on::before{background:#3B82F6}
+body.area-solutions .ni.on .ni-icon{background:rgba(37,99,235,.25)}
+/* coisas só da mentoria escondidas na Solutions */
+body.area-solutions [onclick^="openProcesso"],
+body.area-solutions [onclick^="openSessao"],
+body.area-solutions .ha-mentoria-only{display:none!important}
+</style>
+
+<div id="area-screen">
+  <div class="area-wrap">
+    <div class="area-title">Onde vamos trabalhar hoje?</div>
+    <div class="area-subt">Escolha a área. Pode trocar a qualquer momento no botão do topo.</div>
+    <div class="area-grid">
+      <div class="area-card" onclick="haSetArea('solutions')">
+        <div class="ac-ico" style="background:rgba(37,99,235,.18)">🛠️</div>
+        <div class="ac-k">Hub Advance</div>
+        <div class="ac-n">Solutions</div>
+        <div class="ac-d">Serviços: sites, landing pages, sistemas e gestão para clientes.</div>
+      </div>
+      <div class="area-card" onclick="haSetArea('mentorias')">
+        <div class="ac-ico" style="background:rgba(0,179,122,.18)">🎓</div>
+        <div class="ac-k">Hub Advance</div>
+        <div class="ac-n">Mentorias</div>
+        <div class="ac-d">Educação: mentoria, comunidade, cursos e produtos digitais.</div>
+      </div>
+    </div>
+    <div class="area-card area-geral" onclick="haSetArea('geral')">
+      <div class="ac-ico" style="background:rgba(255,255,255,.08)">🧭</div>
+      <div>
+        <div class="ac-n" style="margin-bottom:2px">Geral</div>
+        <div class="ac-d">As duas áreas juntas — números, agenda e pipeline num só painel.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var AREAS={
+    solutions:{nome:'Hub Advance Solutions',curto:'Solutions',ico:'🛠️'},
+    mentorias:{nome:'Hub Advance Mentorias',curto:'Mentorias',ico:'🎓'},
+    geral:{nome:'Visão Geral',curto:'Geral',ico:'🧭'}
+  };
+  // listas de dados que ficam separadas por área (a Equipa é partilhada)
+  var KEYS=['leads','mentorados','pagamentos','vendas','despesas','reunioes','tarefas','conteudo','produtos'];
+  var depth=0;
+
+  window.HA_AREA=null;
+  try{ HA_AREA=sessionStorage.getItem('ha_area'); }catch(e){}
+  if(!AREAS[HA_AREA]) HA_AREA=null;
+
+  // registos antigos (sem área) pertencem à Mentorias
+  function inArea(x){ return !x||typeof x!=='object' ? true : (x.area||'mentorias')===HA_AREA; }
+
+  // durante o desenho do ecrã, cada área só "vê" os seus dados
+  function withArea(fn,self,args){
+    if(depth>0||!HA_AREA||HA_AREA==='geral') return fn.apply(self,args);
+    var saved={};
+    KEYS.forEach(function(k){ if(Array.isArray(DB[k])){ saved[k]=DB[k]; DB[k]=DB[k].filter(inArea); } });
+    depth++;
+    try{ return fn.apply(self,args); }
+    finally{ depth--; KEYS.forEach(function(k){ if(saved[k]) DB[k]=saved[k]; }); }
+  }
+
+  ['renderAll','renderOverview','renderPipeline','renderMentorados','renderFinanceiro','renderPrevisao',
+   'renderProdutos','renderEntregas','renderAgenda','renderMarketing','renderEquipa','renderCalendario','renderProcesso',
+   'fillSelects','pgRenderDropdown','rnSearchWho','mobNav'].forEach(function(n){
+    var f=window[n]; if(typeof f!=='function') return;
+    window[n]=function(){ return withArea(f,this,arguments); };
+  });
+
+  function hasUntagged(){
+    return KEYS.some(function(k){ return (DB[k]||[]).some(function(x){ return x&&typeof x==='object'&&!x.area; }); });
+  }
+  function tagUntagged(area){
+    KEYS.forEach(function(k){ (DB[k]||[]).forEach(function(x){ if(x&&typeof x==='object'&&!x.area) x.area=area; }); });
+  }
+
+  // 1ª vez: produtos de serviços → Solutions (e tudo o que está ligado a eles); o resto → Mentorias
+  var SERV=/site|landing|p[aá]gina|sistema|\bweb\b|\bapp\b|aplica[cç]|crm|loja|e-?commerce|design|log[oó]|identidade|branding|automa[cç]|tr[aá]fego|ads\b|gest[aã]o de (redes|tr|an)|social media|servi[cç]o|desenvolvimento|setup|implementa/i;
+  var EDU=/mentoria|curso|comunidade|e-?book|forma[cç][aã]o|aula|masterclass|imers[aã]o|workshop|kit|guia|calculadora|agenda lucrativa/i;
+  function isServico(p){ var t=(p.nome||'')+' '+(p.nomeC||''); return SERV.test(t)&&!EDU.test(t); }
+  function smartTag(){
+    var servNomes={};
+    (DB.produtos||[]).forEach(function(p){ if(!p.area) p.area=isServico(p)?'solutions':'mentorias'; if(p.area==='solutions') servNomes[p.nome]=1; });
+    var pessoas={};
+    ['leads','mentorados','pagamentos','vendas'].forEach(function(k){ (DB[k]||[]).forEach(function(x){
+      if(!x.area && servNomes[x.produto]){ x.area='solutions'; if(x.nome) pessoas[x.nome]=1; if(x.cliente) pessoas[x.cliente]=1; }
+    }); });
+    (DB.reunioes||[]).forEach(function(r){ if(!r.area && pessoas[r.who]) r.area='solutions'; });
+    (DB.tarefas||[]).forEach(function(t){ if(!t.area && (servNomes[t.produto]||pessoas[(t.projeto||'').replace(/^Lead: /,'')])) t.area='solutions'; });
+    tagUntagged('mentorias');
+  }
+
+  // mover um produto (e os leads, clientes, pagamentos, reuniões e tarefas ligados) para a outra área
+  window.haMoverProduto=function(id,dest){
+    var p=(DB.produtos||[]).find(function(x){return x.id===id;}); if(!p) return;
+    var nome=p.nome, pessoas={}, n={leads:0,mentorados:0,pagamentos:0,reunioes:0,tarefas:0};
+    ['leads','mentorados','pagamentos','vendas'].forEach(function(k){ (DB[k]||[]).forEach(function(x){ if(x.produto===nome){ n[k]=(n[k]||0)+1; if(x.nome) pessoas[x.nome]=1; if(x.cliente) pessoas[x.cliente]=1; } }); });
+    (DB.reunioes||[]).forEach(function(r){ if(pessoas[r.who]) n.reunioes++; });
+    (DB.tarefas||[]).forEach(function(t){ if(t.produto===nome||pessoas[(t.projeto||'').replace(/^Lead: /,'')]) n.tarefas++; });
+    var destNome=AREAS[dest].nome;
+    if(!confirm('Mover "'+(p.nomeC||nome)+'" para '+destNome+'?\n\nVai junto: '+n.leads+' leads, '+n.mentorados+' clientes/mentorados, '+n.pagamentos+' pagamentos, '+n.reunioes+' reuniões e '+n.tarefas+' tarefas.')) return;
+    p.area=dest;
+    ['leads','mentorados','pagamentos','vendas'].forEach(function(k){ (DB[k]||[]).forEach(function(x){ if(x.produto===nome) x.area=dest; }); });
+    (DB.reunioes||[]).forEach(function(r){ if(pessoas[r.who]) r.area=dest; });
+    (DB.tarefas||[]).forEach(function(t){ if(t.produto===nome||pessoas[(t.projeto||'').replace(/^Lead: /,'')]) t.area=dest; });
+    save(); renderAll();
+    if(typeof toast==='function') toast('✓ Movido para '+destNome);
+  };
+  // copiar só o produto para a outra área (os registos ficam onde estão)
+  window.haCopiarProduto=function(id,dest){
+    var p=(DB.produtos||[]).find(function(x){return x.id===id;}); if(!p) return;
+    var c=JSON.parse(JSON.stringify(p)); c.id=uid(); c.area=dest;
+    DB.produtos.push(c); save(); renderAll();
+    if(typeof toast==='function') toast('✓ Copiado para '+AREAS[dest].nome);
+  };
+  // botões Mover / Copiar em cada cartão de produto
+  function decorarProdutos(){
+    var grid=document.getElementById('produtos-grid'); if(!grid) return;
+    Array.prototype.forEach.call(grid.querySelectorAll('.card'),function(card){
+      var del=Array.prototype.find.call(card.querySelectorAll('button'),function(b){ return (b.getAttribute('onclick')||'').indexOf('deleteProduto(')===0; }); if(!del) return;
+      var id=parseInt((del.getAttribute('onclick').match(/\d+/)||[])[0]);
+      var p=(DB.produtos||[]).find(function(x){return x.id===id;}); if(!p) return;
+      var cur=p.area||'mentorias', dest=cur==='solutions'?'mentorias':'solutions', dn=AREAS[dest].curto;
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px dashed var(--g6);align-items:center';
+      row.innerHTML=(HA_AREA==='geral'?'<span class="tag '+(cur==='solutions'?'tb':'tg')+'" style="font-size:9.5px">'+AREAS[cur].ico+' '+AREAS[cur].curto+'</span>':'')
+        +'<button class="btn bs bsm" style="font-size:10.5px" onclick="haMoverProduto('+id+',\''+dest+'\')">⇄ Mover para '+dn+'</button>'
+        +'<button class="btn bs bsm" style="font-size:10.5px" onclick="haCopiarProduto('+id+',\''+dest+'\')">⧉ Copiar para '+dn+'</button>';
+      card.appendChild(row);
+    });
+  }
+  var _rp=window.renderProdutos;
+  window.renderProdutos=function(){ var r=_rp.apply(this,arguments); decorarProdutos(); return r; };
+
+  // tudo o que é criado fica marcado com a área atual (no Geral → Mentorias)
+  var _save=window.save;
+  window.save=function(){
+    if(depth>0){ setTimeout(window.save,0); return; } // nunca gravar com dados filtrados
+    tagUntagged(HA_AREA&&HA_AREA!=='geral'?HA_AREA:'mentorias');
+    return _save.apply(this,arguments);
+  };
+
+  // depois do login: carregar dados → marcar antigos como Mentorias → mostrar escolha
+  var _init=window.initApp;
+  window.initApp=async function(){
+    await _init.apply(this,arguments);
+    if(hasUntagged()){ smartTag(); _save(); }
+    injectChip();
+    if(HA_AREA) applyArea(); else showChooser();
+  };
+
+  // cada novo login pergunta outra vez a área
+  var _login=window.doLogin;
+  window.doLogin=function(){
+    try{ sessionStorage.removeItem('ha_area'); }catch(e){}
+    HA_AREA=null;
+    return _login.apply(this,arguments);
+  };
+
+  function injectChip(){
+    if(document.getElementById('area-chip')) return;
+    var bar=document.querySelector('.topbar-actions'); if(!bar) return;
+    var b=document.createElement('button');
+    b.id='area-chip'; b.type='button'; b.title='Trocar de área';
+    b.onclick=showChooser;
+    bar.insertBefore(b,bar.firstChild);
+    // marcar elementos que só fazem sentido na Mentorias
+    var funil=document.querySelector('#p-overview > div'); if(funil) funil.classList.add('ha-mentoria-only');
+    var info=document.querySelector('#p-mentorados > .al'); if(info) info.classList.add('ha-mentoria-only');
+  }
+
+  function showChooser(){ document.getElementById('area-screen').classList.add('show'); }
+  window.haShowChooser=showChooser;
+
+  function applyArea(){
+    var a=AREAS[HA_AREA]; if(!a) return;
+    document.body.classList.remove('area-solutions','area-mentorias','area-geral');
+    document.body.classList.add('area-'+HA_AREA);
+    var chip=document.getElementById('area-chip');
+    if(chip) chip.innerHTML=a.ico+' '+a.curto+' <span style="opacity:.55">⇄</span>';
+    var sub=document.querySelector('.sb-logo .logo-sub'); if(sub) sub.textContent=a.nome;
+
+    var lbl=HA_AREA==='solutions'?'Clientes':HA_AREA==='geral'?'Clientes & Mentorados':'Mentorados';
+    if(typeof titles==='object') titles.mentorados=lbl;
+    var ni=document.querySelector('.ni[onclick*="\'mentorados\'"] .ni-label'); if(ni) ni.textContent=lbl;
+    var mn=document.querySelector('#mn-mentorados .mob-nav-label');
+    if(mn) mn.textContent=HA_AREA==='solutions'?'Clientes':HA_AREA==='geral'?'Clientes':'Mentoria';
+    var ov=document.getElementById('ov-ment-semana');
+    if(ov){ var t=ov.parentElement.querySelector('.ct'); if(t) t.textContent=lbl+' esta semana'; }
+
+    var first=document.querySelector('.sb-nav .ni');
+    if(typeof nav==='function') nav('overview',first);
+    if(typeof mobNav==='function') mobNav('overview');
+  }
+
+  window.haSetArea=function(area){
+    if(!AREAS[area]) return;
+    HA_AREA=area;
+    try{ sessionStorage.setItem('ha_area',area); }catch(e){}
+    document.getElementById('area-screen').classList.remove('show');
+    applyArea();
+    if(typeof toast==='function') toast('→ '+AREAS[area].nome, area==='solutions'?'#2563EB':area==='mentorias'?'#0B6E4F':'#16161E');
+  };
+})();
+</script>
+<!-- ═══ FIM DO BLOCO 5 ═══ -->
+
 </body>
 </html>
