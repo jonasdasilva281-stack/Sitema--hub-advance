@@ -4709,7 +4709,8 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     var compras={}; (DB.pagamentos||[]).concat(DB.vendas||[]).forEach(function(x){ if(!x.cliente) return; (compras[x.cliente]=compras[x.cliente]||{})[areaOf(x)]=1; });
     var filtro={
       // lead: pela área do produto de interesse
-      leads:function(l){ var a=prodArea[l.produto]; return a ? a===HA_AREA : areaOf(l)===HA_AREA; },
+      // (e um lead criado numa área aparece sempre nessa área)
+      leads:function(l){ var a=prodArea[l.produto]; return a===HA_AREA || l.area===HA_AREA || (!a && areaOf(l)===HA_AREA); },
       // cliente/mentorado: aparece na área onde comprou (se comprou nas duas, aparece nas duas)
       mentorados:function(m){
         var c=compras[m.nome];
@@ -4866,7 +4867,7 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     }
     var f=function(x){ return areaOf(x)===a; };
     var prods={}; (DB.produtos||[]).forEach(function(p){ if(f(p)) prods[p.nome]=1; });
-    var leads=(DB.leads||[]).filter(function(l){ return prods[l.produto]&&['fechado','perdido','standby'].indexOf(l.etapa)<0; }).length;
+    var leads=(DB.leads||[]).filter(function(l){ return (prods[l.produto]||l.area===a)&&['fechado','perdido','standby'].indexOf(l.etapa)<0; }).length;
     var nomes={};
     (DB.vendas||[]).concat(DB.pagamentos||[]).forEach(function(x){ if(f(x)&&x.cliente) nomes[x.cliente]=1; });
     (DB.mentorados||[]).forEach(function(m){ if(prods[m.produto]) nomes[m.nome]=1; });
@@ -5887,6 +5888,164 @@ mark.cb-hl{background:#FEF3C7;color:inherit;border-radius:3px;padding:0 1px}
 })();
 </script>
 <!-- ═══ FIM DO BLOCO 9 ═══ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     BLOCO 10 — PREÇO À HORA E FORMA DE PAGAMENTO NOS PRODUTOS
+     • No produto: preço por hora (editável) que calcula o valor,
+       formas de pagamento aceites e condições de pagamento.
+     • Ao registar um pagamento/venda, a forma e as prestações do produto
+       entram sozinhas.
+     Colar ANTES de </body>, depois do Bloco 9.
+     ═══════════════════════════════════════════════════════════════ -->
+<style>
+.pp-box{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:.875rem;background:#FAFAFB}
+.pp-h{font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.pp-h svg{color:var(--mut)}
+.pp-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+.pp-calc{font-size:12px;color:var(--mut);margin-top:7px;line-height:1.5}
+.pp-calc b{color:var(--ink);font-weight:600}
+.pp-chips{display:flex;flex-wrap:wrap;gap:6px}
+.pp-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:9px;border:1px solid var(--line);background:#fff;font:500 12.5px 'Inter',sans-serif;color:var(--ink2);cursor:pointer;user-select:none;transition:all .12s}
+.pp-chip input{display:none}
+.pp-chip:has(input:checked){border-color:var(--g);background:var(--gf);color:var(--g)}
+.pp-chip:has(input:checked)::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.pp-pre{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pp-pre button{border:1px dashed #D1D5DB;background:#fff;border-radius:8px;padding:5px 9px;font:500 11.5px 'Inter',sans-serif;color:var(--mut);cursor:pointer}
+.pp-pre button:hover{border-color:var(--g);color:var(--g)}
+.pp-note{font-size:12px;color:var(--ink2);background:var(--gf);border:1px solid var(--gl);border-radius:8px;padding:8px 10px;margin-top:8px;display:none}
+</style>
+
+<script>
+(function(){
+  var FORMAS=['MB Way','Transferência Bancária','Cartão de Crédito','Cartão de Débito','PayPal','Dinheiro'];
+  var PADRAO=['MB Way','Transferência Bancária'];
+  var REC=(typeof PRECO_REGRA==='object'&&PRECO_REGRA.rec)||45;
+  var ICO='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>';
+  var ICO2='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+  function $(id){ return document.getElementById(id); }
+  function arred(v){ return typeof arredPreco==='function'?arredPreco(v):Math.round(v); }
+
+  // ── campos novos na janela do produto ──
+  var desc=$('pd-desc'); var fgDesc=desc?desc.closest('.fg'):null;
+  if(fgDesc&&!$('pd-ph')){
+    var box=document.createElement('div');
+    box.innerHTML=
+      '<div class="pp-box"><div class="pp-h">'+ICO2+'Preço por hora</div>'
+      +'<div class="pp-row"><div><label class="fl">Valor da sua hora (€/h)</label><input type="number" class="fi" id="pd-ph" min="0" step="1" oninput="haPpCalc()"></div>'
+      +'<button type="button" class="btn bs" style="height:38px" onclick="haPpAplicar()">Calcular valor</button></div>'
+      +'<div class="pp-calc" id="pp-calc"></div></div>'
+      +'<div class="pp-box"><div class="pp-h">'+ICO+'Forma de pagamento</div>'
+      +'<label class="fl">Formas aceites</label><div class="pp-chips" id="pp-formas">'
+      +FORMAS.map(function(f){ return '<label class="pp-chip"><input type="checkbox" value="'+f+'">'+f.replace(' Bancária','').replace('Cartão de ','Cartão ')+'</label>'; }).join('')
+      +'</div>'
+      +'<label class="fl" style="margin-top:12px">Condições de pagamento</label>'
+      +'<input class="fi" id="pd-cond" placeholder="Ex: 50% na adjudicação e 50% na entrega">'
+      +'<div class="pp-pre"><button type="button" onclick="haPpCond(\'100% no início\')">100% no início</button>'
+      +'<button type="button" onclick="haPpCond(\'50% no início e 50% na entrega\')">50% início + 50% entrega</button>'
+      +'<button type="button" onclick="haPpCond(\'Prestações mensais\')">Prestações mensais</button>'
+      +'<button type="button" onclick="haPpCond(\'Mensalidade no início de cada mês\')">Mensalidade</button></div></div>';
+    while(box.firstChild) fgDesc.parentNode.insertBefore(box.firstChild,fgDesc);
+  }
+  function formasSel(){ return Array.prototype.map.call(document.querySelectorAll('#pp-formas input:checked'),function(i){return i.value;}); }
+  function setFormas(arr){ document.querySelectorAll('#pp-formas input').forEach(function(i){ i.checked=arr.indexOf(i.value)>=0; }); }
+  window.haPpCond=function(t){ $('pd-cond').value=t; };
+
+  // horas que contam para o preço: entrega (único/parcelado) ou por mês (recorrente)
+  function horasBase(){
+    var tipo=$('pd-tipo').value, h=parseFloat($('pd-horas').value)||0, hm=parseFloat($('pd-horasmes').value)||0;
+    return tipo==='recorrente'?(hm||h):(h||hm);
+  }
+  window.haPpCalc=function(){
+    var el=$('pp-calc'); if(!el) return;
+    var ph=parseFloat($('pd-ph').value)||0, h=horasBase(), v=parseFloat($('pd-valor-input').value)||0, rec=$('pd-tipo').value==='recorrente';
+    var out=[];
+    if(h&&ph) out.push(h+'h × €'+ph+'/h = <b>€'+Math.round(h*ph)+(rec?'/mês':'')+'</b>');
+    else out.push('Indique as horas de trabalho acima para calcular o valor.');
+    if(h&&v) out.push('Com o valor atual (€'+v+') ganha <b>€'+Math.round(v/h)+'/h</b>.');
+    el.innerHTML=out.join('<br>');
+    // a regra de preço do produto passa a usar o seu valor por hora
+    if(typeof pdCalcPreco==='function') pdCalcPreco();
+  };
+  window.haPpAplicar=function(){
+    var ph=parseFloat($('pd-ph').value)||0, h=horasBase();
+    if(!h){ toast('Indique primeiro as horas de trabalho','#C0392B'); $('pd-horas').focus(); return; }
+    if(!ph){ toast('Indique o valor da sua hora','#C0392B'); $('pd-ph').focus(); return; }
+    $('pd-valor-input').value=arred(h*ph);
+    if(typeof pdCalcParcela==='function') pdCalcParcela();
+    window.haPpCalc();
+  };
+  // recalcular quando mudam horas, valor ou tipo
+  ['pd-horas','pd-horasmes','pd-valor-input'].forEach(function(id){ var e=$(id); if(e) e.addEventListener('input',window.haPpCalc); });
+  var tp=$('pd-tipo'); if(tp) tp.addEventListener('change',window.haPpCalc);
+
+  if(typeof pdCalcPreco==='function'&&typeof PRECO_REGRA==='object'){
+    var _calc=window.pdCalcPreco;
+    window.pdCalcPreco=function(){
+      var ph=parseFloat(($('pd-ph')||{}).value)||0, old=PRECO_REGRA.rec;
+      if(ph) PRECO_REGRA.rec=ph;
+      try{ return _calc.apply(this,arguments); } finally{ PRECO_REGRA.rec=old; }
+    };
+  }
+
+  // ── abrir / editar / guardar ──
+  function preencher(p){
+    $('pd-ph').value=(p&&p.precoHora)||REC;
+    setFormas((p&&p.formas&&p.formas.length)?p.formas:PADRAO);
+    $('pd-cond').value=(p&&p.condicoes)||'';
+    window.haPpCalc();
+  }
+  var _novo=window.novoProduto;
+  if(_novo) window.novoProduto=function(){ var r=_novo.apply(this,arguments); preencher(null); return r; };
+  var _edit=window.editProduto;
+  if(_edit) window.editProduto=function(id){ var r=_edit.apply(this,arguments); preencher((DB.produtos||[]).find(function(x){return x.id===id;})); return r; };
+  var _saveP=window.saveProduto;
+  if(_saveP) window.saveProduto=function(){
+    var id=parseInt($('pd-id').value)||0, nome=$('pd-nome').value.trim();
+    var extra={precoHora:parseFloat($('pd-ph').value)||null,formas:formasSel(),condicoes:$('pd-cond').value.trim()};
+    var antes=(DB.produtos||[]).length;
+    var r=_saveP.apply(this,arguments);
+    var p=id?(DB.produtos||[]).find(function(x){return x.id===id;}):((DB.produtos||[]).length>antes?DB.produtos[DB.produtos.length-1]:null);
+    if(p&&p.nome===nome){ Object.assign(p,extra); save(); renderAll(); }
+    return r;
+  };
+
+  // ── ao registar pagamento: forma e prestações do produto ──
+  function aplicarAoPagamento(prodId,formaId,parcId,infoId,calcFn){
+    var sel=$(prodId); if(!sel) return;
+    var p=(DB.produtos||[]).find(function(x){return x.nome===sel.value;}); if(!p) return;
+    var f=$(formaId);
+    if(f&&p.formas&&p.formas.length){ var ok=Array.prototype.some.call(f.options,function(o){return o.value===p.formas[0]||o.text===p.formas[0];}); if(ok) f.value=p.formas[0]; }
+    var pc=$(parcId);
+    if(pc&&p.tipo==='parcelado'&&p.parcelas){ pc.value=String(p.parcelas); if(typeof window[calcFn]==='function') window[calcFn](); }
+    var box=$(infoId+'-pp');
+    if(!box){ box=document.createElement('div'); box.id=infoId+'-pp'; box.className='pp-note'; var inf=$(infoId); if(inf&&inf.parentNode) inf.parentNode.insertBefore(box,inf.nextSibling); }
+    var t=[]; if(p.formas&&p.formas.length) t.push('Aceita: '+p.formas.join(', ')); if(p.condicoes) t.push('Condições: '+p.condicoes);
+    box.textContent=t.join(' · '); box.style.display=t.length?'block':'none';
+  }
+  var _av=window.autoValor;
+  if(_av) window.autoValor=function(){ var r=_av.apply(this,arguments); aplicarAoPagamento('pg-produto','pg-forma','pg-parcelas','pg-info','calcParcela'); return r; };
+  var _vav=window.vrAutoValor;
+  if(_vav) window.vrAutoValor=function(){ var r=_vav.apply(this,arguments); aplicarAoPagamento('vr-produto','vr-forma','vr-parcelas','vr-info','vrCalc'); return r; };
+
+  // ── na Administração → Produtos: mostrar €/h e formas em cada produto ──
+  var _rp=window.renderProdutos;
+  window.renderProdutos=function(){
+    var r=_rp.apply(this,arguments);
+    if(window.HA_AREA==='geral'){
+      document.querySelectorAll('#produtos-grid .pg-it').forEach(function(it){
+        var b=it.querySelector('[onclick^="editProduto("]'); if(!b) return;
+        var id=parseInt((b.getAttribute('onclick').match(/\d+/)||[])[0]);
+        var p=(DB.produtos||[]).find(function(x){return x.id===id;}); if(!p) return;
+        var sm=it.querySelector('.nm small'); if(!sm||sm.dataset.pp) return;
+        var extra=[]; if(p.precoHora) extra.push('€'+p.precoHora+'/h'); if(p.formas&&p.formas.length) extra.push(p.formas.map(function(f){return f.replace(' Bancária','').replace('Cartão de ','Cartão ');}).join(', '));
+        if(extra.length){ sm.dataset.pp='1'; sm.innerHTML+='<br>'+extra.join(' · '); }
+      });
+    }
+    return r;
+  };
+
+})();
+</script>
+<!-- ═══ FIM DO BLOCO 10 ═══ -->
 
 </body>
 </html>
