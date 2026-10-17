@@ -4588,9 +4588,9 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     mentorias:{nome:'Hub Advance Mentorias',curto:'Mentorias'},
     geral:{nome:'Administração',curto:'Administração'}
   };
-  // base de clientes única: leads, clientes/mentorados, agenda e conteúdo são partilhados pelas duas áreas.
-  // separado por área só o que é de cada negócio:
-  var KEYS=['produtos','pagamentos','vendas','despesas','tarefas'];
+  // base de clientes única, mas cada área só mostra o que lhe diz respeito:
+  // clientes que compraram produtos dessa área, leads interessados nesses produtos, reuniões e restantes registos dessa área.
+  var KEYS=['produtos','pagamentos','vendas','despesas','tarefas','reunioes','conteudo','leads','mentorados'];
   var TAGKEYS=['leads','mentorados','pagamentos','vendas','despesas','reunioes','tarefas','conteudo','produtos'];
   var depth=0;
 
@@ -4604,7 +4604,22 @@ body.area-solutions .ha-mentoria-only{display:none!important}
   function withArea(fn,self,args){
     if(depth>0||!HA_AREA||HA_AREA==='geral') return fn.apply(self,args);
     var saved={};
-    KEYS.forEach(function(k){ if(Array.isArray(DB[k])){ saved[k]=DB[k]; DB[k]=DB[k].filter(inArea); } });
+    // área de cada produto e áreas em que cada cliente comprou (vistas na base completa)
+    var prodArea={}; (DB.produtos||[]).forEach(function(p){ prodArea[p.nome]=areaOf(p); });
+    var compras={}; (DB.pagamentos||[]).concat(DB.vendas||[]).forEach(function(x){ if(!x.cliente) return; (compras[x.cliente]=compras[x.cliente]||{})[areaOf(x)]=1; });
+    var filtro={
+      // lead: pela área do produto de interesse
+      leads:function(l){ var a=prodArea[l.produto]; return a ? a===HA_AREA : areaOf(l)===HA_AREA; },
+      // cliente/mentorado: aparece na área onde comprou (se comprou nas duas, aparece nas duas)
+      mentorados:function(m){
+        var c=compras[m.nome];
+        if(c&&c[HA_AREA]) return true;
+        var a=prodArea[m.produto];
+        if(a) return a===HA_AREA;
+        return !c && areaOf(m)===HA_AREA;
+      }
+    };
+    KEYS.forEach(function(k){ if(Array.isArray(DB[k])){ saved[k]=DB[k]; DB[k]=DB[k].filter(filtro[k]||inArea); } });
     depth++;
     try{ return fn.apply(self,args); }
     finally{ depth--; KEYS.forEach(function(k){ if(saved[k]) DB[k]=saved[k]; }); }
@@ -4635,9 +4650,27 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     ['leads','mentorados','pagamentos','vendas'].forEach(function(k){ (DB[k]||[]).forEach(function(x){
       if(!x.area && servNomes[x.produto]){ x.area='solutions'; if(x.nome) pessoas[x.nome]=1; if(x.cliente) pessoas[x.cliente]=1; }
     }); });
-    (DB.reunioes||[]).forEach(function(r){ if(!r.area && pessoas[r.who]) r.area='solutions'; });
-    (DB.tarefas||[]).forEach(function(t){ if(!t.area && (servNomes[t.produto]||pessoas[semLead(t.projeto)])) t.area='solutions'; });
+    var so=soSolutions();
+    (DB.reunioes||[]).forEach(function(r){ if(!r.area && so[r.who]) r.area='solutions'; });
+    (DB.tarefas||[]).forEach(function(t){ if(!t.area && (servNomes[t.produto]||so[semLead(t.projeto)])) t.area='solutions'; });
     tagUntagged('mentorias');
+  }
+  // pessoas que só compraram na Solutions (quem comprou nas duas conta como Mentorias nas reuniões antigas)
+  function soSolutions(){
+    var prodArea={}; (DB.produtos||[]).forEach(function(p){ prodArea[p.nome]=p.area; });
+    var c={};
+    (DB.pagamentos||[]).concat(DB.vendas||[]).forEach(function(x){ if(x.cliente&&x.area) (c[x.cliente]=c[x.cliente]||{})[x.area]=1; });
+    (DB.mentorados||[]).forEach(function(m){ var a=prodArea[m.produto]; if(a) (c[m.nome]=c[m.nome]||{})[a]=1; });
+    var r={}; Object.keys(c).forEach(function(n){ if(c[n].solutions&&!c[n].mentorias) r[n]=1; }); return r;
+  }
+  // correção única: reuniões de mentoria de quem comprou nas duas áreas voltam para a Mentorias
+  function corrigirReunioes(){
+    if(DB.haAreaFix>=1) return false;
+    var so=soSolutions(), mud=false;
+    (DB.reunioes||[]).forEach(function(r){
+      if(r.area==='solutions' && !so[r.who] && /acompanhamento|comunidade|mentoria|sess/i.test(r.tipo||'')){ r.area='mentorias'; mud=true; }
+    });
+    DB.haAreaFix=1; return true;
   }
 
   window.haMoverProduto=function(id,dest){
@@ -4685,7 +4718,10 @@ body.area-solutions .ha-mentoria-only{display:none!important}
   var _init=window.initApp;
   window.initApp=async function(){
     await _init.apply(this,arguments);
-    if(hasUntagged()){ smartTag(); _save(); }
+    var mud=false;
+    if(hasUntagged()){ smartTag(); mud=true; }
+    if(corrigirReunioes()) mud=true;
+    if(mud) _save();
     injectChip();
     if(HA_AREA) applyArea(); else showChooser();
   };
@@ -5204,6 +5240,153 @@ body.area-geral .ni.on .ni-icon svg{color:#fff}
 })();
 </script>
 <!-- ═══ FIM DO BLOCO 7 ═══ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     BLOCO 8 — PRODUTOS NA ADMINISTRAÇÃO
+     Na Administração, Produtos passa a ser o centro de gestão do catálogo:
+     ranking dos produtos (receita, vendas, valor por hora) e onde cada um está.
+     Produtos criados aqui ficam "Por enviar" até serem enviados a uma área.
+     Colar ANTES de </body>, depois do Bloco 7.
+     ═══════════════════════════════════════════════════════════════ -->
+<style>
+body.area-geral #produtos-grid{display:block}
+body.area-geral #p-produtos > div:first-child{display:none!important}
+#produtos-grid .pg-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+#produtos-grid .pg-title{font-size:22px;font-weight:600;letter-spacing:-.025em;color:var(--ink)}
+#produtos-grid .pg-sub{font-size:13px;color:var(--mut);margin-top:3px}
+#produtos-grid .pg-k4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+#produtos-grid .pg-kl{font-size:12px;color:var(--mut);font-weight:500}
+#produtos-grid .pg-kv{font-size:17px;font-weight:600;letter-spacing:-.02em;margin-top:10px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#produtos-grid .pg-ks{font-size:12px;color:var(--mut2);margin-top:3px;font-variant-numeric:tabular-nums}
+#produtos-grid .pg-rank-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+#produtos-grid .pg-ct{font-size:14px;font-weight:600;color:var(--ink);letter-spacing:-.01em}
+#produtos-grid .pg-cs{font-size:12px;color:var(--mut);margin-top:2px}
+#produtos-grid .pg-seg{display:inline-flex;background:#F3F4F6;border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px}
+#produtos-grid .pg-seg button{border:0;background:transparent;font:500 12px 'Inter',sans-serif;color:var(--mut);padding:6px 11px;border-radius:7px;cursor:pointer}
+#produtos-grid .pg-seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(15,23,42,.08)}
+#produtos-grid .pg-row{display:grid;grid-template-columns:minmax(150px,240px) 1fr 92px;align-items:center;gap:14px;padding:9px 0}
+#produtos-grid .pg-n{font-size:13px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:8px;min-width:0}
+#produtos-grid .pg-n span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#produtos-grid .pg-n i{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+#produtos-grid .pg-track{height:10px;border-radius:5px;background:#F1F2F4;overflow:hidden}
+#produtos-grid .pg-track span{display:block;height:100%;border-radius:5px;transition:width .3s}
+#produtos-grid .pg-v{text-align:right;font-size:13px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+#produtos-grid .pg-v small{display:block;font-size:11px;font-weight:400;color:var(--mut2)}
+#produtos-grid .pg-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+#produtos-grid .pg-colh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+#produtos-grid .pg-colh .t{font-size:13px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px}
+#produtos-grid .pg-colh .t i{width:8px;height:8px;border-radius:2px}
+#produtos-grid .pg-colh .c{font-size:12px;color:var(--mut)}
+#produtos-grid .pg-it{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line2)}
+#produtos-grid .pg-it .nm{flex:1;min-width:0}
+#produtos-grid .pg-it .nm b{display:block;font-size:13px;font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#produtos-grid .pg-it .nm small{font-size:11.5px;color:var(--mut)}
+#produtos-grid .pg-ib{border:1px solid var(--line);background:#fff;border-radius:7px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--mut);flex-shrink:0}
+#produtos-grid .pg-ib:hover{color:var(--ink);border-color:#D1D5DB}
+#produtos-grid .pg-ib svg{width:14px;height:14px}
+#produtos-grid .pg-send{border:1px solid var(--line);background:#fff;border-radius:7px;height:28px;padding:0 9px;font:500 11.5px 'Inter',sans-serif;color:var(--ink2);cursor:pointer;white-space:nowrap;flex-shrink:0}
+#produtos-grid .pg-send:hover{border-color:#D1D5DB;background:#F9FAFB}
+#produtos-grid .pg-empty{font-size:12.5px;color:var(--mut2);padding:14px 0;border-top:1px solid var(--line2)}
+#produtos-grid .pg-pend{border:1px dashed #D1D5DB;background:#FAFAFB}
+@media(max-width:1100px){#produtos-grid .pg-k4{grid-template-columns:repeat(2,1fr)}#produtos-grid .pg-cols{grid-template-columns:1fr}}
+@media(max-width:560px){#produtos-grid .pg-row{grid-template-columns:1fr 80px}#produtos-grid .pg-row .pg-track{grid-column:1/-1;order:3}}
+</style>
+
+<script>
+(function(){
+  var COR={solutions:'#2563EB',mentorias:'#0E9F6E',pendente:'#9CA3AF'};
+  var NOME={solutions:'Solutions',mentorias:'Mentorias',pendente:'Por enviar'};
+  var metrica='receita';
+  function areaOf(x){ return (x&&x.area)||'mentorias'; }
+  function eur(v){ return '€'+Math.round(v||0).toLocaleString('pt-PT'); }
+  function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  var I={edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>',
+         del:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>'};
+
+  // produtos criados na Administração ficam "Por enviar"
+  var _save=window.save;
+  window.save=function(){
+    if(window.HA_AREA==='geral') (DB.produtos||[]).forEach(function(p){ if(!p.area) p.area='pendente'; });
+    return _save.apply(this,arguments);
+  };
+
+  window.haEnviarProduto=function(id,dest){
+    var p=(DB.produtos||[]).find(function(x){return x.id===id;}); if(!p) return;
+    var temReg=(DB.pagamentos||[]).concat(DB.vendas||[]).some(function(x){return x.produto===p.nome;});
+    if(p.area==='pendente'||!temReg){ p.area=dest; save(); renderAll(); if(typeof toast==='function') toast('Enviado para '+NOME[dest]); return; }
+    window.haMoverProduto(id,dest);
+  };
+  window.haProdMetrica=function(m){ metrica=m; renderGestao(); };
+
+  function stats(){
+    var hoje=new Date().toISOString().slice(0,10);
+    return (DB.produtos||[]).map(function(p){
+      var pags=(DB.pagamentos||[]).filter(function(x){return x.produto===p.nome;});
+      var grupos={}; pags.forEach(function(x){ grupos[x.grupoId||x.id]=1; });
+      var vendas=Object.keys(grupos).length;
+      var receita=pags.filter(function(x){return x.estado==='Pago';}).reduce(function(s,x){return s+parseFloat(x.valor||0);},0);
+      var previsto=pags.reduce(function(s,x){return s+parseFloat(x.valor||0);},0);
+      var horas=p.tipo==='recorrente'?(p.horasMes||p.horas):(p.horas||p.horasMes);
+      var hora=horas?parseFloat(p.valor||0)/horas:null;
+      return {p:p,area:areaOf(p),vendas:vendas,receita:receita,previsto:previsto,ticket:vendas?previsto/vendas:0,hora:hora};
+    });
+  }
+
+  function renderGestao(){
+    var grid=document.getElementById('produtos-grid'); if(!grid) return;
+    var S=stats();
+    var com=S.filter(function(s){return s.vendas>0;});
+    var top=function(k){ return S.filter(function(s){return s[k];}).sort(function(a,b){return b[k]-a[k];})[0]; };
+    var tR=top('receita'), tV=top('vendas'), tH=top('hora');
+    var k=function(l,s,v){ return '<div class="card"><div class="pg-kl">'+l+'</div><div class="pg-kv">'+(s?esc(s.p.nomeC||s.p.nome):'—')+'</div><div class="pg-ks">'+(s?v(s):'sem dados')+'</div></div>'; };
+
+    var M={receita:{l:'Receita',f:function(s){return s.receita;},t:function(s){return eur(s.receita);},sub:function(s){return s.vendas+' venda'+(s.vendas===1?'':'s');}},
+           vendas:{l:'Vendas',f:function(s){return s.vendas;},t:function(s){return s.vendas;},sub:function(s){return eur(s.receita);}},
+           hora:{l:'€ por hora',f:function(s){return s.hora||0;},t:function(s){return s.hora?eur(s.hora)+'/h':'—';},sub:function(s){var h=s.p.tipo==='recorrente'?(s.p.horasMes||s.p.horas):(s.p.horas||s.p.horasMes);return h?h+'h de trabalho':'sem horas';}}}[metrica];
+    var lista=S.filter(function(s){return M.f(s)>0;}).sort(function(a,b){return M.f(b)-M.f(a);});
+    var mx=lista.length?M.f(lista[0]):1;
+    var rank=lista.length?lista.map(function(s){
+      return '<div class="pg-row"><div class="pg-n"><i style="background:'+COR[s.area]+'"></i><span>'+esc(s.p.nomeC||s.p.nome)+'</span></div>'
+        +'<div class="pg-track"><span style="width:'+Math.max(2,Math.round(M.f(s)/mx*100))+'%;background:'+COR[s.area]+'"></span></div>'
+        +'<div class="pg-v">'+M.t(s)+'<small>'+M.sub(s)+'</small></div></div>';
+    }).join(''):'<div class="pg-empty">'+(metrica==='hora'?'Indique as horas de trabalho nos produtos para ver o valor por hora.':'Ainda não há vendas registadas.')+'</div>';
+    var seg=['receita','vendas','hora'].map(function(m){ return '<button class="'+(m===metrica?'on':'')+'" onclick="haProdMetrica(\''+m+'\')">'+{receita:'Receita',vendas:'Vendas',hora:'€ por hora'}[m]+'</button>'; }).join('');
+
+    var col=function(a){
+      var it=S.filter(function(s){return s.area===a;}).sort(function(x,y){return y.receita-x.receita;});
+      var outros=['solutions','mentorias'].filter(function(x){return x!==a;});
+      var body=it.length?it.map(function(s){
+        var p=s.p;
+        var envio=outros.map(function(d){ return '<button class="pg-send" onclick="haEnviarProduto('+p.id+',\''+d+'\')">'+(a==='pendente'?'Enviar para ':'Passar para ')+NOME[d]+'</button>'; }).join('');
+        return '<div class="pg-it"><div class="nm"><b>'+esc(p.nomeC||p.nome)+'</b><small>'+eur(p.valor)+(p.tipo==='recorrente'?'/mês':'')+(s.vendas?' · '+s.vendas+' venda'+(s.vendas===1?'':'s'):'')+'</small></div>'
+          +(a==='pendente'?envio:'')
+          +'<button class="pg-ib" title="Editar" onclick="editProduto('+p.id+')">'+I.edit+'</button>'
+          +'<button class="pg-ib" title="Apagar" onclick="deleteProduto('+p.id+')">'+I.del+'</button></div>'
+          +(a==='pendente'?'':'<div style="display:flex;justify-content:flex-end;margin:-4px 0 8px">'+envio+'</div>');
+      }).join(''):'<div class="pg-empty">'+(a==='pendente'?'Nenhum produto por enviar.':'Sem produtos.')+'</div>';
+      return '<div class="card'+(a==='pendente'?' pg-pend':'')+'"><div class="pg-colh"><div class="t"><i style="background:'+COR[a]+'"></i>'+NOME[a]+'</div><div class="c">'+it.length+'</div></div>'+body+'</div>';
+    };
+
+    grid.innerHTML=
+      '<div class="pg-head"><div><div class="pg-title">Produtos</div><div class="pg-sub">Crie aqui os produtos e envie-os para a área certa.</div></div>'
+      +'<button class="btn bp" onclick="novoProduto()">+ Novo produto</button></div>'
+      +'<div class="pg-k4">'
+        +k('Maior receita',tR,function(s){return eur(s.receita)+' recebidos';})
+        +k('Mais vendido',tV,function(s){return s.vendas+' venda'+(s.vendas===1?'':'s');})
+        +k('Melhor valor por hora',tH,function(s){return eur(s.hora)+' por hora de trabalho';})
+        +'<div class="card"><div class="pg-kl">Produtos com vendas</div><div class="pg-kv">'+com.length+' de '+S.length+'</div><div class="pg-ks">'+eur(S.reduce(function(t,s){return t+s.receita;},0))+' recebidos no total</div></div>'
+      +'</div>'
+      +'<div class="card"><div class="pg-rank-h"><div><div class="pg-ct">Ranking de produtos</div><div class="pg-cs">'+M.l+' por produto · azul Solutions, verde Mentorias</div></div><div class="pg-seg">'+seg+'</div></div>'+rank+'</div>'
+      +'<div class="pg-cols">'+col('pendente')+col('solutions')+col('mentorias')+'</div>';
+  }
+
+  var _rp=window.renderProdutos;
+  window.renderProdutos=function(){
+    if(window.HA_AREA==='geral') return renderGestao();
+    return _rp.apply(this,arguments);
+  };
+})();
+</script>
+<!-- ═══ FIM DO BLOCO 8 ═══ -->
 
 </body>
 </html>
