@@ -4409,7 +4409,7 @@ window.addEventListener('appinstalled',function(){ pwaDismiss(); toast('✓ App 
 .as-head{margin:0 0 32px}
 .as-eyebrow{font-size:12px;font-weight:500;color:rgba(255,255,255,.45);letter-spacing:.02em;margin-bottom:12px}
 .as-h1{font-size:40px;line-height:1.08;font-weight:600;letter-spacing:-.035em;margin:0}
-.as-h1 span{color:rgba(255,255,255,.42)}
+
 .as-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .as-card{position:relative;border-radius:18px;padding:26px;cursor:pointer;overflow:hidden;outline:none;
   background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.09);
@@ -4461,6 +4461,33 @@ window.addEventListener('appinstalled',function(){ pwaDismiss(); toast('✓ App 
   .as-wide{flex-wrap:wrap}.as-wide .as-stats{display:none}
   .as-key{display:none}
 }
+/* ecrã de entrada (password) */
+#login-screen.ls2{background:#07080C!important;padding:0!important;display:block;overflow-y:auto;font-family:'Inter',sans-serif;color:#fff;
+  background-image:radial-gradient(900px 520px at 12% -10%,rgba(37,99,235,.22),transparent 60%),radial-gradient(800px 520px at 100% 110%,rgba(16,185,129,.16),transparent 60%)!important}
+#login-screen.ls2[style*="display: none"],#login-screen.ls2[style*="display:none"]{display:none!important}
+#login-screen.ls2::before{content:'';position:fixed;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+  background-size:48px 48px;-webkit-mask-image:radial-gradient(ellipse at 50% 40%,#000 25%,transparent 70%);mask-image:radial-gradient(ellipse at 50% 40%,#000 25%,transparent 70%)}
+.ls-wrap{position:relative;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px}
+.ls-box{width:380px;max-width:100%;text-align:center;animation:asIn .4s ease}
+.ls-logo{width:150px;height:auto;filter:brightness(0) invert(1);margin:-30px auto -14px;display:block}
+.ls-h{font-size:28px;font-weight:600;letter-spacing:-.03em;line-height:1.2;margin:0 -60px 8px}
+@media(max-width:520px){.ls-h{margin:0 0 8px;font-size:25px}}
+.ls-p{font-size:14px;color:rgba(255,255,255,.5);margin:0 0 30px}
+.ls-field{position:relative;margin-bottom:12px}
+.ls-field input{width:100%;height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff;
+  font:500 15px 'Inter',sans-serif;padding:0 46px 0 16px;outline:none;transition:border-color .15s,background .15s,box-shadow .15s}
+.ls-field input::placeholder{color:rgba(255,255,255,.35)}
+.ls-field input:focus{border-color:rgba(96,165,250,.6);background:rgba(255,255,255,.07);box-shadow:0 0 0 4px rgba(59,130,246,.15)}
+.ls-eye{position:absolute;right:6px;top:6px;width:36px;height:36px;border:0;border-radius:9px;background:transparent;color:rgba(255,255,255,.45);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ls-eye:hover{color:#fff;background:rgba(255,255,255,.06)}
+.ls-btn{width:100%;height:48px;border:0;border-radius:12px;background:#fff;color:#07080C;font:600 14.5px 'Inter',sans-serif;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s,background .15s}
+.ls-btn:hover{background:#E5E7EB}
+.ls-btn:active{transform:scale(.99)}
+#login-screen.ls2 #login-error{background:rgba(220,38,38,.12)!important;color:#FCA5A5!important;border:1px solid rgba(248,113,113,.25);border-radius:10px!important;font-size:13px!important;margin-bottom:12px!important}
+#login-screen.ls2 #login-db-status{display:none}
+.ls-foot{position:absolute;bottom:22px;left:0;right:0;text-align:center;font-size:12px;color:rgba(255,255,255,.28)}
 /* botão de área no topo */
 #area-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:8px;font:600 12px 'Inter',sans-serif;cursor:pointer;
   border:1px solid var(--line,#E4E6EB);background:#fff;color:#111827;white-space:nowrap;transition:border-color .15s}
@@ -4483,7 +4510,7 @@ body.area-solutions .ha-mentoria-only{display:none!important}
 <div id="area-screen" role="dialog" aria-label="Escolher área">
   <div class="as-inner">
     <div class="as-top">
-      <img id="as-logo" alt="Hub Advance">
+      <img id="as-logo" alt="Hub Advance" title="Voltar ao início" style="cursor:pointer" onclick="haGoHome()">
       <button class="as-out" type="button" onclick="doLogout()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         Sair
@@ -4491,13 +4518,12 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     </div>
     <div class="as-head">
       <div class="as-eyebrow" id="as-date"></div>
-      <h1 class="as-h1"><span id="as-hello">Olá</span><br>Onde vamos trabalhar hoje?</h1>
+      <h1 class="as-h1" id="as-hello">Olá</h1>
     </div>
     <div class="as-grid">
       <div class="as-card" data-a="solutions" tabindex="0" onclick="haSetArea('solutions')">
         <div class="as-row">
           <div class="as-ico" aria-hidden="true">S</div>
-          <span class="as-key">1</span>
         </div>
         <div class="as-brand">Hub Advance</div>
         <div class="as-name">Solutions</div>
@@ -4508,7 +4534,6 @@ body.area-solutions .ha-mentoria-only{display:none!important}
       <div class="as-card" data-a="mentorias" tabindex="0" onclick="haSetArea('mentorias')">
         <div class="as-row">
           <div class="as-ico" aria-hidden="true">M</div>
-          <span class="as-key">2</span>
         </div>
         <div class="as-brand">Hub Advance</div>
         <div class="as-name">Mentorias</div>
@@ -4526,12 +4551,38 @@ body.area-solutions .ha-mentoria-only{display:none!important}
         <div class="as-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
       </div>
     </div>
-    <div class="as-foot"><span>Teclas 1, 2 e 3 para entrar</span><span>Clique no logótipo para voltar a este ecrã</span></div>
   </div>
 </div>
 
 <script>
 (function(){
+
+  // ── ecrã de entrada: logótipo + boas-vindas + senha ──
+  function buildLogin(){
+    var ls=document.getElementById('login-screen'); if(!ls||ls.dataset.v2) return;
+    var img=ls.querySelector('img'), src=img?img.getAttribute('src'):'';
+    ls.dataset.v2='1'; ls.classList.add('ls2');
+    ls.innerHTML='<div class="ls-wrap"><div class="ls-box">'
+      +'<img class="ls-logo" alt="Hub Advance" src="'+src+'">'
+      +'<h1 class="ls-h">Seja bem-vindo à Hub Advance</h1>'
+      +'<p class="ls-p">Introduza a sua senha para entrar no painel.</p>'
+      +'<div id="login-error" style="display:none;padding:10px 14px;text-align:center"></div>'
+      +'<div class="ls-field"><input id="login-pass" type="password" placeholder="Senha" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')doLogin()">'
+      +'<button class="ls-eye" type="button" aria-label="Mostrar senha" onclick="var i=document.getElementById(\'login-pass\');i.type=i.type===\'password\'?\'text\':\'password\';i.focus()">'
+      +'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>'
+      +'<button class="ls-btn" type="button" onclick="doLogin()">Entrar<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'
+      +'<div id="login-db-status"></div>'
+      +'</div><div class="ls-foot">© '+new Date().getFullYear()+' Hub Advance</div></div>';
+  }
+  buildLogin();
+
+  // clicar no logótipo → volta ao ecrã de entrada (pede a senha outra vez)
+  function goHome(){
+    try{ sessionStorage.removeItem('ha_auth'); sessionStorage.removeItem('ha_area'); }catch(e){}
+    location.reload();
+  }
+  window.haGoHome=goHome;
+
   var AREAS={
     solutions:{nome:'Hub Advance Solutions',curto:'Solutions'},
     mentorias:{nome:'Hub Advance Mentorias',curto:'Mentorias'},
@@ -4656,7 +4707,7 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     var funil=document.querySelector('#p-overview > div'); if(funil) funil.classList.add('ha-mentoria-only');
     var info=document.querySelector('#p-mentorados > .al'); if(info) info.classList.add('ha-mentoria-only');
     var logo=document.querySelector('.sb-logo img');
-    if(logo){ logo.title='Voltar ao início'; logo.addEventListener('click',showChooser); }
+    if(logo){ logo.title='Voltar ao início'; logo.addEventListener('click',goHome); }
   }
 
   function eur(v){ return '€'+Math.round(v).toLocaleString('pt-PT'); }
@@ -4891,7 +4942,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
     '📦':'box','⚙':'gear','▶':'play','⏸':'pause','👤':'user','👥':'users','📍':'pin','📹':'video','📁':'folder','🔁':'repeat','🏢':'building',
     '🎯':'target','💳':'card','💰':'euro','💶':'euro','📤':'upload','⚠':'warn','✅':'check','✔':'check','❌':'x','🎓':'cap','🛠':'tool','🧭':'compass',
     '📚':'book','🏆':'trophy','📸':'camera','🧮':'calc','⚡':'zap','🤝':'handshake','🎉':'party'};
-  var EP=/\p{Extended_Pictographic}/u, EPG=/[\p{Extended_Pictographic}️‍]+[  ]?/gu;
+  var EP=/(?![\u00A9\u00AE\u2122])\p{Extended_Pictographic}/u, EPG=/(?:(?![\u00A9\u00AE\u2122])\p{Extended_Pictographic}|[\uFE0F\u200D])+[ \u00A0]?/gu;
   function icon(k){ return '<svg viewBox="0 0 24 24">'+P[k]+'</svg>'; }
 
   function fixText(t){
@@ -4901,7 +4952,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
     if(tag==='SCRIPT'||tag==='STYLE'||tag==='TEXTAREA'||(p.closest&&p.closest('#area-screen'))) return;
     if(tag==='OPTION'&&!p.hasAttribute('value')) p.setAttribute('value',p.textContent);
     v=v.replace(/🥇/g,'1.º ').replace(/🥈/g,'2.º ').replace(/🥉/g,'3.º ');
-    var first=(v.match(/\p{Extended_Pictographic}/u)||[''])[0];
+    var first=(v.match(EP)||[''])[0];
     var out=v.replace(EPG,'').replace(/ {2,}/g,' ');
     if(!out.trim() && MAP[first] && tag!=='OPTION' && tag!=='TITLE'){
       var s=document.createElement('span'); s.className='ha-ico'; s.innerHTML=icon(MAP[first]);
