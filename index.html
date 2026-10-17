@@ -4385,87 +4385,167 @@ window.addEventListener('appinstalled',function(){ pwaDismiss(); toast('✓ App 
 
 <!-- ═══════════════════════════════════════════════════════════════
      BLOCO 5 — ÁREAS: Hub Advance Solutions · Hub Advance Mentorias · Geral
-     Colar ANTES de </body>, a seguir aos blocos 1 a 4.
+     Ecrã inicial de escolha (abre depois do login e ao clicar no logótipo).
+     Base de clientes única (leads, clientes, agenda) partilhada pelas duas áreas;
+     produtos, vendas, pagamentos, entregas, saídas e tarefas são de cada área. O Geral junta tudo.
      Na 1ª abertura, produtos de serviços (site, landing page, sistema…) e o que
      está ligado a eles passam para a Solutions; o resto fica na Mentorias.
      Em Produtos, cada cartão tem botões para Mover ou Copiar para a outra área.
      ═══════════════════════════════════════════════════════════════ -->
 <style>
-#area-screen{position:fixed;inset:0;background:#0C0C12;z-index:9998;display:none;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
-#area-screen.show{display:flex}
-.area-wrap{width:100%;max-width:780px}
-.area-title{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;color:#fff;text-align:center;margin-bottom:6px;letter-spacing:-.3px}
-.area-subt{font-size:13px;color:rgba(255,255,255,.45);text-align:center;margin-bottom:28px}
-.area-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-.area-card{border-radius:16px;padding:24px 22px;cursor:pointer;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);transition:all .18s;color:#fff;font-family:'Inter',sans-serif}
-.area-card:hover{transform:translateY(-2px);background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.18)}
-.area-card .ac-ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px;flex-shrink:0}
-.area-card .ac-k{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:4px}
-.area-card .ac-n{font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700;margin-bottom:6px}
-.area-card .ac-d{font-size:12.5px;color:rgba(255,255,255,.55);line-height:1.5}
-.area-geral{display:flex;align-items:center;gap:16px;padding:16px 22px}
-.area-geral .ac-ico{margin:0}
-@media(max-width:640px){.area-grid{grid-template-columns:1fr}.area-title{font-size:20px}}
-#area-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid var(--gl);font-family:'Inter',sans-serif;background:var(--gf);color:var(--g);white-space:nowrap}
-body.area-geral #area-chip{background:#F4F4F8;color:#0D0D14;border-color:#E8E8F0}
-/* Solutions = azul · Mentorias = verde (original) · Geral = original */
+#area-screen{position:fixed;inset:0;z-index:9998;display:none;overflow-y:auto;background:#07080C;color:#fff;font-family:'Inter',sans-serif;
+  background-image:radial-gradient(900px 520px at 12% -10%,rgba(37,99,235,.22),transparent 60%),radial-gradient(800px 520px at 100% 110%,rgba(16,185,129,.16),transparent 60%)}
+#area-screen.show{display:block;animation:asIn .35s ease}
+@keyframes asIn{from{opacity:0}to{opacity:1}}
+#area-screen::before{content:'';position:fixed;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+  background-size:48px 48px;-webkit-mask-image:radial-gradient(ellipse at 50% 30%,#000 30%,transparent 75%);mask-image:radial-gradient(ellipse at 50% 30%,#000 30%,transparent 75%)}
+.as-inner{position:relative;max-width:1040px;margin:0 auto;padding:36px 28px 40px;min-height:100%;display:flex;flex-direction:column}
+.as-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:auto}
+.as-top img{height:auto;width:96px;margin:-18px 0 -18px -14px;filter:brightness(0) invert(1);opacity:.95}
+.as-out{display:inline-flex;align-items:center;gap:7px;background:transparent;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.6);
+  padding:7px 13px;border-radius:9px;font:500 12px 'Inter',sans-serif;cursor:pointer;transition:all .15s}
+.as-out:hover{color:#fff;border-color:rgba(255,255,255,.28)}
+.as-head{margin:64px 0 34px}
+.as-eyebrow{font-size:12px;font-weight:500;color:rgba(255,255,255,.45);letter-spacing:.02em;margin-bottom:12px}
+.as-h1{font-size:40px;line-height:1.08;font-weight:600;letter-spacing:-.035em;margin:0}
+.as-h1 span{color:rgba(255,255,255,.42)}
+.as-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.as-card{position:relative;border-radius:18px;padding:26px;cursor:pointer;overflow:hidden;outline:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.09);
+  transition:transform .2s ease,border-color .2s ease,background .2s ease;display:flex;flex-direction:column;min-height:270px}
+.as-card::after{content:'';position:absolute;inset:-1px;border-radius:18px;pointer-events:none;opacity:0;transition:opacity .25s;
+  background:radial-gradient(420px 220px at 85% 0%,var(--ac-glow),transparent 70%)}
+.as-card:hover,.as-card:focus-visible{transform:translateY(-3px);border-color:var(--ac-line)}
+.as-card:hover::after,.as-card:focus-visible::after{opacity:1}
+.as-card[data-a="solutions"]{--ac:#60A5FA;--ac-bg:rgba(59,130,246,.14);--ac-line:rgba(96,165,250,.45);--ac-glow:rgba(59,130,246,.22)}
+.as-card[data-a="mentorias"]{--ac:#34D399;--ac-bg:rgba(16,185,129,.14);--ac-line:rgba(52,211,153,.45);--ac-glow:rgba(16,185,129,.2)}
+.as-card[data-a="geral"]{--ac:#E5E7EB;--ac-bg:rgba(255,255,255,.08);--ac-line:rgba(255,255,255,.3);--ac-glow:rgba(255,255,255,.08)}
+.as-row{display:flex;align-items:flex-start;justify-content:space-between;position:relative;z-index:1}
+.as-ico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--ac-bg);color:var(--ac)}
+.as-ico svg{width:21px;height:21px}
+.as-key{font:500 11px 'Inter',sans-serif;color:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:2px 7px}
+.as-brand{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.4);margin:26px 0 5px;position:relative;z-index:1}
+.as-name{font-size:26px;font-weight:600;letter-spacing:-.025em;position:relative;z-index:1}
+.as-desc{font-size:13.5px;color:rgba(255,255,255,.55);line-height:1.55;margin-top:6px;max-width:380px;position:relative;z-index:1}
+.as-stats{display:flex;gap:0;margin-top:auto;padding-top:22px;border-top:1px solid rgba(255,255,255,.07);position:relative;z-index:1}
+.as-stat{flex:1;padding-right:12px}
+.as-stat+.as-stat{padding-left:16px;border-left:1px solid rgba(255,255,255,.07)}
+.as-sv{font-size:19px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.as-sl{font-size:11px;color:rgba(255,255,255,.42);margin-top:2px;white-space:nowrap}
+.as-go{position:absolute;right:22px;bottom:24px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:var(--ac);color:#07080C;opacity:0;transform:translateX(-6px);transition:all .2s;z-index:2}
+.as-go svg{width:16px;height:16px}
+.as-card:hover .as-go,.as-card:focus-visible .as-go{opacity:1;transform:none}
+.as-card:hover .as-stats,.as-card:focus-visible .as-stats{padding-right:44px}
+.as-wide{grid-column:1/-1;min-height:0;flex-direction:row;align-items:center;gap:18px;padding:20px 24px}
+.as-wide .as-txt{flex:1;position:relative;z-index:1}
+.as-wide .as-name{font-size:18px}
+.as-wide .as-desc{margin-top:2px;max-width:none}
+.as-wide .as-stats{margin:0;padding:0;border:0;flex:0 0 auto;gap:0}
+.as-wide .as-go{position:static;opacity:.5;transform:none;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.18)}
+.as-wide:hover .as-go{opacity:1;background:#fff;color:#07080C}
+.as-wide:hover .as-stats{padding-right:0}
+.as-foot{margin-top:28px;font-size:12px;color:rgba(255,255,255,.32);display:flex;gap:18px;flex-wrap:wrap}
+@media(max-width:760px){
+  .as-inner{padding:22px 16px 28px}
+  .as-head{margin:40px 0 24px}.as-h1{font-size:30px}
+  .as-grid{grid-template-columns:1fr}
+  .as-card{min-height:0;padding:22px}
+  .as-go{opacity:1;transform:none}
+  .as-stats{padding-right:44px}
+  .as-wide{flex-wrap:wrap}.as-wide .as-stats{display:none}
+  .as-key{display:none}
+}
+/* botão de área no topo */
+#area-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:8px;font:600 12px 'Inter',sans-serif;cursor:pointer;
+  border:1px solid var(--line,#E4E6EB);background:#fff;color:#111827;white-space:nowrap;transition:border-color .15s}
+#area-chip:hover{border-color:#C9CDD4}
+#area-chip .ac-dot{width:8px;height:8px;border-radius:50%;background:var(--g)}
+#area-chip svg{width:13px;height:13px;color:#9CA3AF}
+body.area-geral #area-chip .ac-dot{background:#111827}
+.sb-logo img{cursor:pointer}
+/* Solutions = azul · Mentorias = verde */
 body.area-solutions{--g:#2563EB;--gm:#3B82F6;--gl:#DBEAFE;--gf:#EFF6FF}
-body.area-solutions .bp{background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);box-shadow:0 2px 8px rgba(37,99,235,.3)}
+body.area-solutions .bp{background:#2563EB}
+body.area-solutions .bp:hover{background:#1D4ED8}
 body.area-solutions .ni.on::before{background:#3B82F6}
-body.area-solutions .ni.on .ni-icon{background:rgba(37,99,235,.25)}
-/* coisas só da mentoria escondidas na Solutions */
+body.area-solutions .ni.on .ni-icon{background:rgba(59,130,246,.22)}
 body.area-solutions [onclick^="openProcesso"],
 body.area-solutions [onclick^="openSessao"],
 body.area-solutions .ha-mentoria-only{display:none!important}
 </style>
 
-<div id="area-screen">
-  <div class="area-wrap">
-    <div class="area-title">Onde vamos trabalhar hoje?</div>
-    <div class="area-subt">Escolha a área. Pode trocar a qualquer momento no botão do topo.</div>
-    <div class="area-grid">
-      <div class="area-card" onclick="haSetArea('solutions')">
-        <div class="ac-ico" style="background:rgba(37,99,235,.18)">🛠️</div>
-        <div class="ac-k">Hub Advance</div>
-        <div class="ac-n">Solutions</div>
-        <div class="ac-d">Serviços: sites, landing pages, sistemas e gestão para clientes.</div>
+<div id="area-screen" role="dialog" aria-label="Escolher área">
+  <div class="as-inner">
+    <div class="as-top">
+      <img id="as-logo" alt="Hub Advance">
+      <button class="as-out" type="button" onclick="doLogout()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sair
+      </button>
+    </div>
+    <div class="as-head">
+      <div class="as-eyebrow" id="as-date"></div>
+      <h1 class="as-h1"><span id="as-hello">Olá</span><br>Onde vamos trabalhar hoje?</h1>
+    </div>
+    <div class="as-grid">
+      <div class="as-card" data-a="solutions" tabindex="0" onclick="haSetArea('solutions')">
+        <div class="as-row">
+          <div class="as-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M10 13l-2 2 2 2M14 13l2 2-2 2"/></svg></div>
+          <span class="as-key">1</span>
+        </div>
+        <div class="as-brand">Hub Advance</div>
+        <div class="as-name">Solutions</div>
+        <div class="as-desc">Sites, landing pages, sistemas e gestão web para clientes.</div>
+        <div class="as-stats" id="as-st-solutions"></div>
+        <div class="as-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
       </div>
-      <div class="area-card" onclick="haSetArea('mentorias')">
-        <div class="ac-ico" style="background:rgba(0,179,122,.18)">🎓</div>
-        <div class="ac-k">Hub Advance</div>
-        <div class="ac-n">Mentorias</div>
-        <div class="ac-d">Educação: mentoria, comunidade, cursos e produtos digitais.</div>
+      <div class="as-card" data-a="mentorias" tabindex="0" onclick="haSetArea('mentorias')">
+        <div class="as-row">
+          <div class="as-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9L12 4 2 9l10 5 10-5z"/><path d="M6 11.2V16c3.5 2.5 8.5 2.5 12 0v-4.8"/><path d="M22 9v5"/></svg></div>
+          <span class="as-key">2</span>
+        </div>
+        <div class="as-brand">Hub Advance</div>
+        <div class="as-name">Mentorias</div>
+        <div class="as-desc">Mentoria, comunidade, cursos e produtos digitais.</div>
+        <div class="as-stats" id="as-st-mentorias"></div>
+        <div class="as-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </div>
+      <div class="as-card as-wide" data-a="geral" tabindex="0" onclick="haSetArea('geral')">
+        <div class="as-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg></div>
+        <div class="as-txt">
+          <div class="as-name">Visão geral</div>
+          <div class="as-desc">As duas áreas num só painel — receita, agenda e pipeline.</div>
+        </div>
+        <div class="as-stats" id="as-st-geral"></div>
+        <div class="as-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
       </div>
     </div>
-    <div class="area-card area-geral" onclick="haSetArea('geral')">
-      <div class="ac-ico" style="background:rgba(255,255,255,.08)">🧭</div>
-      <div>
-        <div class="ac-n" style="margin-bottom:2px">Geral</div>
-        <div class="ac-d">As duas áreas juntas — números, agenda e pipeline num só painel.</div>
-      </div>
-    </div>
+    <div class="as-foot"><span>Teclas 1, 2 e 3 para entrar</span><span>Clique no logótipo para voltar a este ecrã</span></div>
   </div>
 </div>
 
 <script>
 (function(){
   var AREAS={
-    solutions:{nome:'Hub Advance Solutions',curto:'Solutions',ico:'🛠️'},
-    mentorias:{nome:'Hub Advance Mentorias',curto:'Mentorias',ico:'🎓'},
-    geral:{nome:'Visão Geral',curto:'Geral',ico:'🧭'}
+    solutions:{nome:'Hub Advance Solutions',curto:'Solutions'},
+    mentorias:{nome:'Hub Advance Mentorias',curto:'Mentorias'},
+    geral:{nome:'Visão Geral',curto:'Geral'}
   };
-  // listas de dados que ficam separadas por área (a Equipa é partilhada)
-  var KEYS=['leads','mentorados','pagamentos','vendas','despesas','reunioes','tarefas','conteudo','produtos'];
+  // base de clientes única: leads, clientes/mentorados, agenda e conteúdo são partilhados pelas duas áreas.
+  // separado por área só o que é de cada negócio:
+  var KEYS=['produtos','pagamentos','vendas','despesas','tarefas'];
+  var TAGKEYS=['leads','mentorados','pagamentos','vendas','despesas','reunioes','tarefas','conteudo','produtos'];
   var depth=0;
 
   window.HA_AREA=null;
   try{ HA_AREA=sessionStorage.getItem('ha_area'); }catch(e){}
   if(!AREAS[HA_AREA]) HA_AREA=null;
 
-  // registos antigos (sem área) pertencem à Mentorias
-  function inArea(x){ return !x||typeof x!=='object' ? true : (x.area||'mentorias')===HA_AREA; }
+  function areaOf(x){ return (x&&x.area)||'mentorias'; }
+  function inArea(x){ return !x||typeof x!=='object' ? true : areaOf(x)===HA_AREA; }
 
-  // durante o desenho do ecrã, cada área só "vê" os seus dados
   function withArea(fn,self,args){
     if(depth>0||!HA_AREA||HA_AREA==='geral') return fn.apply(self,args);
     var saved={};
@@ -4483,16 +4563,16 @@ body.area-solutions .ha-mentoria-only{display:none!important}
   });
 
   function hasUntagged(){
-    return KEYS.some(function(k){ return (DB[k]||[]).some(function(x){ return x&&typeof x==='object'&&!x.area; }); });
+    return TAGKEYS.some(function(k){ return (DB[k]||[]).some(function(x){ return x&&typeof x==='object'&&!x.area; }); });
   }
   function tagUntagged(area){
-    KEYS.forEach(function(k){ (DB[k]||[]).forEach(function(x){ if(x&&typeof x==='object'&&!x.area) x.area=area; }); });
+    TAGKEYS.forEach(function(k){ (DB[k]||[]).forEach(function(x){ if(x&&typeof x==='object'&&!x.area) x.area=area; }); });
   }
 
-  // 1ª vez: produtos de serviços → Solutions (e tudo o que está ligado a eles); o resto → Mentorias
   var SERV=/site|landing|p[aá]gina|sistema|\bweb\b|\bapp\b|aplica[cç]|crm|loja|e-?commerce|design|log[oó]|identidade|branding|automa[cç]|tr[aá]fego|ads\b|gest[aã]o de (redes|tr|an)|social media|servi[cç]o|desenvolvimento|setup|implementa/i;
   var EDU=/mentoria|curso|comunidade|e-?book|forma[cç][aã]o|aula|masterclass|imers[aã]o|workshop|kit|guia|calculadora|agenda lucrativa/i;
   function isServico(p){ var t=(p.nome||'')+' '+(p.nomeC||''); return SERV.test(t)&&!EDU.test(t); }
+  function semLead(t){ return (t||'').replace(/^Lead: /,''); }
   function smartTag(){
     var servNomes={};
     (DB.produtos||[]).forEach(function(p){ if(!p.area) p.area=isServico(p)?'solutions':'mentorias'; if(p.area==='solutions') servNomes[p.nome]=1; });
@@ -4501,61 +4581,52 @@ body.area-solutions .ha-mentoria-only{display:none!important}
       if(!x.area && servNomes[x.produto]){ x.area='solutions'; if(x.nome) pessoas[x.nome]=1; if(x.cliente) pessoas[x.cliente]=1; }
     }); });
     (DB.reunioes||[]).forEach(function(r){ if(!r.area && pessoas[r.who]) r.area='solutions'; });
-    (DB.tarefas||[]).forEach(function(t){ if(!t.area && (servNomes[t.produto]||pessoas[(t.projeto||'').replace(/^Lead: /,'')])) t.area='solutions'; });
+    (DB.tarefas||[]).forEach(function(t){ if(!t.area && (servNomes[t.produto]||pessoas[semLead(t.projeto)])) t.area='solutions'; });
     tagUntagged('mentorias');
   }
 
-  // mover um produto (e os leads, clientes, pagamentos, reuniões e tarefas ligados) para a outra área
   window.haMoverProduto=function(id,dest){
     var p=(DB.produtos||[]).find(function(x){return x.id===id;}); if(!p) return;
-    var nome=p.nome, pessoas={}, n={leads:0,mentorados:0,pagamentos:0,reunioes:0,tarefas:0};
-    ['leads','mentorados','pagamentos','vendas'].forEach(function(k){ (DB[k]||[]).forEach(function(x){ if(x.produto===nome){ n[k]=(n[k]||0)+1; if(x.nome) pessoas[x.nome]=1; if(x.cliente) pessoas[x.cliente]=1; } }); });
-    (DB.reunioes||[]).forEach(function(r){ if(pessoas[r.who]) n.reunioes++; });
-    (DB.tarefas||[]).forEach(function(t){ if(t.produto===nome||pessoas[(t.projeto||'').replace(/^Lead: /,'')]) n.tarefas++; });
+    var nome=p.nome, n={pagamentos:0,vendas:0,tarefas:0};
+    ['pagamentos','vendas','tarefas'].forEach(function(k){ (DB[k]||[]).forEach(function(x){ if(x.produto===nome) n[k]++; }); });
     var destNome=AREAS[dest].nome;
-    if(!confirm('Mover "'+(p.nomeC||nome)+'" para '+destNome+'?\n\nVai junto: '+n.leads+' leads, '+n.mentorados+' clientes/mentorados, '+n.pagamentos+' pagamentos, '+n.reunioes+' reuniões e '+n.tarefas+' tarefas.')) return;
+    if(!confirm('Mover "'+(p.nomeC||nome)+'" para '+destNome+'?\n\nVai junto: '+n.pagamentos+' pagamentos, '+n.vendas+' entregas e '+n.tarefas+' tarefas. Os clientes ficam na base comum.')) return;
     p.area=dest;
-    ['leads','mentorados','pagamentos','vendas'].forEach(function(k){ (DB[k]||[]).forEach(function(x){ if(x.produto===nome) x.area=dest; }); });
-    (DB.reunioes||[]).forEach(function(r){ if(pessoas[r.who]) r.area=dest; });
-    (DB.tarefas||[]).forEach(function(t){ if(t.produto===nome||pessoas[(t.projeto||'').replace(/^Lead: /,'')]) t.area=dest; });
+    ['pagamentos','vendas','tarefas'].forEach(function(k){ (DB[k]||[]).forEach(function(x){ if(x.produto===nome) x.area=dest; }); });
     save(); renderAll();
-    if(typeof toast==='function') toast('✓ Movido para '+destNome);
+    if(typeof toast==='function') toast('Movido para '+destNome);
   };
-  // copiar só o produto para a outra área (os registos ficam onde estão)
   window.haCopiarProduto=function(id,dest){
     var p=(DB.produtos||[]).find(function(x){return x.id===id;}); if(!p) return;
     var c=JSON.parse(JSON.stringify(p)); c.id=uid(); c.area=dest;
     DB.produtos.push(c); save(); renderAll();
-    if(typeof toast==='function') toast('✓ Copiado para '+AREAS[dest].nome);
+    if(typeof toast==='function') toast('Copiado para '+AREAS[dest].nome);
   };
-  // botões Mover / Copiar em cada cartão de produto
   function decorarProdutos(){
     var grid=document.getElementById('produtos-grid'); if(!grid) return;
     Array.prototype.forEach.call(grid.querySelectorAll('.card'),function(card){
       var del=Array.prototype.find.call(card.querySelectorAll('button'),function(b){ return (b.getAttribute('onclick')||'').indexOf('deleteProduto(')===0; }); if(!del) return;
       var id=parseInt((del.getAttribute('onclick').match(/\d+/)||[])[0]);
       var p=(DB.produtos||[]).find(function(x){return x.id===id;}); if(!p) return;
-      var cur=p.area||'mentorias', dest=cur==='solutions'?'mentorias':'solutions', dn=AREAS[dest].curto;
+      var cur=areaOf(p), dest=cur==='solutions'?'mentorias':'solutions', dn=AREAS[dest].curto;
       var row=document.createElement('div');
-      row.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px dashed var(--g6);align-items:center';
-      row.innerHTML=(HA_AREA==='geral'?'<span class="tag '+(cur==='solutions'?'tb':'tg')+'" style="font-size:9.5px">'+AREAS[cur].ico+' '+AREAS[cur].curto+'</span>':'')
-        +'<button class="btn bs bsm" style="font-size:10.5px" onclick="haMoverProduto('+id+',\''+dest+'\')">⇄ Mover para '+dn+'</button>'
-        +'<button class="btn bs bsm" style="font-size:10.5px" onclick="haCopiarProduto('+id+',\''+dest+'\')">⧉ Copiar para '+dn+'</button>';
+      row.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--g6);align-items:center';
+      row.innerHTML=(HA_AREA==='geral'?'<span class="tag '+(cur==='solutions'?'tb':'tg')+'">'+AREAS[cur].curto+'</span>':'')
+        +'<button class="btn bs bsm" onclick="haMoverProduto('+id+',\''+dest+'\')">Mover para '+dn+'</button>'
+        +'<button class="btn bs bsm" onclick="haCopiarProduto('+id+',\''+dest+'\')">Copiar para '+dn+'</button>';
       card.appendChild(row);
     });
   }
   var _rp=window.renderProdutos;
   window.renderProdutos=function(){ var r=_rp.apply(this,arguments); decorarProdutos(); return r; };
 
-  // tudo o que é criado fica marcado com a área atual (no Geral → Mentorias)
   var _save=window.save;
   window.save=function(){
-    if(depth>0){ setTimeout(window.save,0); return; } // nunca gravar com dados filtrados
+    if(depth>0){ setTimeout(window.save,0); return; }
     tagUntagged(HA_AREA&&HA_AREA!=='geral'?HA_AREA:'mentorias');
     return _save.apply(this,arguments);
   };
 
-  // depois do login: carregar dados → marcar antigos como Mentorias → mostrar escolha
   var _init=window.initApp;
   window.initApp=async function(){
     await _init.apply(this,arguments);
@@ -4564,7 +4635,6 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     if(HA_AREA) applyArea(); else showChooser();
   };
 
-  // cada novo login pergunta outra vez a área
   var _login=window.doLogin;
   window.doLogin=function(){
     try{ sessionStorage.removeItem('ha_area'); }catch(e){}
@@ -4579,27 +4649,65 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     b.id='area-chip'; b.type='button'; b.title='Trocar de área';
     b.onclick=showChooser;
     bar.insertBefore(b,bar.firstChild);
-    // marcar elementos que só fazem sentido na Mentorias
     var funil=document.querySelector('#p-overview > div'); if(funil) funil.classList.add('ha-mentoria-only');
     var info=document.querySelector('#p-mentorados > .al'); if(info) info.classList.add('ha-mentoria-only');
+    var logo=document.querySelector('.sb-logo img');
+    if(logo){ logo.title='Voltar ao início'; logo.addEventListener('click',showChooser); }
   }
 
-  function showChooser(){ document.getElementById('area-screen').classList.add('show'); }
+  function eur(v){ return '€'+Math.round(v).toLocaleString('pt-PT'); }
+  function statsDe(a){
+    var f=function(x){ return a==='geral'||areaOf(x)===a; };
+    var prods={}; (DB.produtos||[]).forEach(function(p){ if(f(p)) prods[p.nome]=1; });
+    var leads=(DB.leads||[]).filter(function(l){ return (a==='geral'||prods[l.produto])&&['fechado','perdido','standby'].indexOf(l.etapa)<0; }).length;
+    var nomes={};
+    (DB.vendas||[]).concat(DB.pagamentos||[]).forEach(function(x){ if(f(x)&&x.cliente) nomes[x.cliente]=1; });
+    if(a==='geral') (DB.mentorados||[]).forEach(function(m){ nomes[m.nome]=1; });
+    var clientes=Object.keys(nomes).length;
+    var rec=(DB.pagamentos||[]).filter(function(p){ return f(p)&&p.estado==='Pago'&&typeof thisMonth==='function'&&thisMonth(p.data); })
+      .reduce(function(s,p){ return s+parseFloat(p.valor||0); },0);
+    return [[leads,'leads ativos'],[clientes,a==='mentorias'?'mentorados':'clientes'],[eur(rec),'recebido este mês']];
+  }
+  function stHTML(list){ return list.map(function(s){ return '<div class="as-stat"><div class="as-sv">'+s[0]+'</div><div class="as-sl">'+s[1]+'</div></div>'; }).join(''); }
+  function renderChooser(){
+    var h=new Date().getHours(), nome=(window.CONFIG&&CONFIG.USERNAME)||'';
+    document.getElementById('as-hello').textContent=(h<12?'Bom dia':h<20?'Boa tarde':'Boa noite')+(nome?', '+nome:'')+'.';
+    var dt=new Date().toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'}); document.getElementById('as-date').textContent=dt.charAt(0).toUpperCase()+dt.slice(1);
+    var src=document.querySelector('.sb-logo img'), lg=document.getElementById('as-logo');
+    if(src&&lg&&!lg.src) lg.src=src.src;
+    if(typeof DB==='object'&&DB){
+      ['solutions','mentorias','geral'].forEach(function(a){ var el=document.getElementById('as-st-'+a); if(el) el.innerHTML=stHTML(statsDe(a)); });
+    }
+  }
+  function showChooser(){
+    renderChooser();
+    var s=document.getElementById('area-screen'); s.classList.add('show'); s.scrollTop=0;
+    var sb=document.querySelector('.sb'); if(sb) sb.classList.remove('open');
+    var ov=document.getElementById('sb-overlay'); if(ov){ ov.classList.remove('show'); ov.style.display='none'; }
+  }
   window.haShowChooser=showChooser;
+
+  document.addEventListener('keydown',function(e){
+    var s=document.getElementById('area-screen'); if(!s||!s.classList.contains('show')) return;
+    if(/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||'')) return;
+    var m={'1':'solutions','2':'mentorias','3':'geral'}[e.key];
+    if(m){ e.preventDefault(); haSetArea(m); }
+    else if(e.key==='Enter'&&e.target&&e.target.dataset&&e.target.dataset.a){ haSetArea(e.target.dataset.a); }
+  });
 
   function applyArea(){
     var a=AREAS[HA_AREA]; if(!a) return;
     document.body.classList.remove('area-solutions','area-mentorias','area-geral');
     document.body.classList.add('area-'+HA_AREA);
     var chip=document.getElementById('area-chip');
-    if(chip) chip.innerHTML=a.ico+' '+a.curto+' <span style="opacity:.55">⇄</span>';
+    if(chip) chip.innerHTML='<span class="ac-dot"></span>'+a.curto+'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16l-4-4 4-4M17 8l4 4-4 4M3 12h18"/></svg>';
     var sub=document.querySelector('.sb-logo .logo-sub'); if(sub) sub.textContent=a.nome;
 
-    var lbl=HA_AREA==='solutions'?'Clientes':HA_AREA==='geral'?'Clientes & Mentorados':'Mentorados';
+    var lbl=HA_AREA==='mentorias'?'Mentorados':'Clientes';
     if(typeof titles==='object') titles.mentorados=lbl;
     var ni=document.querySelector('.ni[onclick*="\'mentorados\'"] .ni-label'); if(ni) ni.textContent=lbl;
     var mn=document.querySelector('#mn-mentorados .mob-nav-label');
-    if(mn) mn.textContent=HA_AREA==='solutions'?'Clientes':HA_AREA==='geral'?'Clientes':'Mentoria';
+    if(mn) mn.textContent=HA_AREA==='mentorias'?'Mentoria':'Clientes';
     var ov=document.getElementById('ov-ment-semana');
     if(ov){ var t=ov.parentElement.querySelector('.ct'); if(t) t.textContent=lbl+' esta semana'; }
 
@@ -4614,11 +4722,217 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     try{ sessionStorage.setItem('ha_area',area); }catch(e){}
     document.getElementById('area-screen').classList.remove('show');
     applyArea();
-    if(typeof toast==='function') toast('→ '+AREAS[area].nome, area==='solutions'?'#2563EB':area==='mentorias'?'#0B6E4F':'#16161E');
   };
 })();
 </script>
 <!-- ═══ FIM DO BLOCO 5 ═══ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     BLOCO 6 — DESIGN PROFISSIONAL
+     Visual mais limpo e moderno + troca dos emojis por ícones de linha.
+     Colar ANTES de </body>, depois do Bloco 5. Não mexe em dados.
+     ═══════════════════════════════════════════════════════════════ -->
+<style>
+:root{
+  --ink:#0F172A;--ink2:#334155;--mut:#64748B;--mut2:#94A3B8;--line:#E5E7EB;--line2:#EEF0F3;--bg:#F6F7F9;--card:#FFFFFF;
+  --g:#0E9F6E;--gm:#10B981;--gl:#D1FAE5;--gf:#ECFDF5;
+  --g3:#475569;--g4:#64748B;--g5:#CBD5E1;--g6:#E5E7EB;--g7:#F3F4F6;--bk:#0F172A;
+  --re:#DC2626;--rel:#FEF2F2;--or:#D97706;--orl:#FFFBEB;--ye:#B45309;--yel:#FFFBEB;--pu:#6D28D9;--pul:#F5F3FF;--bl:#2563EB;--bll:#EFF6FF;
+  --r:12px;--rs:8px;
+  --shadow-sm:0 1px 2px rgba(15,23,42,.04);--shadow-md:0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.03);--shadow-lg:0 20px 40px -12px rgba(15,23,42,.18)
+}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-feature-settings:'cv11','ss01'}
+.logo,.tb-title,.ct,.kv,.mt,.pl-col-title,.pl-card-name,[style*="Space Grotesk"]{font-family:'Inter',system-ui,sans-serif!important}
+.kv,.as-sv,td,.tag{font-variant-numeric:tabular-nums}
+
+/* barra lateral */
+.sb{background:#0B0E14;border-right:1px solid rgba(255,255,255,.04)}
+.sb-divider{background:rgba(255,255,255,.05)}
+.nav-sec{font-size:10.5px!important;letter-spacing:.06em;font-weight:500;color:rgba(255,255,255,.3);text-transform:none;padding:1rem .6rem .35rem}
+.ni{font-size:13px;color:rgba(255,255,255,.55);border-radius:8px;padding:7px 9px;gap:10px}
+.ni:hover{background:rgba(255,255,255,.05);color:#fff}
+.ni.on{background:rgba(255,255,255,.08);color:#fff}
+.ni.on::before{left:-8px;width:3px;height:16px;border-radius:0 3px 3px 0}
+.ni-icon{width:auto;height:auto;background:transparent!important}
+.ni-icon svg{width:16px;height:16px;stroke-width:1.7}
+.ni.on .ni-icon svg{color:var(--gm)}
+.nb{background:rgba(255,255,255,.1);color:rgba(255,255,255,.75);font-weight:600;border-radius:6px}
+.sb-logout{color:rgba(255,255,255,.4)}
+.uav{background:#1F2937}
+.uav::after{border-color:#0B0E14}
+
+/* topo e conteúdo */
+.main{background:var(--bg)}
+.topbar{background:rgba(255,255,255,.85);border-bottom:1px solid var(--line);box-shadow:none;height:60px}
+.tb-title{font-size:15px;font-weight:600;letter-spacing:-.015em;color:var(--ink)}
+.tb-title::before{display:none}
+.content{padding:24px 28px}
+
+/* botões */
+.btn{border-radius:8px;font-weight:500;font-size:12.5px;letter-spacing:0;padding:7px 13px;box-shadow:none;transition:background .15s,border-color .15s,color .15s}
+.btn:hover{transform:none!important}
+.bp{background:var(--g);color:#fff;box-shadow:0 1px 2px rgba(15,23,42,.08)}
+.bp:hover{background:#0B8A5F;box-shadow:0 1px 2px rgba(15,23,42,.08)}
+.bs{background:#fff;color:var(--ink2);border:1px solid var(--line);box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.bs:hover{background:#F9FAFB;border-color:#D1D5DB}
+.bd{background:#fff;color:var(--re);border:1px solid #FECACA}
+.bd:hover{background:var(--rel)}
+.bg{background:var(--gf);color:var(--g);border:1px solid var(--gl)}
+.bsm{padding:5px 10px;font-size:12px}
+
+/* cartões */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-sm);padding:20px}
+.ct{font-size:14px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
+.cs{color:var(--mut)}
+.kpi{padding:18px 20px}
+.kpi::before{display:none}
+.kl{font-size:12px;text-transform:none;letter-spacing:0;color:var(--mut);font-weight:500;margin-bottom:10px}
+.kv{font-size:26px;font-weight:600;letter-spacing:-.03em;color:var(--ink)}
+.ks{color:var(--mut2);font-size:12px}
+
+/* tabelas */
+.tbl th{background:transparent;color:var(--mut);font-size:11.5px;font-weight:500;text-transform:none;letter-spacing:0;border-bottom:1px solid var(--line);padding:9px 12px}
+.tbl td{border-bottom:1px solid var(--line2);font-size:13px}
+.tbl tbody tr:hover td{background:#FAFAFB}
+
+/* etiquetas */
+.tag{border-radius:6px;font-weight:500;font-size:11px;padding:2px 8px;border:1px solid transparent}
+.tg{background:#ECFDF5;color:#047857;border-color:#D1FAE5}
+.tp{background:#F5F3FF;color:#6D28D9;border-color:#EDE9FE}
+.to{background:#FFF7ED;color:#C2410C;border-color:#FFEDD5}
+.tr{background:#FEF2F2;color:#B91C1C;border-color:#FEE2E2}
+.ty{background:#FFFBEB;color:#B45309;border-color:#FEF3C7}
+.tgr{background:#F3F4F6;color:#4B5563;border-color:#E5E7EB}
+.tb{background:#EFF6FF;color:#1D4ED8;border-color:#DBEAFE}
+
+/* formulários e janelas */
+.fi{border:1px solid var(--line);border-radius:8px;box-shadow:0 1px 2px rgba(15,23,42,.03);font-size:13px}
+.fi:focus{border-color:var(--g);box-shadow:0 0 0 3px color-mix(in srgb,var(--g) 15%,transparent)}
+.fl{color:var(--ink2);font-weight:500}
+.mo{background:rgba(15,23,42,.45);backdrop-filter:blur(3px)}
+.mbox{border-radius:14px;border:1px solid var(--line);box-shadow:var(--shadow-lg);padding:24px}
+.mt{font-size:16px;font-weight:600;letter-spacing:-.015em}
+.mx{font-size:18px;color:var(--mut2)}
+.al{border-radius:8px;font-size:12.5px}
+.empty{color:var(--mut2)}
+.toast{border-radius:10px;background:#0F172A!important;font-weight:500;box-shadow:0 10px 30px -8px rgba(15,23,42,.35)}
+
+/* pipeline e agenda */
+.pl-col{background:#F3F4F6;border:1px solid var(--line2);border-radius:12px}
+.pl-card{border:1px solid var(--line);border-left-width:3px;border-radius:10px;box-shadow:var(--shadow-sm)}
+.pl-card:hover{transform:none;box-shadow:0 4px 12px -4px rgba(15,23,42,.12)}
+.lead-card{border-radius:10px}
+.day-col{background:#F3F4F6;border-radius:10px}
+.filter-btn{border-radius:8px;box-shadow:none;border-color:var(--line);font-size:12px}
+.filter-btn.on{background:var(--ink);border-color:var(--ink)}
+.sbw{background:#EEF0F3;height:6px}
+
+/* faixa do funil (Visão Geral) mais sóbria */
+#p-overview > div:first-child > div[style*="background:#0C0C12"]{background:#fff!important;border:1px solid var(--line);box-shadow:var(--shadow-sm)}
+#p-overview > div:first-child > div[style*="background:#0C0C12"] div[style*="color:#fff"]{color:var(--ink)!important}
+#p-overview > div:first-child > div[style*="background:#0C0C12"] div[style*="rgba(255,255,255"]{color:var(--mut)!important}
+#p-overview > div:first-child > div[style*="linear-gradient"]{background:var(--ink)!important;box-shadow:none!important}
+
+/* barra inferior (telemóvel) */
+.mob-nav{background:#0B0E14}
+.mob-nav-item.on{background:rgba(255,255,255,.07)}
+.mob-nav-item.on svg{stroke:#fff}
+.mob-nav-item.on .mob-nav-label{color:#fff}
+
+/* ícones que substituem os emojis */
+.ha-ico{display:inline-flex;align-items:center;justify-content:center;vertical-align:-2px;line-height:1}
+.ha-ico svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.btn .ha-ico svg{width:13px;height:13px}
+@media(max-width:768px){.content{padding:14px}.card{padding:16px}}
+</style>
+
+<script>
+(function(){
+  var P={
+    pencil:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/>',
+    cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+    phone:'<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',
+    chat:'<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>',
+    note:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>',
+    clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    box:'<path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/>',
+    gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/>',
+    play:'<path d="M7 4l13 8-13 8z"/>',
+    pause:'<path d="M8 4v16M16 4v16"/>',
+    user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>',
+    users:'<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0114 0M16 4a4 4 0 010 8M22 21a7 7 0 00-4-6.3"/>',
+    pin:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/>',
+    video:'<path d="M15 10l5-3v10l-5-3"/><rect x="2" y="6" width="13" height="12" rx="2"/>',
+    folder:'<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>',
+    repeat:'<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 013-3h15M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 01-3 3H3"/>',
+    building:'<rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>',
+    target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+    euro:'<path d="M18 7a7 7 0 100 10M4 10h10M4 14h10"/>',
+    upload:'<path d="M12 16V4M7 9l5-5 5 5"/><path d="M20 16v3a2 2 0 01-2 2H6a2 2 0 01-2-2v-3"/>',
+    warn:'<path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+    check:'<path d="M20 6L9 17l-5-5"/>',
+    x:'<path d="M18 6L6 18M6 6l12 12"/>',
+    cap:'<path d="M22 9L12 4 2 9l10 5 10-5z"/><path d="M6 11v5c3.5 2.5 8.5 2.5 12 0v-5"/>',
+    tool:'<path d="M14.7 6.3a4 4 0 00-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 005.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
+    compass:'<circle cx="12" cy="12" r="9"/><path d="M16 8l-2 6-6 2 2-6z"/>',
+    book:'<path d="M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5z"/><path d="M4 19.5V21h16"/>',
+    trophy:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0z"/><path d="M17 5h3v2a3 3 0 01-3 3M7 5H4v2a3 3 0 003 3"/>',
+    camera:'<path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>',
+    calc:'<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h8"/>',
+    zap:'<path d="M13 2L3 14h9l-1 8 10-12h-9z"/>',
+    handshake:'<path d="M11 17l2 2a1.4 1.4 0 002-2M14 14l2.5 2.5a1.4 1.4 0 002-2L15 11M2 12l5-5 4 1 3-2 3 3"/><path d="M22 12l-5-5M2 12l6 6 2-2"/>',
+    party:'<path d="M5.8 11.3L2 22l10.7-3.8"/><path d="M4 3h.01M22 8h.01M15 2h.01M22 20h.01M22 2l-2.2.7a2 2 0 00-1.3 2.3c.2.9-.4 1.8-1.4 1.8H16M11 13c1.9-1.9 2.4-4.5 1-6s-4.1-.9-6 1"/>'
+  };
+  var MAP={'✏':'pencil','📅':'cal','📆':'cal','🗓':'cal','📱':'phone','📞':'phone','💬':'chat','📝':'note','📋':'note','🕑':'clock','⏱':'clock','⏰':'clock',
+    '📦':'box','⚙':'gear','▶':'play','⏸':'pause','👤':'user','👥':'users','📍':'pin','📹':'video','📁':'folder','🔁':'repeat','🏢':'building',
+    '🎯':'target','💳':'card','💰':'euro','💶':'euro','📤':'upload','⚠':'warn','✅':'check','✔':'check','❌':'x','🎓':'cap','🛠':'tool','🧭':'compass',
+    '📚':'book','🏆':'trophy','📸':'camera','🧮':'calc','⚡':'zap','🤝':'handshake','🎉':'party'};
+  var EP=/\p{Extended_Pictographic}/u, EPG=/[\p{Extended_Pictographic}️‍]+[  ]?/gu;
+  function icon(k){ return '<svg viewBox="0 0 24 24">'+P[k]+'</svg>'; }
+
+  function fixText(t){
+    var v=t.nodeValue; if(!v||!EP.test(v)) return;
+    var p=t.parentNode; if(!p) return;
+    var tag=p.nodeName;
+    if(tag==='SCRIPT'||tag==='STYLE'||tag==='TEXTAREA'||(p.closest&&p.closest('#area-screen'))) return;
+    if(tag==='OPTION'&&!p.hasAttribute('value')) p.setAttribute('value',p.textContent);
+    v=v.replace(/🥇/g,'1.º ').replace(/🥈/g,'2.º ').replace(/🥉/g,'3.º ');
+    var first=(v.match(/\p{Extended_Pictographic}/u)||[''])[0];
+    var out=v.replace(EPG,'').replace(/ {2,}/g,' ');
+    if(!out.trim() && MAP[first] && tag!=='OPTION' && tag!=='TITLE'){
+      var s=document.createElement('span'); s.className='ha-ico'; s.innerHTML=icon(MAP[first]);
+      p.replaceChild(s,t); return;
+    }
+    if(out!==t.nodeValue) t.nodeValue=out;
+  }
+  function walk(root){
+    if(!root) return;
+    if(root.nodeType===3){ fixText(root); return; }
+    if(root.nodeType!==1&&root.nodeType!==9&&root.nodeType!==11) return;
+    var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null), list=[], n;
+    while((n=w.nextNode())) if(EP.test(n.nodeValue)) list.push(n);
+    list.forEach(fixText);
+  }
+  function fixAttrs(root){
+    if(!root||!root.querySelectorAll) return;
+    root.querySelectorAll('[placeholder],[title]').forEach(function(el){
+      ['placeholder','title'].forEach(function(a){ var v=el.getAttribute(a); if(v&&EP.test(v)) el.setAttribute(a,v.replace(EPG,'').trim()); });
+    });
+  }
+  function start(){
+    walk(document.body); fixAttrs(document.body);
+    if(document.title&&EP.test(document.title)) document.title=document.title.replace(EPG,'');
+    new MutationObserver(function(ms){
+      ms.forEach(function(m){
+        if(m.type==='characterData') fixText(m.target);
+        else m.addedNodes.forEach(function(nd){ walk(nd); if(nd.nodeType===1) fixAttrs(nd); });
+      });
+    }).observe(document.body,{childList:true,subtree:true,characterData:true});
+  }
+  if(document.body) start(); else document.addEventListener('DOMContentLoaded',start);
+})();
+</script>
+<!-- ═══ FIM DO BLOCO 6 ═══ -->
 
 </body>
 </html>
