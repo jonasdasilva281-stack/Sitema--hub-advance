@@ -4790,7 +4790,11 @@ body.area-solutions .ha-mentoria-only{display:none!important}
   window.doLogin=function(){
     try{ sessionStorage.removeItem('ha_area'); }catch(e){}
     HA_AREA=null;
-    return _login.apply(this,arguments);
+    var r=_login.apply(this,arguments);
+    // senha certa → abre já a página de escolha, sem passar pelo painel (os números entram quando os dados carregarem)
+    var ok=false; try{ ok=sessionStorage.getItem('ha_auth')==='1'; }catch(e){}
+    if(ok) showChooser();
+    return r;
   };
 
   function injectChip(){
@@ -4867,8 +4871,6 @@ body.area-solutions .ha-mentoria-only{display:none!important}
       spark('as-sp-solutions',serie('solutions')); spark('as-sp-mentorias',serie('mentorias'));
       contar();
     }
-    // reinicia as animações de entrada
-    document.querySelectorAll('#area-screen .as-card').forEach(function(c){ c.style.animation='none'; void c.offsetWidth; c.style.animation=''; });
   }
   // luz que segue o rato + inclinação 3D suave
   (function(){
@@ -4884,8 +4886,11 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     });
   })();
   function showChooser(){
-    renderChooser();
-    var s=document.getElementById('area-screen'); s.classList.add('show'); s.scrollTop=0;
+    var s=document.getElementById('area-screen'), jaAberto=s.classList.contains('show');
+    renderChooser(jaAberto);
+    if(jaAberto) return;
+    document.querySelectorAll('#area-screen .as-card').forEach(function(c){ c.style.animation='none'; void c.offsetWidth; c.style.animation=''; });
+    s.classList.add('show'); s.scrollTop=0;
     var sb=document.querySelector('.sb'); if(sb) sb.classList.remove('open');
     var ov=document.getElementById('sb-overlay'); if(ov){ ov.classList.remove('show'); ov.style.display='none'; }
   }
@@ -4919,6 +4924,8 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     if(typeof nav==='function') nav('overview',first);
     if(typeof mobNav==='function') mobNav('overview');
   }
+
+  try{ if(sessionStorage.getItem('ha_auth')==='1' && !HA_AREA) showChooser(); }catch(e){}
 
   window.haSetArea=function(area){
     if(!AREAS[area]) return;
