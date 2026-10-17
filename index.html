@@ -5673,7 +5673,7 @@ mark.cb-hl{background:#FEF3C7;color:inherit;border-radius:3px;padding:0 1px}
   var filtro='todos', aberto={}, sel=0, resultados=[], vista=[];
   function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
   function eur(v){ return '€'+Math.round(v||0).toLocaleString('pt-PT'); }
-  function tel(t){ return typeof normalizeTel==='function'?normalizeTel(t||''):String(t||'').replace(/\D/g,''); }
+  function tel(t){ t=String(t==null?'':t); return typeof normalizeTel==='function'?normalizeTel(t):t.replace(/\D/g,''); }
   function nk(n){ return String(n||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
   function areaOf(x){ return (x&&x.area)||'mentorias'; }
   function cor(n){ var h=0; for(var i=0;i<(n||'').length;i++) h=(h*31+n.charCodeAt(i))>>>0; return CORES[h%CORES.length]; }
