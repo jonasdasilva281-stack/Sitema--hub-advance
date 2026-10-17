@@ -4542,10 +4542,10 @@ body.area-solutions .ha-mentoria-only{display:none!important}
         <div class="as-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
       </div>
       <div class="as-card as-wide" data-a="geral" tabindex="0" onclick="haSetArea('geral')">
-        <div class="as-ico" aria-hidden="true">G</div>
+        <div class="as-ico" aria-hidden="true">A</div>
         <div class="as-txt">
-          <div class="as-name">Visão geral</div>
-          <div class="as-desc">As duas áreas num só painel — receita, agenda e pipeline.</div>
+          <div class="as-name">Administração</div>
+          <div class="as-desc">Gestão da empresa — finanças, produtos e equipa das duas áreas.</div>
         </div>
         <div class="as-stats" id="as-st-geral"></div>
         <div class="as-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
@@ -4586,7 +4586,7 @@ body.area-solutions .ha-mentoria-only{display:none!important}
   var AREAS={
     solutions:{nome:'Hub Advance Solutions',curto:'Solutions'},
     mentorias:{nome:'Hub Advance Mentorias',curto:'Mentorias'},
-    geral:{nome:'Visão Geral',curto:'Geral'}
+    geral:{nome:'Administração',curto:'Administração'}
   };
   // base de clientes única: leads, clientes/mentorados, agenda e conteúdo são partilhados pelas duas áreas.
   // separado por área só o que é de cada negócio:
@@ -4712,6 +4712,12 @@ body.area-solutions .ha-mentoria-only{display:none!important}
 
   function eur(v){ return '€'+Math.round(v).toLocaleString('pt-PT'); }
   function statsDe(a){
+    if(a==='geral'){
+      var mes=(DB.pagamentos||[]).filter(function(p){return p.estado==='Pago'&&typeof thisMonth==='function'&&thisMonth(p.data);}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
+      var sai=(DB.despesas||[]).filter(function(d){return typeof thisMonth==='function'&&thisMonth(d.data);}).reduce(function(s,d){return s+parseFloat(d.valor||0);},0);
+      var pe=(DB.pagamentos||[]).filter(function(p){return p.estado==='Pendente';}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
+      return [[eur(mes),'receita do mês'],[eur(mes-sai),'resultado'],[eur(pe),'a receber']];
+    }
     var f=function(x){ return a==='geral'||areaOf(x)===a; };
     var prods={}; (DB.produtos||[]).forEach(function(p){ if(f(p)) prods[p.nome]=1; });
     var leads=(DB.leads||[]).filter(function(l){ return (a==='geral'||prods[l.produto])&&['fechado','perdido','standby'].indexOf(l.etapa)<0; }).length;
@@ -4988,6 +4994,216 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 })();
 </script>
 <!-- ═══ FIM DO BLOCO 6 ═══ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     BLOCO 7 — ADMINISTRAÇÃO (a antiga "Visão geral")
+     Painel de gestão da empresa com as duas áreas juntas.
+     Mostra só as áreas de gestão: Painel, Financeiro, Produtos e Equipa.
+     Colar ANTES de </body>, depois do Bloco 6.
+     ═══════════════════════════════════════════════════════════════ -->
+<style>
+.ni-admin-sec,.ni-admin{display:none}
+body.area-geral .ni-admin-sec,body.area-geral .ni-admin{display:flex}
+body.area-geral .ni-admin-sec{display:block}
+body.area-geral .sb-nav .nav-sec:not(.ni-admin-sec),
+body.area-geral .ni[onclick*="'overview'"],
+body.area-geral .ni[onclick*="'pipeline'"],
+body.area-geral .ni[onclick*="'mentorados'"],
+body.area-geral .ni[onclick*="'entregas'"],
+body.area-geral .ni[onclick*="'agenda'"],
+body.area-geral .ni[onclick*="'marketing'"],
+body.area-geral #mn-pipeline,body.area-geral #mn-mentorados,body.area-geral #mn-agenda,
+body.area-geral .topbar-actions .btn{display:none!important}
+body.area-geral{--g:#111827;--gm:#374151;--gl:#E5E7EB;--gf:#F3F4F6}
+body.area-geral .bp{background:#111827}
+body.area-geral .bp:hover{background:#1F2937}
+body.area-geral .ni.on::before{background:#fff}
+body.area-geral .ni.on .ni-icon svg{color:#fff}
+
+#p-admin .ad-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+#p-admin .ad-title{font-size:22px;font-weight:600;letter-spacing:-.025em;color:var(--ink)}
+#p-admin .ad-sub{font-size:13px;color:var(--mut);margin-top:3px}
+#p-admin .ad-leg{display:flex;gap:14px;font-size:12px;color:var(--mut)}
+#p-admin .ad-leg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:0}
+#p-admin .ad-g{display:grid;gap:14px;margin-bottom:14px}
+#p-admin .ad-k4{grid-template-columns:repeat(4,1fr)}
+#p-admin .ad-21{grid-template-columns:1.7fr 1fr}
+#p-admin .ad-3{grid-template-columns:repeat(3,1fr)}
+#p-admin .ad-kl{font-size:12px;color:var(--mut);font-weight:500}
+#p-admin .ad-kv{font-size:26px;font-weight:600;letter-spacing:-.03em;margin-top:10px;font-variant-numeric:tabular-nums;color:var(--ink)}
+#p-admin .ad-ks{font-size:12px;color:var(--mut2);margin-top:4px}
+#p-admin .up{color:#047857}#p-admin .down{color:#B91C1C}
+#p-admin .ad-ct{font-size:14px;font-weight:600;color:var(--ink);letter-spacing:-.01em}
+#p-admin .ad-cs{font-size:12px;color:var(--mut);margin-top:2px}
+#p-admin .ad-chart{display:flex;align-items:flex-end;gap:14px;height:180px;margin-top:22px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+#p-admin .ad-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px}
+#p-admin .ad-stack{width:100%;max-width:46px;display:flex;flex-direction:column-reverse;border-radius:6px 6px 2px 2px;overflow:hidden;min-height:2px;background:#EEF0F3}
+#p-admin .ad-stack span{display:block;width:100%}
+#p-admin .ad-cv{font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}
+#p-admin .ad-xl{display:flex;gap:14px;margin-top:8px}
+#p-admin .ad-xl div{flex:1;text-align:center;font-size:11.5px;color:var(--mut)}
+#p-admin .ad-xl div.cur{color:var(--ink);font-weight:600}
+#p-admin .ad-area{padding:14px 0;border-bottom:1px solid var(--line2)}
+#p-admin .ad-area:last-child{border-bottom:0;padding-bottom:0}
+#p-admin .ad-area:first-of-type{padding-top:6px}
+#p-admin .ad-arow{display:flex;justify-content:space-between;align-items:baseline}
+#p-admin .ad-an{font-size:13px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px}
+#p-admin .ad-an i{width:8px;height:8px;border-radius:2px;display:inline-block}
+#p-admin .ad-av{font-size:18px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+#p-admin .ad-bar{height:6px;border-radius:4px;background:#EEF0F3;margin:9px 0 8px;overflow:hidden}
+#p-admin .ad-bar span{display:block;height:100%;border-radius:4px}
+#p-admin .ad-meta{display:flex;gap:16px;font-size:12px;color:var(--mut)}
+#p-admin .ad-meta b{color:var(--ink2);font-weight:600}
+#p-admin .ad-li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line2);font-size:13px}
+#p-admin .ad-li:last-child{border-bottom:0}
+#p-admin .ad-li .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+#p-admin .ad-li .s{font-size:11.5px;color:var(--mut)}
+#p-admin .ad-li .v{font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink)}
+#p-admin .ad-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+#p-admin .ad-empty{font-size:13px;color:var(--mut2);padding:18px 0;text-align:center}
+#p-admin .ad-av2{width:26px;height:26px;border-radius:50%;background:#111827;color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+@media(max-width:1100px){#p-admin .ad-k4{grid-template-columns:repeat(2,1fr)}#p-admin .ad-21,#p-admin .ad-3{grid-template-columns:1fr}}
+@media(max-width:560px){#p-admin .ad-k4{grid-template-columns:1fr 1fr}#p-admin .ad-kv{font-size:21px}#p-admin .ad-chart{gap:6px}#p-admin .ad-xl{gap:6px}}
+</style>
+
+<script>
+(function(){
+  var COR={solutions:'#2563EB',mentorias:'#0E9F6E'};
+  var NOME={solutions:'Solutions',mentorias:'Mentorias'};
+  var MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+  // painel, item de menu e título
+  var content=document.getElementById('content');
+  if(content&&!document.getElementById('p-admin')){
+    var p=document.createElement('div'); p.className='panel'; p.id='p-admin';
+    content.insertBefore(p,content.firstChild);
+  }
+  var navEl=document.querySelector('.sb-nav');
+  var adminNi=null;
+  if(navEl){
+    var sec=document.createElement('div'); sec.className='nav-sec ni-admin-sec'; sec.textContent='Gestão da empresa';
+    adminNi=document.createElement('div'); adminNi.className='ni ni-admin';
+    adminNi.setAttribute('onclick',"nav('admin',this)");
+    adminNi.innerHTML='<span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></span><span class="ni-label">Painel da empresa</span>';
+    navEl.insertBefore(adminNi,navEl.firstChild); navEl.insertBefore(sec,adminNi);
+  }
+  if(typeof titles==='object') titles.admin='Administração';
+
+  // na Administração, "início" é o painel da empresa
+  var _nav=window.nav;
+  window.nav=function(id,el){
+    if(window.HA_AREA==='geral'&&id==='overview'){ id='admin'; el=adminNi; }
+    if(window.HA_AREA!=='geral'&&id==='admin'){ id='overview'; el=document.querySelector('.ni[onclick*="\'overview\'"]'); }
+    return _nav.call(this,id,el);
+  };
+  var _ra=window.renderAll;
+  window.renderAll=function(){ var r=_ra.apply(this,arguments); if(window.HA_AREA==='geral') renderAdmin(); return r; };
+
+  function areaOf(x){ return (x&&x.area)||'mentorias'; }
+  function eur(v){ return '€'+Math.round(v||0).toLocaleString('pt-PT'); }
+  function iso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function ym(s){ return (s||'').slice(0,7); }
+  function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function ini(n){ return (n||'?').split(' ').map(function(x){return x[0]||'';}).join('').slice(0,2).toUpperCase(); }
+
+  function renderAdmin(){
+    var el=document.getElementById('p-admin'); if(!el||typeof DB!=='object') return;
+    var pags=DB.pagamentos||[], desps=DB.despesas||[], hoje=new Date(), hojeISO=iso(hoje);
+    var mesAtual=hojeISO.slice(0,7), dPrev=new Date(hoje.getFullYear(),hoje.getMonth()-1,1), mesPrev=iso(dPrev).slice(0,7);
+    var pagos=pags.filter(function(p){return p.estado==='Pago';});
+    function rec(mes,area){ return pagos.filter(function(p){return ym(p.data)===mes&&(!area||areaOf(p)===area);}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0); }
+    var recMes=rec(mesAtual), recPrev=rec(mesPrev);
+    var saidas=desps.filter(function(d){return ym(d.data)===mesAtual;}).reduce(function(s,d){return s+parseFloat(d.valor||0);},0);
+    var lim=new Date(hoje); lim.setDate(lim.getDate()+30); var limISO=iso(lim);
+    var pend=pags.filter(function(p){return p.estado==='Pendente';});
+    var aReceber=pend.filter(function(p){return (p.data||'')<=limISO;}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
+    var atrasado=pend.filter(function(p){return (p.data||'')<hojeISO;}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
+    var res=recMes-saidas;
+    var delta=recPrev>0?Math.round((recMes-recPrev)/recPrev*100):null;
+
+    // 6 meses por área
+    var cols=[], maxV=1;
+    for(var i=5;i>=0;i--){
+      var d=new Date(hoje.getFullYear(),hoje.getMonth()-i,1), m=iso(d).slice(0,7);
+      var s=rec(m,'solutions'), mt=rec(m,'mentorias'); maxV=Math.max(maxV,s+mt);
+      cols.push({m:m,l:MESES[d.getMonth()],s:s,mt:mt,cur:i===0});
+    }
+    var chart=cols.map(function(c){
+      var h=Math.round((c.s+c.mt)/maxV*150);
+      var hs=c.s+c.mt>0?Math.round(c.s/(c.s+c.mt)*100):0;
+      return '<div class="ad-col"><div class="ad-cv">'+(c.s+c.mt>0?eur(c.s+c.mt):'')+'</div>'
+        +'<div class="ad-stack" style="height:'+Math.max(h,2)+'px">'
+        +(c.mt>0?'<span style="height:'+(100-hs)+'%;background:'+COR.mentorias+'"></span>':'')
+        +(c.s>0?'<span style="height:'+hs+'%;background:'+COR.solutions+'"></span>':'')
+        +'</div></div>';
+    }).join('');
+    var xl=cols.map(function(c){return '<div class="'+(c.cur?'cur':'')+'">'+c.l+'</div>';}).join('');
+
+    // por área
+    var ano=String(hoje.getFullYear());
+    var areas=['solutions','mentorias'].map(function(a){
+      var mes=rec(mesAtual,a);
+      var anoV=pagos.filter(function(p){return (p.data||'').slice(0,4)===ano&&areaOf(p)===a;}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
+      var cl={}; pags.concat(DB.vendas||[]).forEach(function(x){ if(areaOf(x)===a&&x.cliente) cl[x.cliente]=1; });
+      var pendA=pend.filter(function(p){return areaOf(p)===a;}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
+      return {a:a,mes:mes,ano:anoV,cl:Object.keys(cl).length,pend:pendA};
+    });
+    var totMes=areas[0].mes+areas[1].mes||1;
+    var areaHTML=areas.map(function(x){
+      return '<div class="ad-area"><div class="ad-arow"><div class="ad-an"><i style="background:'+COR[x.a]+'"></i>'+NOME[x.a]+'</div><div class="ad-av">'+eur(x.mes)+'</div></div>'
+        +'<div class="ad-bar"><span style="width:'+Math.round(x.mes/totMes*100)+'%;background:'+COR[x.a]+'"></span></div>'
+        +'<div class="ad-meta"><span>Ano <b>'+eur(x.ano)+'</b></span><span>Clientes <b>'+x.cl+'</b></span><span>A receber <b>'+eur(x.pend)+'</b></span></div></div>';
+    }).join('');
+
+    // saídas por categoria (mês)
+    var cat={}; desps.filter(function(d){return ym(d.data)===mesAtual;}).forEach(function(d){ var c=d.categoria||'Outro'; cat[c]=(cat[c]||0)+parseFloat(d.valor||0); });
+    var catL=Object.keys(cat).sort(function(a,b){return cat[b]-cat[a];});
+    var catHTML=catL.length?catL.map(function(c){return '<div class="ad-li"><span class="n">'+esc(c)+'</span><span class="v">'+eur(cat[c])+'</span></div>';}).join('')
+      :'<div class="ad-empty">Sem saídas este mês</div>';
+
+    // próximos recebimentos
+    var prox=pend.slice().sort(function(a,b){return (a.data||'').localeCompare(b.data||'');}).slice(0,6);
+    var proxHTML=prox.length?prox.map(function(p){
+      var late=(p.data||'')<hojeISO;
+      return '<div class="ad-li"><span class="ad-dot" style="background:'+COR[areaOf(p)]+'"></span><div class="n">'+esc(p.cliente)
+        +'<div class="s"'+(late?' style="color:#B91C1C"':'')+'>'+(typeof fmtDate==='function'?fmtDate(p.data):p.data)+(late?' · em atraso':'')+(p.totalParcelas>1?' · '+p.parcela+'/'+p.totalParcelas:'')+'</div></div>'
+        +'<span class="v">'+eur(p.valor)+'</span></div>';
+    }).join(''):'<div class="ad-empty">Nada pendente</div>';
+
+    // equipa
+    var eq=(DB.equipa||[]).map(function(m){
+      var t=(DB.tarefas||[]).filter(function(x){return x.resp===m.nome&&!x.done;});
+      var at=t.filter(function(x){return x.prazo&&x.prazo<hojeISO;}).length;
+      return {n:m.nome,f:m.funcao||m.tag||'',p:t.length,at:at};
+    }).sort(function(a,b){return b.p-a.p;});
+    var eqHTML=eq.length?eq.slice(0,6).map(function(m){
+      return '<div class="ad-li"><span class="ad-av2">'+esc(ini(m.n))+'</span><div class="n">'+esc(m.n)+'<div class="s">'+esc(m.f)+'</div></div>'
+        +'<span class="s"'+(m.at?' style="color:#B91C1C"':'')+'>'+(m.p?m.p+' por fazer'+(m.at?' · '+m.at+' em atraso':''):'em dia')+'</span></div>';
+    }).join(''):'<div class="ad-empty">Sem equipa registada</div>';
+
+    var mesNome=hoje.toLocaleDateString('pt-PT',{month:'long',year:'numeric'});
+    el.innerHTML=
+      '<div class="ad-head"><div><div class="ad-title">Painel da empresa</div><div class="ad-sub">Solutions e Mentorias · '+mesNome+'</div></div>'
+      +'<div class="ad-leg"><span><i style="background:'+COR.solutions+'"></i>Solutions</span><span><i style="background:'+COR.mentorias+'"></i>Mentorias</span></div></div>'
+      +'<div class="ad-g ad-k4">'
+        +'<div class="card"><div class="ad-kl">Receita do mês</div><div class="ad-kv">'+eur(recMes)+'</div><div class="ad-ks">'+(delta===null?'—':'<span class="'+(delta>=0?'up':'down')+'">'+(delta>=0?'+':'')+delta+'%</span> vs mês anterior')+'</div></div>'
+        +'<div class="card"><div class="ad-kl">Saídas do mês</div><div class="ad-kv">'+eur(saidas)+'</div><div class="ad-ks">'+catL.length+' categoria'+(catL.length===1?'':'s')+'</div></div>'
+        +'<div class="card"><div class="ad-kl">Resultado do mês</div><div class="ad-kv '+(res>=0?'':'down')+'">'+(res<0?'−':'')+eur(Math.abs(res))+'</div><div class="ad-ks">receita menos saídas</div></div>'
+        +'<div class="card"><div class="ad-kl">A receber · 30 dias</div><div class="ad-kv">'+eur(aReceber)+'</div><div class="ad-ks">'+(atrasado>0?'<span class="down">'+eur(atrasado)+' em atraso</span>':'nada em atraso')+'</div></div>'
+      +'</div>'
+      +'<div class="ad-g ad-21">'
+        +'<div class="card"><div class="ad-ct">Receita por mês</div><div class="ad-cs">Últimos 6 meses, por área</div><div class="ad-chart">'+chart+'</div><div class="ad-xl">'+xl+'</div></div>'
+        +'<div class="card"><div class="ad-ct">Este mês por área</div><div class="ad-cs">Receita, ano e valores a receber</div>'+areaHTML+'</div>'
+      +'</div>'
+      +'<div class="ad-g ad-3">'
+        +'<div class="card"><div class="ad-ct">Próximos recebimentos</div><div class="ad-cs" style="margin-bottom:4px">Parcelas pendentes</div>'+proxHTML+'</div>'
+        +'<div class="card"><div class="ad-ct">Saídas por categoria</div><div class="ad-cs" style="margin-bottom:4px">Este mês</div>'+catHTML+'</div>'
+        +'<div class="card"><div class="ad-ct">Equipa</div><div class="ad-cs" style="margin-bottom:4px">Tarefas por pessoa</div>'+eqHTML+'</div>'
+      +'</div>';
+  }
+  window.haRenderAdmin=renderAdmin;
+})();
+</script>
+<!-- ═══ FIM DO BLOCO 7 ═══ -->
 
 </body>
 </html>
