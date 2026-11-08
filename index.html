@@ -6266,7 +6266,7 @@ try{
     var y=+mesSel.slice(0,4), mo=+mesSel.slice(5,7)-1;
     var temWorkshop=(DB.produtos||[]).some(function(p){ return /workshop/i.test(p.nome||''); });
     var temPacote=(DB.produtos||[]).some(function(p){ return /pacote|grava/i.test(p.nome||''); });
-    var metaFat=(f.metas&&f.metas.faturado!=null)?f.metas.faturado:2894;
+    var metaFat=(f.metas&&f.metas.faturado!=null)?f.metas.faturado:2294;
     var pct=metaFat?Math.min(100,Math.round(r.faturado/metaFat*100)):0;
     var wk=semanaAtual(f.data);
     var h='';
@@ -6360,6 +6360,222 @@ try{
 })();
 </script>
 <!-- ═══ FIM DO BLOCO 11 ═══ -->
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BLOCO 12 — FUNIL & METAS (Hub Advance Solutions)
+     • Novo item "Funil & Metas" no menu da área Solutions.
+     • Funil visual: entraram → em conversa → reunião/proposta → fecharam,
+       com a % que passa em cada etapa; fotografia de agora.
+     • Perdidos e Stand By com mensagem de WhatsApp pronta e estratégia
+       de recuperação.
+     • Metas de hoje (contam sozinhas a partir do Pipeline + 2 à mão),
+       faturação do mês vs. meta e a rotina comercial da semana.
+     • Grava em DB.funilSol. Não altera nenhum dado existente.
+     Colar ANTES de </body>, depois do Bloco 11.
+     ═══════════════════════════════════════════════════════════════ -->
+<style>
+.ni-funilsol{display:none}
+body.area-solutions .ni-funilsol{display:flex}
+.fs-funnel{display:flex;flex-direction:column;align-items:center;gap:4px}
+.fs-bar{color:#fff;border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;box-sizing:border-box;min-width:min(220px,100%)}
+.fs-bar b{font-size:13.5px;display:block}
+.fs-bar small{font-size:11px;opacity:.8}
+.fs-bar .n{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.fs-pass{font-size:11.5px;color:var(--mut)}
+.fs-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.fs-tab{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font:600 12.5px 'Inter',sans-serif;color:var(--ink2);cursor:pointer}
+.fs-tab.on{border-color:var(--g);color:var(--g);background:var(--gf)}
+.fs-now{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+.fs-now div{border:1px solid var(--line);border-radius:10px;padding:10px;font-size:11.5px;color:var(--mut)}
+.fs-now b{display:block;font-size:20px;color:var(--ink);font-variant-numeric:tabular-nums}
+.fs-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:14px}
+.fs-lost{display:grid;gap:6px;margin-top:10px}
+.fs-row{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--line2);padding-bottom:6px}
+.fs-row .who{min-width:0}
+.fs-row .who b{display:block;font-size:13px}
+.fs-row .who small{color:var(--mut);font-size:11.5px}
+.fs-wa{border:1px solid var(--g);color:var(--g);background:var(--gf);border-radius:999px;padding:4px 10px;font:600 12px 'Inter',sans-serif;text-decoration:none;white-space:nowrap}
+.fs-pair{display:flex;gap:10px;margin-top:10px}
+.fs-pair div{flex:1;border-radius:10px;padding:10px;font-size:11.5px;color:var(--mut)}
+.fs-pair b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.fs-steps{margin:10px 0 0;padding-left:18px;display:grid;gap:5px;font-size:12.5px;color:var(--ink2)}
+.fs-man{display:flex;gap:6px;margin-top:6px}
+.fs-man button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:3px 11px;font:600 12px 'Inter',sans-serif;cursor:pointer;color:var(--ink2)}
+.fs-man button.p{border-color:var(--g);color:var(--g)}
+.fs-ins{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.fs-ins .big{font-size:36px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+@media(max-width:900px){ .fs-grid{grid-template-columns:minmax(0,1fr)} .fs-now{grid-template-columns:repeat(2,minmax(0,1fr))} }
+</style>
+<script>
+(function(){
+try{
+  var ET_CONV=['sdr','closer','followup','standby','fechado'];
+  var ET_NEG=['closer','followup','fechado'];
+  var DIARIAS=[
+    {k:'prospeccao',n:'Empresas abordadas',meta:10,auto:false,aj:'Mensagem, comentário ou chamada a um negócio novo'},
+    {k:'contactos',n:'Contactos novos no pipeline',meta:3,auto:true,aj:'Leads da área Solutions criadas hoje'},
+    {k:'conversas',n:'Conversas registadas',meta:8,auto:true,aj:'Interações registadas nos leads hoje'},
+    {k:'reunioes',n:'Reuniões marcadas',meta:1,auto:true,aj:'Leads passados para Closer hoje'},
+    {k:'propostas',n:'Propostas enviadas',meta:1,auto:false,aj:'Orçamento ou proposta enviada'},
+    {k:'fechados',n:'Fechados',meta:0,auto:true,aj:'Leads passados para Fechado hoje'}
+  ];
+  var RECUP=[
+    ['15 dias depois','Pergunta simples: "Ainda faz sentido avançar com [serviço]? Posso ajustar a proposta ao seu orçamento."'],
+    ['30 dias depois','Prova: um caso de cliente parecido (antes e depois do site, números da automação).'],
+    ['Stand By','Combinar uma data concreta para voltar a falar e marcar já no Pipeline.'],
+    ['Sempre','Oferecer uma versão mais pequena (landing page em vez de site, 1 automação em vez de 3) para começar.']
+  ];
+  var ROTINA=[
+    ['Segunda','Rever o funil da semana passada e escolher 10 empresas para abordar'],
+    ['Todos os dias','Empresas abordadas + resposta a todos os leads no próprio dia'],
+    ['Terça e quinta','Reuniões de diagnóstico (Closer) e propostas enviadas em 24 h'],
+    ['Quarta','Publicar um caso de cliente (antes e depois) nas redes da Hub'],
+    ['Sexta','Follow-up a todas as propostas abertas e aos Stand By com data marcada']
+  ];
+
+  function iso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function addD(s,n){ var d=new Date(s+'T12:00:00'); d.setDate(d.getDate()+n); return iso(d); }
+  function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function eur(v){ return '€'+Math.round(v||0).toLocaleString('pt-PT'); }
+  function isSol(x){ return !!x && x.area==='solutions'; }
+  function dShort(s){ return new Date(s+'T12:00:00').toLocaleDateString('pt-PT',{weekday:'short',day:'2-digit'}); }
+  function waLinkSol(tel,msg){ var n=String(tel||'').replace(/\D/g,''); if(n.length===9) n='351'+n; return n?'https://wa.me/'+n+'?text='+encodeURIComponent(msg):''; }
+  function S(){ if(!DB.funilSol) DB.funilSol={metas:{},diarias:{},dias:{}}; ['metas','diarias','dias'].forEach(function(k){ if(!DB.funilSol[k]) DB.funilSol[k]={}; }); return DB.funilSol; }
+  function persist(){ try{ save(); }catch(e){} }
+  var periodo='mes';
+
+  // painel, menu e título
+  var content=document.getElementById('content');
+  if(content&&!document.getElementById('p-funilsol')){
+    var p=document.createElement('div'); p.className='panel'; p.id='p-funilsol'; content.appendChild(p);
+  }
+  var after=document.querySelector('.sb-nav .ni-funil')||document.querySelector('.sb-nav .ni[onclick*="\'pipeline\'"]');
+  if(after&&!document.querySelector('.ni-funilsol')){
+    var ni=document.createElement('div'); ni.className='ni ni-funilsol';
+    ni.setAttribute('onclick',"nav('funilsol',this)");
+    ni.innerHTML='<span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg></span><span class="ni-label">Funil &amp; Metas</span>';
+    after.parentNode.insertBefore(ni,after.nextSibling);
+  }
+  if(typeof titles==='object') titles.funilsol='Funil & Metas · Hub Solutions';
+
+  var _ra=window.renderAll;
+  window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ var el=document.getElementById('p-funilsol'); if(el&&el.classList.contains('on')) renderSol(); }catch(e){ console.error(e); } return r; };
+
+  function leadsSol(){ return (DB.leads||[]).filter(isSol); }
+  function diaReal(d){
+    var r={contactos:0,conversas:0,reunioes:0,fechados:0};
+    leadsSol().forEach(function(l){
+      if((l.createdAt||'').slice(0,10)===d) r.contactos++;
+      (l.interacoes||[]).forEach(function(i){
+        if((i.data||'').slice(0,10)!==d) return;
+        if(i.tipo==='Mudança de etapa'){
+          if(/→\s*Closer/.test(i.nota||'')) r.reunioes++;
+          if(/→\s*Fechado/.test(i.nota||'')) r.fechados++;
+        } else r.conversas++;
+      });
+    });
+    return r;
+  }
+  function metasDia(){ var s=S(), o={}; DIARIAS.forEach(function(x){ o[x.k]=s.diarias[x.k]!=null?s.diarias[x.k]:x.meta; }); return o; }
+  function valor(d,x){ return x.auto?(diaReal(d)[x.k]||0):(Number(((S().dias[d])||{})[x.k])||0); }
+  function pctDia(d,mt){ var t=0,n=0; DIARIAS.forEach(function(x){ if(mt[x.k]>0){ t+=Math.min(1,valor(d,x)/mt[x.k]); n++; } }); return n?Math.round(t/n*100):0; }
+  function ultData(l){ var h=(l.interacoes||[]).map(function(i){return (i.data||'').slice(0,10);}).filter(Boolean).sort(); return h.length?h[h.length-1]:(l.createdAt||'').slice(0,10); }
+  function diasDesde(s){ if(!s) return 0; return Math.max(0,Math.round((new Date(iso(new Date())+'T12:00:00')-new Date(s+'T12:00:00'))/86400000)); }
+
+  function renderSol(){
+    var el=document.getElementById('p-funilsol'); if(!el||typeof DB!=='object') return;
+    var hoje=iso(new Date()), mes=hoje.slice(0,7), s=S(), mt=metasDia();
+    var desde=periodo==='mes'?mes+'-01':periodo==='30'?addD(hoje,-29):'0000';
+    var L=leadsSol(), per=L.filter(function(l){ return (l.createdAt||'').slice(0,10)>=desde; });
+    var etapas=[
+      {n:'Entraram',d:'leads novos',v:per.length,c:'#1A1A1A'},
+      {n:'Em conversa',d:'SDR em diante',v:per.filter(function(l){return ET_CONV.indexOf(l.etapa)>=0;}).length,c:'#5B4FCF'},
+      {n:'Reunião e proposta',d:'Closer e Follow Up',v:per.filter(function(l){return ET_NEG.indexOf(l.etapa)>=0;}).length,c:'#C05621'},
+      {n:'Fecharam',d:'clientes novos',v:per.filter(function(l){return l.etapa==='fechado';}).length,c:'#0B6E4F'}
+    ];
+    var topo=Math.max(etapas[0].v,1);
+    var agora={novo:0,conv:0,neg:0};
+    L.forEach(function(l){ if(l.etapa==='novo'||!l.etapa) agora.novo++; else if(l.etapa==='sdr') agora.conv++; else if(l.etapa==='closer'||l.etapa==='followup') agora.neg++; });
+    var perd=L.filter(function(l){return l.etapa==='perdido';}), stby=L.filter(function(l){return l.etapa==='standby';});
+    var lista=perd.concat(stby).sort(function(a,b){ return ultData(a)<ultData(b)?-1:1; }).slice(0,8);
+    var pags=(DB.pagamentos||[]).filter(function(p){ return isSol(p) && (p.data||'').slice(0,7)===mes; });
+    var fat=pags.filter(function(p){ return p.estado==='Pago'; }).reduce(function(t,p){ return t+parseFloat(p.valor||0); },0);
+    var novosPag=pags.filter(function(p){ return (p.parcela||1)===1; });
+    var ticket=novosPag.length?novosPag.reduce(function(t,p){return t+parseFloat(p.valor||0);},0)/novosPag.length:0;
+    var metaFat=s.metas.faturado!=null?s.metas.faturado:0;
+    var pct=metaFat?Math.min(100,Math.round(fat/metaFat*100)):0;
+    var falta=Math.max(0,metaFat-fat);
+    var diasMes=new Date(+mes.slice(0,4),+mes.slice(5,7),0).getDate()-new Date().getDate()+1;
+
+    var h='<div class="fn-wrap">';
+    // insight
+    h+='<div class="card"><div class="fs-ins">';
+    if(!metaFat){
+      h+='<div><div class="ct">Defina a meta de faturação da Hub Solutions</div><div class="fn-auto" style="margin-top:4px">Sem meta não há conta do que falta. Escreva o valor do mês:</div></div><span class="fn-num" style="margin-left:auto">Meta € <input id="fs-meta-fat" type="number" min="0" value="0" onchange="haFunilSol.meta(this.value)"></span>';
+    } else {
+      var vendasPrec=ticket?Math.ceil(falta/ticket):null;
+      h+='<span class="big" style="color:'+(falta?'var(--re)':'var(--g)')+'">'+eur(falta)+'</span><div style="flex:1;min-width:220px"><div class="ct">'+(falta?'faltam para a meta do mês':'meta do mês atingida')+'</div><div class="fn-auto" style="margin-top:4px;text-transform:none;letter-spacing:0;font-size:12.5px">Faturado '+eur(fat)+' de '+eur(metaFat)+' ('+pct+'%) · faltam '+diasMes+' dias'+(vendasPrec!=null&&falta?' · ao ticket médio de '+eur(ticket)+' são '+vendasPrec+' cliente'+(vendasPrec===1?'':'s')+' novo'+(vendasPrec===1?'':'s'):'')+'</div></div>';
+      h+='<span class="fn-num">Meta € <input id="fs-meta-fat" type="number" min="0" value="'+metaFat+'" onchange="haFunilSol.meta(this.value)"></span>';
+    }
+    h+='</div>';
+    if(metaFat) h+='<div class="fn-bar'+(pct<40?' no':pct<80?' lo':'')+'" style="margin-top:10px"><i style="width:'+pct+'%"></i></div>';
+    h+='</div>';
+
+    // metas de hoje
+    h+='<div class="card"><div class="ct" style="margin-bottom:4px">Metas de hoje · '+dShort(hoje)+'</div><div class="fn-auto" style="margin-bottom:10px">As automáticas contam sozinhas a partir do Pipeline da área Solutions; as outras marcam-se com + e −</div><div class="fn-days">';
+    DIARIAS.forEach(function(x){
+      var v=valor(hoje,x), m=mt[x.k];
+      h+='<div class="fn-day"><span class="lb">'+esc(x.n)+' <span class="fn-auto">'+(x.auto?'auto':'manual')+'</span></span><span class="v">'+v+' <small>/ <input id="fs-dm-'+x.k+'" type="number" min="0" value="'+m+'" onchange="haFunilSol.diaria(\''+x.k+'\',this.value)" aria-label="Meta: '+esc(x.n)+'" style="width:52px;border:1px solid var(--line);border-radius:6px;padding:2px 4px;font:600 12px Inter,sans-serif"></small></span><span class="fn-auto" style="text-transform:none;letter-spacing:0">'+esc(x.aj)+'</span>';
+      if(!x.auto) h+='<span class="fs-man"><button type="button" onclick="haFunilSol.add(\''+x.k+'\',-1)">−</button><button type="button" class="p" onclick="haFunilSol.add(\''+x.k+'\',1)">+1</button><button type="button" onclick="haFunilSol.add(\''+x.k+'\',5)">+5</button></span>';
+      h+='</div>';
+    });
+    h+='</div><div class="fn-strip">';
+    for(var i=6;i>=0;i--){ var d=addD(hoje,-i), pc=pctDia(d,mt); h+='<div class="'+(pc>=100?'ok':pc>=50?'mid':'no')+'"><b>'+pc+'%</b>'+new Date(d+'T12:00:00').toLocaleDateString('pt-PT',{weekday:'short',day:'2-digit'})+'</div>'; }
+    h+='</div></div>';
+
+    // funil + perdidos
+    h+='<div class="fs-grid"><div class="card"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px"><div><div class="ct">Funil de vendas · Hub Solutions</div><div class="fn-auto" style="text-transform:none;letter-spacing:0;font-size:12px;margin-top:3px">Leads que entraram no período e até onde chegaram</div></div><div class="fs-tabs">';
+    [['mes','Este mês'],['30','30 dias'],['tudo','Tudo']].forEach(function(t){ h+='<button type="button" class="fs-tab'+(periodo===t[0]?' on':'')+'" onclick="haFunilSol.per(\''+t[0]+'\')">'+t[1]+'</button>'; });
+    h+='</div></div><div class="fs-funnel">';
+    etapas.forEach(function(e,i){
+      if(i>0){ var ant=etapas[i-1].v; h+='<div class="fs-pass">↓ '+(ant?Math.round(e.v/ant*100)+'% passam':'—')+'</div>'; }
+      h+='<div class="fs-bar" style="width:'+Math.max(28,Math.round(e.v/topo*100))+'%;background:'+e.c+'"><span><b>'+esc(e.n)+'</b><small>'+esc(e.d)+'</small></span><span class="n">'+e.v+'</span></div>';
+    });
+    h+='</div><div class="fs-now"><div>Agora: novos por contactar<b style="color:'+(agora.novo?'var(--or)':'var(--ink)')+'">'+agora.novo+'</b></div><div>Agora: em conversa (SDR)<b>'+agora.conv+'</b></div><div>Agora: reunião e proposta<b>'+agora.neg+'</b></div><div>Faturado este mês<b style="color:var(--g)">'+eur(fat)+'</b></div></div>';
+    h+='<div style="margin-top:12px"><button type="button" class="bp" onclick="nav(\'pipeline\',document.querySelector(\'.sb-nav .ni[onclick*=&quot;pipeline&quot;]\'))">Abrir o Pipeline</button></div></div>';
+
+    h+='<div class="card" style="border-color:#FECACA"><div class="ct">Perdidos e Stand By: voltar ao funil</div><div class="fn-auto" style="text-transform:none;letter-spacing:0;font-size:12px;margin-top:3px">Nenhum lead fica esquecido. Os que estão parados há mais tempo aparecem primeiro.</div>';
+    h+='<div class="fs-pair"><div style="background:var(--rel)">Perdidos<b style="color:var(--re)">'+perd.length+'</b></div><div style="background:var(--orl)">Stand By<b style="color:var(--or)">'+stby.length+'</b></div></div><div class="fs-lost">';
+    if(!lista.length) h+='<div class="fn-auto" style="text-transform:none;letter-spacing:0">Sem leads perdidos ou parados.</div>';
+    lista.forEach(function(l){
+      var dd=diasDesde(ultData(l)), primeiro=String(l.nome||'').split(' ')[0];
+      var msg='Olá '+primeiro+'! Aqui é o Jonas, da Hub Advance. Há uns tempos falámos sobre '+(l.produto||'o seu projeto')+'. Ainda faz sentido avançar? Posso ajustar a proposta ao momento do seu negócio.';
+      var wa=waLinkSol(l.contacto,msg);
+      h+='<div class="fs-row"><span class="who"><b>'+esc(l.nome||'—')+'</b><small>'+(l.etapa==='standby'?'Stand By':'Perdido')+' · '+esc(l.produto||'—')+' · há '+dd+' dia'+(dd===1?'':'s')+(l.motivo?' · '+esc(l.motivo):'')+'</small></span>'+(wa?'<a class="fs-wa" href="'+wa+'" target="_blank" rel="noopener">WhatsApp</a>':'')+'</div>';
+    });
+    h+='</div><ul class="fs-steps">';
+    RECUP.forEach(function(r){ h+='<li><b>'+esc(r[0])+':</b> '+esc(r[1])+'</li>'; });
+    h+='</ul></div></div>';
+
+    // rotina comercial
+    h+='<div class="card fn-pb"><div class="ct" style="margin-bottom:10px">A rotina comercial da Hub Solutions</div><ul style="margin:0;padding-left:18px;display:grid;gap:6px;font-size:12.5px;color:var(--ink2)">';
+    ROTINA.forEach(function(r){ h+='<li><b>'+esc(r[0])+':</b> '+esc(r[1])+'</li>'; });
+    h+='</ul><div class="fn-auto" style="margin-top:10px;text-transform:none;letter-spacing:0">Para os números contarem: cada contacto entra no Pipeline na área Solutions e muda de etapa sempre que a conversa avança (SDR → Closer → Follow Up → Fechado).</div></div>';
+
+    h+='</div>';
+    el.innerHTML=h;
+  }
+
+  window.haFunilSol={
+    per:function(v){ periodo=v; renderSol(); },
+    meta:function(v){ S().metas.faturado=Math.max(0,parseFloat(v)||0); persist(); renderSol(); },
+    diaria:function(k,v){ S().diarias[k]=Math.max(0,parseFloat(v)||0); persist(); renderSol(); },
+    add:function(k,n){ var s=S(), d=iso(new Date()); s.dias[d]=s.dias[d]||{}; s.dias[d][k]=Math.max(0,(Number(s.dias[d][k])||0)+n); persist(); renderSol(); }
+  };
+}catch(e){ console.error('Bloco 12 (Funil & Metas Solutions):',e); }
+})();
+</script>
+<!-- ═══ FIM DO BLOCO 12 ═══ -->
 
 </body>
 </html>
