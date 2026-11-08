@@ -6047,5 +6047,319 @@ mark.cb-hl{background:#FEF3C7;color:inherit;border-radius:3px;padding:0 1px}
 </script>
 <!-- ═══ FIM DO BLOCO 10 ═══ -->
 
+<!-- ═══════════════════════════════════════════════════════════════
+     BLOCO 11 — FUNIL & METAS (Hub Advance Mentorias)
+     • Novo item "Funil & Metas" no menu da área Mentorias, a seguir ao Pipeline.
+     • Por mês: tema e data do workshop, metas de cada etapa do funil e o real
+       (contado sozinho a partir de leads e pagamentos, mais 3 números à mão).
+     • O ciclo de 4 semanas com checklist, as datas de verificação e o
+       manual de cada plataforma (Instagram, WhatsApp, anúncios, página).
+     • Grava em DB.funil. Não altera nenhum dado existente.
+     Colar ANTES de </body>, depois do Bloco 10.
+     ═══════════════════════════════════════════════════════════════ -->
+<style>
+.ni-funil{display:none}
+body.area-mentorias .ni-funil{display:flex}
+.fn-wrap{display:grid;gap:14px}
+.fn-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.fn-month{display:flex;align-items:center;gap:8px}
+.fn-month b{font-size:15px;font-weight:700;min-width:130px;text-align:center;text-transform:capitalize}
+.fn-arrow{border:1px solid var(--line);background:var(--card);border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:16px;color:var(--ink2)}
+.fn-cfg{display:flex;flex-wrap:wrap;gap:10px}
+.fn-cfg label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--mut)}
+.fn-cfg input{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:500 13px 'Inter',sans-serif;color:var(--ink);background:var(--card);min-width:0}
+.fn-now{background:var(--ink);color:#fff;border-radius:12px;padding:14px 16px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.fn-now .w{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gm);font-weight:700}
+.fn-now b{font-size:15px}
+.fn-now span{color:rgba(255,255,255,.7);font-size:12.5px}
+.fn-stages{display:grid;gap:8px}
+.fn-st{display:grid;grid-template-columns:minmax(0,170px) minmax(0,1fr) 170px;gap:12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--card)}
+.fn-st .nm{font-weight:600;font-size:13px}
+.fn-st .nm small{display:block;font-weight:400;color:var(--mut);font-size:11px}
+.fn-bar{height:8px;background:var(--line2);border-radius:8px;overflow:hidden}
+.fn-bar i{display:block;height:100%;border-radius:8px;background:var(--g)}
+.fn-bar.lo i{background:var(--or)}
+.fn-bar.no i{background:var(--re)}
+.fn-num{display:flex;align-items:center;justify-content:flex-end;gap:6px;font-variant-numeric:tabular-nums;font-size:13px}
+.fn-num input{width:58px;border:1px solid var(--line);border-radius:7px;padding:5px 6px;font:600 13px 'Inter',sans-serif;text-align:right;color:var(--ink);background:var(--card)}
+.fn-num .meta{color:var(--mut)}
+.fn-auto{font-size:10px;color:var(--mut2);text-transform:uppercase;letter-spacing:.06em}
+.fn-weeks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.fn-wk{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--card);display:grid;gap:6px;align-content:start}
+.fn-wk.cur{border-color:var(--g);box-shadow:0 0 0 1px var(--g) inset}
+.fn-wk h4{margin:0;font-size:13px;font-weight:700}
+.fn-wk h4 small{display:block;font-weight:500;color:var(--mut);font-size:11px;margin-top:2px}
+.fn-ck{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--ink2);cursor:pointer;line-height:1.4}
+.fn-ck input{margin-top:2px;accent-color:var(--g);width:15px;height:15px;flex:none}
+.fn-ck.done span{color:var(--mut2);text-decoration:line-through}
+.fn-checks{display:grid;gap:6px}
+.fn-chk{display:grid;grid-template-columns:auto 92px minmax(0,1fr);gap:10px;align-items:center;border-bottom:1px solid var(--line2);padding:8px 0;font-size:12.5px}
+.fn-chk .dt{font-weight:600;font-variant-numeric:tabular-nums}
+.fn-chk.late .dt{color:var(--re)}
+.fn-chk.ok .dt{color:var(--g)}
+.fn-chk input{accent-color:var(--g);width:15px;height:15px}
+.fn-chk small{display:block;color:var(--mut);font-size:11.5px}
+.fn-pb details{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:0 14px}
+.fn-pb details+details{margin-top:8px}
+.fn-pb summary{cursor:pointer;padding:12px 0;font-weight:600;font-size:13px;list-style:none;display:flex;justify-content:space-between}
+.fn-pb summary::after{content:'+';color:var(--mut)}
+.fn-pb details[open] summary::after{content:'–'}
+.fn-pb ul{margin:0 0 12px;padding-left:18px;display:grid;gap:5px;font-size:12.5px;color:var(--ink2)}
+.fn-tot{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.fn-tot .big{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+.fn-tot .of{color:var(--mut);font-size:13px}
+.fn-hint{font-size:12px;color:var(--mut);background:var(--yel);border:1px solid #FDE68A;border-radius:10px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.fn-days{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.fn-day{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--card);display:grid;gap:6px}
+.fn-day .lb{font-size:11.5px;color:var(--mut)}
+.fn-day .v{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.fn-day .v small{font-size:13px;color:var(--mut);font-weight:600}
+.fn-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:12px}
+.fn-strip div{border-radius:8px;padding:6px 4px;text-align:center;font-size:11px;border:1px solid var(--line);font-variant-numeric:tabular-nums}
+.fn-strip div b{display:block;font-size:13px}
+.fn-strip .ok{background:var(--gf);border-color:var(--gl);color:var(--g)}
+.fn-strip .mid{background:var(--orl);border-color:#FDE68A;color:var(--or)}
+.fn-strip .no{background:var(--rel);border-color:#FECACA;color:var(--re)}
+@media(max-width:820px){ .fn-days{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media(max-width:820px){
+  .fn-st{grid-template-columns:minmax(0,1fr) auto}
+  .fn-st .fn-bar{grid-column:1/-1;order:3}
+  .fn-weeks{grid-template-columns:minmax(0,1fr)}
+  .fn-chk{grid-template-columns:auto 80px minmax(0,1fr)}
+}
+</style>
+<script>
+(function(){
+try{
+  var MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  var TEMAS={'2026-11':['Precificação Inteligente','2026-11-23'],'2026-12':['Captar Clientes',''],'2027-01':['Equipa e Liderança',''],'2027-03':['Imersão Impacto (presencial)','']};
+  var METAS=[
+    {k:'comentarios',n:'1 · Atrair',d:'Comentários e respostas',meta:60,auto:null},
+    {k:'conversas',n:'2 · Conversar',d:'Conversas em DM/WhatsApp',meta:60,auto:null},
+    {k:'leads',n:'Leads no pipeline',d:'Leads novos criados no mês',meta:30,auto:'leads'},
+    {k:'workshop',n:'3 · Workshop',d:'Inscrições pagas',meta:20,auto:/workshop/i},
+    {k:'calls',n:'4 · Calls de mentoria',d:'Calls de 20 min feitas',meta:6,auto:null},
+    {k:'mentorias',n:'4 · Mentorias fechadas',d:'Vendas de mentoria',meta:2,auto:/mentoria|acompanhamento/i},
+    {k:'comunidade',n:'Plano B · Comunidade',d:'Novas alunas',meta:3,auto:/comunidade/i},
+    {k:'pacote',n:'5 · Reaproveitar',d:'Pacotes da gravação',meta:10,auto:/pacote|grava/i}
+  ];
+  var SEMANAS=[
+    {t:'Abrir a pré-venda',it:['Escolher o tema e a data do workshop','Criar o link de pagamento (Stripe) e o grupo de WhatsApp','Página de vendas e artes prontas','Mensagem a 30 pessoas da lista quente','Post e stories de lançamento']},
+    {t:'Vender e preparar',it:['Live com a Rafa sobre o tema','Último dia da pré-venda e subir o preço','Roteiro e slides do workshop','Pedir um testemunho a uma mentorada']},
+    {t:'Dar o workshop',it:['Ensaio e teste técnico','Enviar acessos no grupo','Dar o workshop (segunda de manhã)','Oferta da mentoria nos últimos 15 min','Mensagem a quem escreveu MENTORIA']},
+    {t:'Fechar e reaproveitar',it:['Calls de mentoria','Fechar as mentorias (condição de 48h)','Oferecer a Comunidade a quem não fechou','Vender o pacote da gravação','Escolher o tema do mês seguinte']}
+  ];
+
+  function iso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function addD(s,n){ var d=new Date(s+'T12:00:00'); d.setDate(d.getDate()+n); return iso(d); }
+  function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function eur(v){ return '€'+Math.round(v||0).toLocaleString('pt-PT'); }
+  function areaOf(x){ return (x&&x.area)||'mentorias'; }
+  function dShort(s){ return new Date(s+'T12:00:00').toLocaleDateString('pt-PT',{weekday:'short',day:'2-digit',month:'short'}); }
+
+  var mesSel=iso(new Date()).slice(0,7);
+  function addMonth(m,n){ var y=+m.slice(0,4), mo=+m.slice(5,7)-1+n; var d=new Date(y,mo,1,12); return iso(d).slice(0,7); }
+
+  function F(){ if(!DB.funil) DB.funil={meses:{}}; if(!DB.funil.meses) DB.funil.meses={}; return DB.funil; }
+  function M(m,create){
+    var f=DB.funil&&DB.funil.meses&&DB.funil.meses[m];
+    if(f||!create) return f||{tema:(TEMAS[m]||[''])[0],data:(TEMAS[m]||['',''])[1],metas:{},manual:{},checks:{}};
+    f=F().meses[m]={tema:(TEMAS[m]||[''])[0],data:(TEMAS[m]||['',''])[1],metas:{},manual:{},checks:{}};
+    return f;
+  }
+  function persist(){ try{ save(); }catch(e){} }
+
+  // painel, menu e título
+  var content=document.getElementById('content');
+  if(content&&!document.getElementById('p-funil')){
+    var p=document.createElement('div'); p.className='panel'; p.id='p-funil'; content.appendChild(p);
+  }
+  var pipeNi=document.querySelector('.sb-nav .ni[onclick*="\'pipeline\'"]');
+  if(pipeNi&&!document.querySelector('.ni-funil')){
+    var ni=document.createElement('div'); ni.className='ni ni-funil';
+    ni.setAttribute('onclick',"nav('funil',this)");
+    ni.innerHTML='<span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg></span><span class="ni-label">Funil &amp; Metas</span>';
+    pipeNi.parentNode.insertBefore(ni,pipeNi.nextSibling);
+  }
+  if(typeof titles==='object') titles.funil='Funil & Metas do mês';
+
+  var _ra=window.renderAll;
+  window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ var el=document.getElementById('p-funil'); if(el&&el.classList.contains('on')) renderFunil(); }catch(e){ console.error(e); } return r; };
+
+  function real(m){
+    var r={};
+    var pags=(DB.pagamentos||[]).filter(function(p){ return areaOf(p)==='mentorias' && (p.data||'').slice(0,7)===m; });
+    var novos=pags.filter(function(p){ return (p.parcela||1)===1; });
+    METAS.forEach(function(s){
+      if(s.auto==='leads') r[s.k]=(DB.leads||[]).filter(function(l){ return areaOf(l)==='mentorias' && (l.createdAt||'').slice(0,7)===m; }).length;
+      else if(s.auto) r[s.k]=novos.filter(function(p){ return s.auto.test(p.produto||''); }).length;
+    });
+    r.faturado=pags.filter(function(p){ return p.estado==='Pago'; }).reduce(function(t,p){ return t+parseFloat(p.valor||0); },0);
+    return r;
+  }
+
+  function semanaAtual(data){
+    if(!data) return 0;
+    var hoje=iso(new Date());
+    var dias=Math.round((new Date(data+'T12:00:00')-new Date(hoje+'T12:00:00'))/86400000);
+    if(dias>=14) return 1; if(dias>=7) return 2; if(dias>=0) return 3; if(dias>=-10) return 4; return 0;
+  }
+
+  function checkpoints(m,f){
+    var out=[], y=+m.slice(0,4), mo=+m.slice(5,7)-1;
+    for(var d=new Date(y,mo,1,12); d.getMonth()===mo; d.setDate(d.getDate()+1)){
+      if(d.getDay()===1) out.push({k:'seg-'+iso(d),d:iso(d),t:'Painel semanal (9h)',s:'Ver alcance, comentários MENTORIA, DMs, inscrições e faturação vs. semana anterior. Fazer mais do que trouxe conversas.'});
+    }
+    if(f.data){
+      out.push({k:'pre',d:addD(f.data,-8),t:'Fim da pré-venda',s:'Balanço: inscrições vs. meta. Subir o preço à meia-noite.'});
+      out.push({k:'ws1',d:addD(f.data,1),t:'Fecho do workshop',s:'Inscrições, presenças, quem escreveu MENTORIA. Marcar as calls.'});
+      out.push({k:'ads',d:addD(f.data,3),t:'Decisão de anúncios',s:'Regra: anunciar só se houve 10+ inscrições orgânicas. Escalar só se cada inscrição custar menos de 15€ e sair 1+ mentoria por workshop.'});
+    }
+    var last=new Date(y,mo+1,0,12);
+    out.push({k:'fim',d:iso(last),t:'Fecho do mês',s:'Faturação vs. meta, o que funcionou, tema e data do próximo workshop.'});
+    out.sort(function(a,b){ return a.d<b.d?-1:a.d>b.d?1:0; });
+    return out;
+  }
+
+
+  var DIARIAS=[
+    {k:'contactos',n:'Contactos novos no pipeline',meta:10},
+    {k:'conversas',n:'Conversas registadas',meta:10},
+    {k:'calls',n:'Leads levados a Closer (call)',meta:1},
+    {k:'inscricoes',n:'Inscrições no workshop',meta:2}
+  ];
+  function diaReal(d){
+    var leads=(DB.leads||[]).filter(function(l){ return areaOf(l)==='mentorias'; });
+    var r={contactos:0,conversas:0,calls:0,inscricoes:0};
+    leads.forEach(function(l){
+      if((l.createdAt||'').slice(0,10)===d) r.contactos++;
+      (l.interacoes||[]).forEach(function(i){
+        if((i.data||'').slice(0,10)!==d) return;
+        if(i.tipo==='Mudança de etapa'){ if(/→\s*Closer/.test(i.nota||'')) r.calls++; }
+        else r.conversas++;
+      });
+    });
+    r.inscricoes=(DB.pagamentos||[]).filter(function(p){ return areaOf(p)==='mentorias' && p.data===d && (p.parcela||1)===1 && /workshop/i.test(p.produto||''); }).length;
+    return r;
+  }
+  function diaMetas(){ var f=F(); f.diarias=f.diarias||{}; var o={}; DIARIAS.forEach(function(x){ o[x.k]=f.diarias[x.k]!=null?f.diarias[x.k]:x.meta; }); return o; }
+  function diaPct(r,mt){ var t=0,n=0; DIARIAS.forEach(function(x){ if(mt[x.k]>0){ t+=Math.min(1,(r[x.k]||0)/mt[x.k]); n++; } }); return n?Math.round(t/n*100):0; }
+  function renderHoje(){
+    var hoje=iso(new Date()), r=diaReal(hoje), mt=(DB.funil&&DB.funil.diarias)?diaMetas():(function(){var o={};DIARIAS.forEach(function(x){o[x.k]=x.meta;});return o;})();
+    var h='<div class="card"><div class="ct" style="margin-bottom:4px">Metas de hoje · '+dShort(hoje)+'</div><div class="fn-auto" style="margin-bottom:10px">Conta sozinho a partir do Pipeline: leads criados, interações registadas, leads passados a Closer e pagamentos de workshop</div><div class="fn-days">';
+    DIARIAS.forEach(function(x){
+      var v=r[x.k]||0, m=mt[x.k], pc=m?Math.min(100,Math.round(v/m*100)):0;
+      h+='<div class="fn-day"><span class="lb">'+esc(x.n)+'</span><span class="v">'+v+' <small>/ <input id="fn-dm-'+x.k+'" type="number" min="0" value="'+m+'" onchange="haFunil.diaria(\''+x.k+'\',this.value)" aria-label="Meta diária: '+esc(x.n)+'" style="width:44px;border:1px solid var(--line);border-radius:6px;padding:2px 4px;font:600 12px Inter,sans-serif;text-align:right;color:var(--ink);background:var(--card)"></small></span><div class="fn-bar'+(pc<40?' no':pc<80?' lo':'')+'"><i style="width:'+pc+'%"></i></div></div>';
+    });
+    h+='</div><div class="fn-strip">';
+    for(var i=6;i>=0;i--){
+      var d=addD(hoje,-i), pc=diaPct(diaReal(d),mt);
+      h+='<div class="'+(pc>=100?'ok':pc>=50?'mid':'no')+'"><b>'+pc+'%</b>'+new Date(d+'T12:00:00').toLocaleDateString('pt-PT',{weekday:'short',day:'2-digit'})+'</div>';
+    }
+    h+='</div></div>';
+    return h;
+  }
+
+  function renderFunil(){
+    var el=document.getElementById('p-funil'); if(!el||typeof DB!=='object') return;
+    var f=M(mesSel,false), r=real(mesSel), hoje=iso(new Date());
+    var y=+mesSel.slice(0,4), mo=+mesSel.slice(5,7)-1;
+    var temWorkshop=(DB.produtos||[]).some(function(p){ return /workshop/i.test(p.nome||''); });
+    var temPacote=(DB.produtos||[]).some(function(p){ return /pacote|grava/i.test(p.nome||''); });
+    var metaFat=(f.metas&&f.metas.faturado!=null)?f.metas.faturado:2894;
+    var pct=metaFat?Math.min(100,Math.round(r.faturado/metaFat*100)):0;
+    var wk=semanaAtual(f.data);
+    var h='';
+    h+='<div class="fn-wrap">';
+    h+='<div class="fn-head"><div class="fn-month"><button class="fn-arrow" type="button" onclick="haFunil.mes(-1)" aria-label="Mês anterior">‹</button><b>'+MESES[mo]+' '+y+'</b><button class="fn-arrow" type="button" onclick="haFunil.mes(1)" aria-label="Mês seguinte">›</button></div>';
+    h+='<div class="fn-cfg"><label for="fn-tema">Tema do workshop<input id="fn-tema" value="'+esc(f.tema)+'" onchange="haFunil.cfg(\'tema\',this.value)" placeholder="Ex.: Captar Clientes"></label>';
+    h+='<label for="fn-data">Data do workshop<input id="fn-data" type="date" value="'+esc(f.data)+'" onchange="haFunil.cfg(\'data\',this.value)"></label></div></div>';
+
+    if(!temWorkshop||!temPacote){
+      h+='<div class="fn-hint"><span>Para o funil contar as vendas sozinho, os pagamentos têm de estar ligados aos produtos'+(temWorkshop?'':' "Workshop €27"')+(temWorkshop||temPacote?'':' e')+(temPacote?'':' "Pacote Gravação €27"')+'.</span><button class="btn bp bsm" type="button" onclick="haFunil.criarProdutos()">Criar produtos do funil</button></div>';
+    }
+
+    var semNome=wk?SEMANAS[wk-1].t:'';
+    h+='<div class="fn-now">'+(wk?'<span class="w">Semana '+wk+' de 4</span><b>'+esc(semNome)+'</b>':'<b>'+(f.data?'Fora do ciclo deste workshop':'Defina a data do workshop para ver a semana do ciclo')+'</b>')+(f.tema?'<span>Workshop: '+esc(f.tema)+(f.data?' · '+dShort(f.data):'')+'</span>':'')+'</div>';
+
+    if(mesSel===iso(new Date()).slice(0,7)) h+=renderHoje();
+
+    // faturação
+    h+='<div class="card"><div class="ct" style="margin-bottom:8px">Faturação do mês (Mentorias)</div><div class="fn-tot"><span class="big">'+eur(r.faturado)+'</span><span class="of">de '+eur(metaFat)+' de meta · '+pct+'%</span>';
+    h+='<span class="fn-num" style="margin-left:auto">Meta € <input id="fn-meta-fat" type="number" min="0" value="'+metaFat+'" onchange="haFunil.meta(\'faturado\',this.value)"></span></div>';
+    h+='<div class="fn-bar'+(pct<40?' no':pct<80?' lo':'')+'" style="margin-top:10px"><i style="width:'+pct+'%"></i></div>';
+    h+='<div class="fn-auto" style="margin-top:6px">Conta sozinha: pagamentos marcados como Pago neste mês</div></div>';
+
+    // etapas
+    h+='<div class="card"><div class="ct" style="margin-bottom:10px">O funil: meta vs. real</div><div class="fn-stages">';
+    METAS.forEach(function(s){
+      var meta=(f.metas&&f.metas[s.k]!=null)?f.metas[s.k]:s.meta;
+      var val=s.auto?(r[s.k]||0):((f.manual&&f.manual[s.k])||0);
+      var pc=meta?Math.min(100,Math.round(val/meta*100)):0;
+      h+='<div class="fn-st"><div class="nm">'+esc(s.n)+'<small>'+esc(s.d)+'</small></div>';
+      h+='<div class="fn-bar'+(pc<40?' no':pc<80?' lo':'')+'"><i style="width:'+pc+'%"></i></div>';
+      h+='<div class="fn-num">';
+      if(s.auto) h+='<b>'+val+'</b><span class="fn-auto">auto</span>';
+      else h+='<input id="fn-man-'+s.k+'" type="number" min="0" value="'+val+'" onchange="haFunil.manual(\''+s.k+'\',this.value)" aria-label="Real: '+esc(s.d)+'">';
+      h+='<span class="meta">/</span><input id="fn-meta-'+s.k+'" type="number" min="0" value="'+meta+'" onchange="haFunil.meta(\''+s.k+'\',this.value)" aria-label="Meta: '+esc(s.d)+'"></div></div>';
+    });
+    h+='</div></div>';
+
+    // ciclo
+    h+='<div class="card"><div class="ct" style="margin-bottom:10px">O ciclo de 4 semanas</div><div class="fn-weeks">';
+    SEMANAS.forEach(function(w,i){
+      var ini=f.data?addD(f.data,[-21,-14,-7,1][i]):'', fim=f.data?addD(f.data,[-15,-8,0,10][i]):'';
+      h+='<div class="fn-wk'+(wk===i+1?' cur':'')+'"><h4>Semana '+(i+1)+' · '+esc(w.t)+(ini?'<small>'+dShort(ini)+' a '+dShort(fim)+'</small>':'')+'</h4>';
+      w.it.forEach(function(t,j){
+        var k='w'+(i+1)+'-'+j, on=!!(f.checks&&f.checks[k]);
+        h+='<label class="fn-ck'+(on?' done':'')+'" for="fn-'+k+'"><input type="checkbox" id="fn-'+k+'"'+(on?' checked':'')+' onchange="haFunil.check(\''+k+'\',this.checked)"><span>'+esc(t)+'</span></label>';
+      });
+      h+='</div>';
+    });
+    h+='</div></div>';
+
+    // verificações
+    h+='<div class="card"><div class="ct" style="margin-bottom:6px">Datas de verificação</div><div class="fn-checks">';
+    checkpoints(mesSel,f).forEach(function(c){
+      var on=!!(f.checks&&f.checks['v-'+c.k]); var cls=on?' ok':(c.d<hoje?' late':'');
+      h+='<div class="fn-chk'+cls+'"><input type="checkbox" id="fn-v-'+c.k+'"'+(on?' checked':'')+' onchange="haFunil.check(\'v-'+c.k+'\',this.checked)" aria-label="'+esc(c.t)+'"><span class="dt">'+dShort(c.d)+'</span><label for="fn-v-'+c.k+'"><b>'+esc(c.t)+'</b><small>'+esc(c.s)+'</small></label></div>';
+    });
+    h+='</div></div>';
+
+    // manual das plataformas
+    h+='<div class="card fn-pb"><div class="ct" style="margin-bottom:10px">Como fazer em cada plataforma</div>';
+    h+='<details open><summary>Instagram (@jonassilva.pt + Collab com a Rafa)</summary><ul><li>1 post por dia às 15h: situação real do atelier ou da Academy, com a lição para salão, clínica, unhas, pestanas.</li><li>CTA único nos posts: "Comente MENTORIA". No período de venda, P.S. com o workshop.</li><li>4 stories por dia, 1 sempre sobre o workshop do mês, a fechar com "Responda EU QUERO".</li><li>1 a 2 Collabs por semana com @rafamendoncanails (bastidores, discussões de preço).</li><li>1 live por mês com a Rafa, na semana 2.</li><li>Tratamento neutro ("a sua agenda", "comente"); realidade portuguesa (IVA, Segurança Social).</li></ul></details>';
+    h+='<details><summary>WhatsApp e DMs (Vendas do dia)</summary><ul><li>Todos os dias: responder a todas as mensagens + 10 contactos novos.</li><li>Cada conversa acaba com uma pergunta ou um link, nunca só "obrigado".</li><li>Quem pergunta pela mentoria: marcar call de 20 min em 48h.</li><li>Follow-up a quem disse "talvez" ao fim de 2 dias.</li><li>Cada pessoa que levanta a mão entra no Pipeline como lead (com telemóvel).</li></ul></details>';
+    h+='<details><summary>Anúncios (Meta)</summary><ul><li>Só depois de um workshop com 10+ inscrições orgânicas.</li><li>Começar por promover o post orgânico com mais comentários: 5€/dia durante 5 dias.</li><li>Público: quem já interagiu com o seu perfil e o da Rafa; depois Portugal, mulheres 22–55, interesses de beleza.</li><li>Escalar só se cada inscrição custar menos de 15€ e sair pelo menos 1 mentoria por workshop.</li><li>Produtos de 17€ sozinhos: não anunciar. Só em pacote com oferta da Comunidade a seguir.</li></ul></details>';
+    h+='<details><summary>Página, pagamento e entrega</summary><ul><li>Pagamento no Stripe (Payment Link), com redirecionamento para a página de obrigado.</li><li>Página de obrigado leva ao grupo de WhatsApp das participantes.</li><li>No grupo: materiais até 3 dias antes, lembrete na véspera e 30 min antes.</li><li>Cada pagamento é registado aqui no Financeiro, ligado ao produto certo, para o funil contar sozinho.</li></ul></details>';
+    h+='<details><summary>Regras do funil</summary><ul><li>Vender antes de construir: Vendas do dia sempre primeiro.</li><li>Um pedido de cada vez: MENTORIA no conteúdo, o workshop no período de venda.</li><li>A mentoria nunca leva desconto; só bónus com prazo.</li><li>Navi e Patas Urbanas no mínimo enquanto o funil não bate a meta.</li></ul></details>';
+    h+='</div>';
+
+    h+='</div>';
+    el.innerHTML=h;
+  }
+
+  window.haFunil={
+    mes:function(n){ mesSel=addMonth(mesSel,n); renderFunil(); },
+    cfg:function(k,v){ M(mesSel,true)[k]=v; persist(); renderFunil(); },
+    meta:function(k,v){ var f=M(mesSel,true); f.metas=f.metas||{}; f.metas[k]=Math.max(0,parseFloat(v)||0); persist(); renderFunil(); },
+    manual:function(k,v){ var f=M(mesSel,true); f.manual=f.manual||{}; f.manual[k]=Math.max(0,parseFloat(v)||0); persist(); renderFunil(); },
+    diaria:function(k,v){ var f=F(); f.diarias=f.diarias||{}; f.diarias[k]=Math.max(0,parseFloat(v)||0); persist(); renderFunil(); },
+    check:function(k,on){ var f=M(mesSel,true); f.checks=f.checks||{}; if(on) f.checks[k]=true; else delete f.checks[k]; persist(); renderFunil(); },
+    criarProdutos:function(){
+      DB.produtos=DB.produtos||[];
+      if(!DB.produtos.some(function(p){ return /workshop/i.test(p.nome||''); }))
+        DB.produtos.push({id:uid(),nome:'Workshop €27',nomeC:'Workshop online do mês',valor:27,tipo:'unico',area:'mentorias',desc:'Workshop online de 3h sobre um problema do negócio de beleza. 27€ em pré-venda, 37€ depois.'});
+      if(!DB.produtos.some(function(p){ return /pacote|grava/i.test(p.nome||''); }))
+        DB.produtos.push({id:uid(),nome:'Pacote Gravação €27',nomeC:'Pacote: gravação do workshop + produtos',valor:27,tipo:'unico',area:'mentorias',desc:'Gravação do workshop + calculadora + Kit Agenda Cheia + Ideias Prontas.'});
+      persist(); if(typeof renderAll==='function') renderAll(); else renderFunil();
+      if(typeof toast==='function') toast('✓ Produtos do funil criados');
+    }
+  };
+}catch(e){ console.error('Bloco 11 (Funil & Metas):',e); }
+})();
+</script>
+<!-- ═══ FIM DO BLOCO 11 ═══ -->
+
 </body>
 </html>
