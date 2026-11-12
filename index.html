@@ -395,6 +395,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div class="nav-sec">Vendas</div>
     <div class="ni" onclick="nav('pipeline',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="4" height="18" rx="1.5"/><rect x="10" y="7" width="4" height="14" rx="1.5"/><rect x="17" y="11" width="4" height="10" rx="1.5"/></svg></span><span class="ni-label">Pipeline</span><span class="nb" id="nb-leads">0</span></div>
     <div class="ni" onclick="nav('recuperar',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg></span><span class="ni-label">Recuperar</span><span class="nb nb-blue" id="nb-recup" style="display:none">0</span></div>
+    <div class="ni" onclick="nav('metas',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></span><span class="ni-label">Metas</span></div>
     <div class="nav-sec">Negócio</div>
     <div class="ni" onclick="nav('mentorados',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span><span class="ni-label">Mentorados</span><span class="nb" id="nb-ment">0</span></div>
     <div class="ni" onclick="nav('entregas',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="ni-label">Entregas</span><span class="nb" id="nb-ent">0</span></div>
@@ -632,6 +633,9 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     </div>
     <div id="rc-body" style="display:none"></div>
   </div>
+
+  <!-- METAS -->
+  <div class="panel" id="p-metas"><div id="mt-root"></div></div>
 
   <!-- MENTORADOS -->
   <div class="panel" id="p-mentorados">
@@ -6889,6 +6893,132 @@ window.haRecup=(function(){
   };
 })();
 (function(){ if(typeof titles!=='undefined') titles.recuperar='Recuperar'; try{haRecup.render();}catch(e){} })();
+</script>
+
+<!-- ═══ BLOCO 13 — Metas e objetivos diários ═══ -->
+<style>
+body.area-geral .ni[onclick*="'metas'"]{display:none!important}
+.mt-top{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;margin-bottom:16px}
+.mt-card{background:#fff;border:1px solid var(--line2,#E5E7EB);border-radius:12px;padding:18px 20px}
+.mt-card h3{font-size:13px;font-weight:700;margin-bottom:12px}
+.mt-big{font-size:30px;font-weight:700;letter-spacing:-.02em}
+.mt-sub{font-size:12px;color:var(--g4,#888);margin-top:3px}
+.mt-bar{height:10px;border-radius:6px;background:#E5E7EB;margin:12px 0 6px;overflow:hidden}
+.mt-bar i{display:block;height:100%;background:#0B6E4F;border-radius:6px}
+.mt-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mt-form label{font-size:11px;color:var(--g4,#888);display:block;margin-bottom:3px}
+.mt-form input{width:100%;padding:8px 10px;border:1px solid #D1D5DB;border-radius:8px;font:500 13px Inter,sans-serif}
+.mt-todo{display:flex;flex-direction:column;gap:8px}
+.mt-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;border:1px solid var(--line2,#E5E7EB);border-radius:10px}
+.mt-row.done{background:#0B6E4F0D;border-color:#0B6E4F55}
+.mt-chk{width:22px;height:22px;border-radius:50%;border:2px solid #D1D5DB;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;flex-shrink:0;cursor:default}
+.mt-row.done .mt-chk{background:#0B6E4F;border-color:#0B6E4F}
+.mt-row.man .mt-chk{cursor:pointer}
+.mt-t{flex:1;font-size:13.5px;font-weight:600}
+.mt-t small{display:block;font-weight:400;color:var(--g4,#888);font-size:11.5px;margin-top:2px}
+.mt-n{font-size:13px;font-weight:700;white-space:nowrap}
+.mt-x{border:none;background:none;color:#9CA3AF;cursor:pointer;font-size:15px}
+.mt-add{display:flex;gap:8px;margin-top:10px}
+.mt-add input{flex:1;padding:8px 10px;border:1px solid #D1D5DB;border-radius:8px;font:500 13px Inter,sans-serif}
+@media(max-width:900px){.mt-top{grid-template-columns:1fr}}
+</style>
+<script>
+window.haMetas=(function(){
+  function M(){
+    DB.metas=DB.metas||{};
+    var m=DB.metas;
+    if(m.meta==null) m.meta=1000;
+    if(m.ticket==null) m.ticket=47;
+    if(m.cConv==null) m.cConv=30;   // % contactos que viram conversa
+    if(m.cVenda==null) m.cVenda=20; // % conversas que viram venda
+    if(!m.habitos) m.habitos=['Publicar conteúdo no Instagram','Stories com chamada para ação','Responder a todas as DMs'];
+    if(!m.feitos) m.feitos={};
+    return m;
+  }
+  function pend(h){return Math.max(0,h);}
+  function diasUteisRestantes(){
+    var d=new Date(), fim=new Date(d.getFullYear(),d.getMonth()+1,0), n=0;
+    for(var x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x<=fim;x.setDate(x.getDate()+1)){var w=x.getDay(); if(w!==0&&w!==6) n++;}
+    return Math.max(1,n);
+  }
+  function recebido(prefixo){
+    return (DB.pagamentos||[]).filter(function(p){return p.estado==='Pago'&&String(p.data||'').indexOf(prefixo)===0;})
+      .reduce(function(t,p){return t+parseFloat(p.valor||0);},0);
+  }
+  function contactosHoje(){
+    var h=todayISO(), n=0;
+    DB.leads.forEach(function(l){(l.interacoes||[]).forEach(function(i){
+      if(String(i.data||'').slice(0,10)===h && i.tipo!=='Mudança de etapa' && i.tipo!=='Recuperação') n++; });});
+    return n;
+  }
+  function recupHoje(){
+    var h=todayISO(), n=0;
+    DB.leads.forEach(function(l){(l.interacoes||[]).forEach(function(i){
+      if(String(i.data||'').slice(0,10)===h && i.tipo==='Recuperação') n++; });});
+    return n;
+  }
+  function recupDevidas(){
+    var h=todayISO();
+    return DB.leads.filter(function(l){return l.etapa==='perdido'&&l.recup&&l.recup.estado==='ativa'&&l.recup.passo<4&&
+      (function(){var d=new Date((l.recup.ultimo||l.recup.desde)+'T12:00:00');d.setDate(d.getDate()+[0,3,7,14][l.recup.passo]);return d.toISOString().slice(0,10)<=h;})();}).length;
+  }
+  function render(){
+    var box=document.getElementById('mt-root'); if(!box) return;
+    var m=M(), hoje=todayISO(), mes=hoje.slice(0,7);
+    var rec=recebido(mes), faltam=Math.max(0,m.meta-rec), pct=m.meta?Math.min(100,Math.round(rec/m.meta*100)):0;
+    var dias=diasUteisRestantes();
+    var vendas=Math.ceil(faltam/Math.max(1,m.ticket));
+    var vDia=Math.ceil(vendas/dias);
+    var convDia=Math.ceil(vDia/Math.max(.01,m.cVenda/100));
+    var contDia=Math.ceil(convDia/Math.max(.01,m.cConv/100));
+    var hojeRec=recebido(hoje);
+    var atrasados=DB.leads.filter(function(l){return !['fechado','perdido'].includes(l.etapa)&&l.proxData&&l.proxData<=hoje;}).length;
+    var cH=contactosHoje(), rD=recupDevidas(), rH=recupHoje();
+    var feitos=m.feitos[hoje]||[];
+
+    var linhas=[];
+    function auto(t,sub,feito,total){ var ok=total>0?feito>=total:true; linhas.push('<div class="mt-row'+(ok?' done':'')+'"><div class="mt-chk">'+(ok?'✓':'')+'</div><div class="mt-t">'+t+'<small>'+sub+'</small></div><div class="mt-n">'+feito+' / '+total+'</div></div>'); }
+    auto('Contactar leads novos','Mensagens ou chamadas para novas pessoas (registe em "+" no cartão do lead)',cH,faltam>0?contDia:0);
+    linhas.push('<div class="mt-row'+(atrasados===0?' done':'')+'"><div class="mt-chk">'+(atrasados===0?'✓':'')+'</div><div class="mt-t">Dar seguimento ao que está agendado<small>Leads com contacto marcado para hoje ou em atraso (altere a data ao tratar de cada um)</small></div><div class="mt-n">'+(atrasados===0?'Tudo em dia':atrasados+' por tratar')+'</div></div>');
+    auto('Contactar quem está em Recuperar','Passos da sequência com data de hoje',rH,rD+rH);
+    m.habitos.forEach(function(h,i){
+      var ok=feitos.indexOf(i)>=0;
+      linhas.push('<div class="mt-row man'+(ok?' done':'')+'"><div class="mt-chk" onclick="haMetas.tick('+i+')">'+(ok?'✓':'')+'</div><div class="mt-t">'+esc(h)+'<small>Hábito diário</small></div><button class="mt-x" title="Remover" onclick="haMetas.rem('+i+')">×</button></div>');
+    });
+
+    box.innerHTML=
+    '<div class="mt-top">'+
+      '<div class="mt-card"><h3>Meta de '+mes.split('-').reverse().join('/')+'</h3>'+
+        '<div class="mt-big">€'+rec.toFixed(0)+' <span style="font-size:15px;color:var(--g4,#888);font-weight:500">de €'+m.meta+'</span></div>'+
+        '<div class="mt-bar"><i style="width:'+pct+'%"></i></div>'+
+        '<div class="mt-sub">'+pct+'% atingido · faltam <b>€'+faltam.toFixed(0)+'</b> · '+dias+' dias úteis até ao fim do mês · hoje já entrou €'+hojeRec.toFixed(0)+'</div>'+
+        (faltam>0?'<div style="margin-top:14px;padding:12px 14px;background:#F6F7F9;border-radius:10px;font-size:13px;line-height:1.6">Para chegar lá: <b>'+vendas+' venda'+(vendas===1?'':'s')+'</b> no total, ou seja <b>'+vDia+' por dia útil</b>. Com as suas taxas, isso pede cerca de <b>'+convDia+' conversas</b> e <b>'+contDia+' contactos novos</b> por dia.</div>':'<div style="margin-top:14px;padding:12px 14px;background:#0B6E4F12;border-radius:10px;font-size:13px">Meta do mês atingida. 🎉</div>')+
+      '</div>'+
+      '<div class="mt-card"><h3>Os seus números</h3><div class="mt-form">'+
+        '<div><label>Meta do mês (€)</label><input type="number" id="mt-meta" value="'+m.meta+'" onchange="haMetas.set(\'meta\',this.value)"></div>'+
+        '<div><label>Valor médio por venda (€)</label><input type="number" id="mt-ticket" value="'+m.ticket+'" onchange="haMetas.set(\'ticket\',this.value)"></div>'+
+        '<div><label>% contactos que viram conversa</label><input type="number" id="mt-cc" value="'+m.cConv+'" onchange="haMetas.set(\'cConv\',this.value)"></div>'+
+        '<div><label>% conversas que viram venda</label><input type="number" id="mt-cv" value="'+m.cVenda+'" onchange="haMetas.set(\'cVenda\',this.value)"></div>'+
+      '</div><div class="mt-sub" style="margin-top:10px">Ajuste as percentagens ao que realmente acontece consigo. Quanto mais exatas, mais certo fica o objetivo diário.</div></div>'+
+    '</div>'+
+    '<div class="mt-card"><h3>O que fazer hoje ('+fmtDate(hoje)+')</h3><div class="mt-todo">'+linhas.join('')+'</div>'+
+      '<div class="mt-add"><input id="mt-novo" placeholder="Novo hábito diário (ex.: gravar um vídeo)" onkeydown="if(event.key===\'Enter\')haMetas.add()"><button class="btn bp bsm" onclick="haMetas.add()">Adicionar</button></div></div>';
+  }
+  function gravar(){save();render();}
+  return {
+    render:render,
+    ir:function(){var el=document.querySelector('.ni[onclick*="\'metas\'"]');nav('metas',el);},
+    set:function(k,v){var m=M();m[k]=Math.max(0,parseFloat(v)||0);gravar();},
+    tick:function(i){var m=M(),h=todayISO();var a=m.feitos[h]=m.feitos[h]||[];var p=a.indexOf(i);if(p>=0)a.splice(p,1);else a.push(i);gravar();},
+    add:function(){var e=document.getElementById('mt-novo'),v=(e.value||'').trim();if(!v)return;M().habitos.push(v);gravar();},
+    rem:function(i){var m=M();m.habitos.splice(i,1);m.feitos={};gravar();}
+  };
+})();
+(function(){
+  if(typeof titles!=='undefined') titles.metas='Metas e objetivos diários';
+  var r=haRecup.render;
+  haRecup.render=function(){ r.apply(this,arguments); try{haMetas.render();}catch(e){console.error('Metas:',e);} };
+})();
 </script>
 
 </body>
