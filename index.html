@@ -7021,5 +7021,58 @@ window.haMetas=(function(){
 })();
 </script>
 
+<!-- ═══ BLOCO 14 — Popup "Porque perdemos?" ao passar para Recuperar ═══ -->
+<div class="mo" id="modal-perda"><div class="mbox" style="max-width:460px">
+  <div class="mh"><div class="mt">🔄 Passar para Recuperar</div><span class="mx" onclick="haPerda.fechar()">✕</span></div>
+  <div style="font-size:12.5px;color:var(--g3);margin-bottom:14px" id="pf-nome"></div>
+  <div class="fg"><label class="fl">Porque se perdeu?</label><select class="fi" id="pf-motivo"></select></div>
+  <div class="fg"><label class="fl">Quando voltar a contactar?</label>
+    <select class="fi" id="pf-quando">
+      <option value="0">Já, começar a sequência de recuperação</option>
+      <option value="14">Daqui a 2 semanas</option>
+      <option value="30">Daqui a 1 mês</option>
+      <option value="60">Daqui a 2 meses</option>
+      <option value="90">Daqui a 3 meses</option>
+    </select></div>
+  <div class="fg"><label class="fl">O que disse? (ajuda a escolher a abordagem)</label><textarea class="fi" id="pf-nota" rows="3" placeholder="Ex.: disse que ia ver depois do verão"></textarea></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
+    <button class="btn" onclick="haPerda.fechar()">Cancelar</button>
+    <button class="btn bp" onclick="haPerda.confirmar()">Passar para Recuperar</button>
+  </div>
+</div></div>
+<script>
+window.haPerda=(function(){
+  var alvo=null, orig=window.mudarEtapa;
+  window.mudarEtapa=function(id,nova){
+    if(nova!=='perdido') return orig.apply(this,arguments);
+    var l=DB.leads.find(function(x){return x.id===id;}); if(!l) return;
+    alvo=id;
+    document.getElementById('pf-nome').textContent=l.nome+(l.produto?' · '+l.produto:'');
+    var sel=document.getElementById('pf-motivo');
+    sel.innerHTML=MOTIVOS_PERDA.map(function(m){return '<option'+(m===l.motivo?' selected':'')+'>'+m+'</option>';}).join('');
+    document.getElementById('pf-quando').value='0';
+    document.getElementById('pf-nota').value='';
+    document.getElementById('modal-perda').classList.add('open');
+  };
+  function addDias(n){var d=new Date(todayISO()+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+  return {
+    fechar:function(){document.getElementById('modal-perda').classList.remove('open');alvo=null;},
+    confirmar:function(){
+      var l=DB.leads.find(function(x){return x.id===alvo;}); if(!l) return;
+      var n=parseInt(document.getElementById('pf-quando').value,10)||0;
+      var nota=document.getElementById('pf-nota').value.trim();
+      l.motivo=document.getElementById('pf-motivo').value;
+      if(nota) l.motivoNota=nota;
+      l.recup={desde:addDias(n),passo:0,ultimo:null,estado:'ativa',hist:[]};
+      l.proxData=l.recup.desde; l.proxTipo='Recuperação';
+      if(!l.interacoes) l.interacoes=[];
+      l.interacoes.push({id:Date.now(),tipo:'Nota',nota:'Perdido: '+l.motivo+(nota?' — '+nota:''),data:new Date().toISOString()});
+      var id=alvo; this.fechar();
+      orig.call(window,id,'perdido');
+    }
+  };
+})();
+</script>
+
 </body>
 </html>
