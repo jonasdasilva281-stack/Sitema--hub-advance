@@ -394,6 +394,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div class="ni on" onclick="nav('overview',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span><span class="ni-label">Visão Geral</span></div>
     <div class="nav-sec">Vendas</div>
     <div class="ni" onclick="nav('pipeline',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="4" height="18" rx="1.5"/><rect x="10" y="7" width="4" height="14" rx="1.5"/><rect x="17" y="11" width="4" height="10" rx="1.5"/></svg></span><span class="ni-label">Pipeline</span><span class="nb" id="nb-leads">0</span></div>
+    <div class="ni" onclick="nav('recuperar',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg></span><span class="ni-label">Recuperar</span><span class="nb nb-blue" id="nb-recup" style="display:none">0</span></div>
     <div class="nav-sec">Negócio</div>
     <div class="ni" onclick="nav('mentorados',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span><span class="ni-label">Mentorados</span><span class="nb" id="nb-ment">0</span></div>
     <div class="ni" onclick="nav('entregas',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="ni-label">Entregas</span><span class="nb" id="nb-ent">0</span></div>
@@ -581,7 +582,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
       <div class="card kpi"><div class="kl">Pipeline total</div><div class="kv" style="color:var(--or)" id="ld-valor">€0</div></div>
       <div class="card kpi"><div class="kl">Forecast</div><div class="kv" style="color:var(--pu)" id="ld-forecast">€0</div></div>
       <div class="card kpi"><div class="kl">Stand By</div><div class="kv" style="color:var(--bl)" id="pl-standby-count">0</div></div>
-      <div class="card kpi"><div class="kl">Perdidos</div><div class="kv" style="color:var(--re)" id="pd-total">0</div></div>
+      <div class="card kpi" style="cursor:pointer" onclick="haRecup.ir()" title="Abrir Recuperar"><div class="kl">A recuperar</div><div class="kv" style="color:var(--re)" id="pd-total">0</div></div>
     </div>
     <!-- Toolbar -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px;flex-wrap:wrap">
@@ -593,17 +594,14 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     </div>
     <!-- Kanban columns -->
     <div id="pipeline-kanban" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:12px;align-items:flex-start"></div>
-    <!-- Fechados + Perdidos detail -->
-    <div class="g2" style="margin-top:16px">
-      <div class="card"><div class="ct" style="margin-bottom:10px">✅ Fechados</div><div id="leads-fechados"></div></div>
-      <div class="card">
-        <div class="ct" style="margin-bottom:10px">❌ Motivos de perda</div>
-        <div id="pd-distribuicao"></div>
-      </div>
-    </div>
+    <!-- Fechados (recolhido) + atalho para Recuperar -->
+    <details class="pl-foot" id="pl-foot">
+      <summary><span>✅ Fechados</span><span class="pl-foot-n" id="pl-foot-n">0</span><span class="pl-foot-sp"></span><a onclick="event.stopPropagation();event.preventDefault();haRecup.ir()">🔄 Perdidos passam para Recuperar →</a></summary>
+      <div class="pl-foot-body"><div id="leads-fechados"></div></div>
+    </details>
     <!-- hidden IDs kept for compat -->
     <div style="display:none">
-      <span id="nb-perdidos"></span>
+      <span id="nb-perdidos"></span><div id="pd-distribuicao"></div>
       <span id="nb-standby"></span>
       <span id="pd-valor"></span>
       <span id="pd-motivo"></span>
@@ -612,6 +610,27 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
       <span id="standby-list"></span>
       <span id="leads-list"></span>
     </div>
+  </div>
+
+  <!-- RECUPERAR -->
+  <div class="panel" id="p-recuperar">
+    <div class="rc-kpis">
+      <div class="card kpi"><div class="kl">A recuperar</div><div class="kv" style="color:var(--re)" id="rc-k1">0</div></div>
+      <div class="card kpi"><div class="kl">Contactar hoje</div><div class="kv" style="color:var(--or)" id="rc-k2">0</div></div>
+      <div class="card kpi"><div class="kl">Recuperados</div><div class="kv" style="color:var(--g)" id="rc-k3">0</div></div>
+      <div class="card kpi"><div class="kl">Valor em jogo</div><div class="kv" id="rc-k4">€0</div></div>
+    </div>
+    <div class="rc-intro">Leads que se perderam. Aqui não se vende logo: reabre-se a conversa, mostra-se valor e só depois se volta a propor. O pipeline principal fica só com quem ainda está em conversa.</div>
+    <div class="rc-tools" id="rc-tools"></div>
+    <div class="rc-grid">
+      <div class="rc-list" id="rc-list"></div>
+      <div class="rc-side">
+        <h4>Porque se perderam</h4>
+        <div id="rc-motivos"></div>
+        <div class="rc-seq"><b>Sequência</b><br>1 · Dia 0: reabrir a conversa, sem vender<br>2 · +3 dias: valor ou prova<br>3 · +7 dias: nova oferta adaptada ao motivo<br>4 · +14 dias: último contacto, porta aberta</div>
+      </div>
+    </div>
+    <div id="rc-body" style="display:none"></div>
   </div>
 
   <!-- MENTORADOS -->
@@ -1486,7 +1505,6 @@ function renderPipeline(){
     {id:'todos',l:`Todos`},
     ...ETAPAS.filter(e=>!['fechado','perdido','standby'].includes(e.id)).map(e=>({id:e.id,l:`${e.l} (${ativos.filter(x=>x.etapa===e.id).length})`})),
     {id:'standby',l:`Stand By (${standby.length})`},
-    {id:'perdidos',l:`Perdidos (${perdidos.length})`},
     {id:'atrasados',l:`⚠ Atrasados (${atrasados.length})`}
   ];
   document.getElementById('leads-filters').innerHTML=filtros.map(f=>`<button class="filter-btn${leadFiltro===f.id?' on':''}" onclick="leadFiltro='${f.id}';renderPipeline()">${f.l}</button>`).join('');
@@ -1496,7 +1514,7 @@ function renderPipeline(){
   // Apply filter
   let filtradosAtivos = leadFiltro==='todos' ? ativos :
     leadFiltro==='standby' ? standby :
-    leadFiltro==='perdidos' ? perdidos :
+    
     leadFiltro==='atrasados' ? atrasados :
     ativos.filter(l=>l.etapa===leadFiltro);
 
@@ -1535,22 +1553,9 @@ function renderPipeline(){
     </div>`;
   });
 
-  // Perdidos column
-  const perdidosCards=(leadFiltro==='todos'||leadFiltro==='perdidos'?perdidos:[]).map(l=>`
-    <div class="pl-card" style="border-left-color:#F0465A;opacity:.75" onclick="editLead(${l.id})">
-      <div class="pl-card-name">${l.nome}</div>
-      <div class="pl-card-sub">${l.produto||'—'} · ${l.origem||'—'}</div>
-      ${l.motivo?`<div style="font-size:10px;color:var(--re);margin-top:3px">${l.motivo}</div>`:''}
-      <div class="pl-card-actions" onclick="event.stopPropagation()">
-        <button class="etapa-btn" style="background:#2563EB18;color:#2563EB" onclick="mudarEtapa(${l.id},'standby')">Stand By</button>
-      </div>
-    </div>`).join('');
-  cols.push(`<div class="pl-col">
-    <div class="pl-col-header"><span class="pl-col-title" style="color:#F0465A">Perdidos</span><span class="pl-col-count" style="background:#F0465A18;color:#F0465A">${perdidos.length}</span></div>
-    ${perdidosCards||`<div style="font-size:11px;color:var(--g4);text-align:center;padding:20px 0">—</div>`}
-  </div>`);
-
   document.getElementById('pipeline-kanban').innerHTML=cols.join('');
+  var fn=document.getElementById('pl-foot-n'); if(fn) fn.textContent=fechados.length;
+  try{ if(window.haRecup) haRecup.render(); }catch(e){ console.error('Recuperar:',e); }
 
   // Fechados
   document.getElementById('leads-fechados').innerHTML = fechados.length ? fechados.map(l=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--g6);font-size:12px"><span style="font-weight:500">${l.nome}</span><span class="tag tg">Fechado</span></div>`).join('') : '<div class="empty">Nenhum fechado ainda</div>';
@@ -6576,6 +6581,315 @@ try{
 })();
 </script>
 <!-- ═══ FIM DO BLOCO 12 ═══ -->
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BLOCO 12 — Recuperar (leads perdidos) · pipeline fixo · menu minimizável
+     Aditivo: não altera dados existentes (só acrescenta l.recup nos perdidos).
+     ═══════════════════════════════════════════════════════════════ -->
+<style>
+/* ── Pipeline fixo no fundo (desktop) ── */
+@media(min-width:769px){
+  body.pipe-fixed .main{height:100vh;min-height:0;overflow:hidden}
+  body.pipe-fixed .content{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  body.pipe-fixed #p-pipeline.on{display:flex;flex-direction:column;flex:1;min-height:0}
+  body.pipe-fixed #pipeline-kanban{flex:1;min-height:0;align-items:stretch!important;padding-bottom:8px!important}
+  body.pipe-fixed .pl-col{display:flex;flex-direction:column;overflow-y:auto;min-height:0;scrollbar-width:thin}
+  body.pipe-fixed .pl-col-header{position:sticky;top:-10px;z-index:2;background:inherit;padding:10px 2px 8px;margin:-10px 0 8px}
+  body.pipe-fixed .pl-foot{flex-shrink:0}
+}
+.pl-foot{margin-top:6px;background:#fff;border:1px solid var(--line2,#E5E7EB);border-radius:12px;font-size:12.5px}
+.pl-foot summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 14px;font-weight:600}
+.pl-foot summary::-webkit-details-marker{display:none}
+.pl-foot-n{background:#0B6E4F18;color:#0B6E4F;border-radius:20px;padding:1px 8px;font-size:11px}
+.pl-foot-sp{flex:1}
+.pl-foot summary a{font-weight:500;color:var(--re,#C0392B);cursor:pointer;font-size:12px}
+.pl-foot-body{padding:4px 14px 12px;max-height:34vh;overflow:auto}
+
+/* ── Menu minimizável ── */
+#sb-min-row{padding:0 .7rem .4rem}
+#sb-min-btn{width:100%;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:none;color:rgba(255,255,255,.45);font:500 11.5px Inter,sans-serif;padding:7px 10px;border-radius:8px;cursor:pointer}
+#sb-min-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+#sb-min-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+@media(min-width:769px){
+  .sb,.main{transition:width .2s,margin-left .2s}
+  body.sb-min{--sw:68px}
+  body.sb-min .sb-logo{padding:1rem 0!important;justify-content:center;overflow:hidden}
+  body.sb-min .sb-logo>*{display:none!important}
+  body.sb-min .sb-logo::after{content:'HA';font:700 15px Inter,sans-serif;color:#fff;letter-spacing:.02em}
+  body.sb-min .ni-label,body.sb-min .ni .nb,body.sb-min #sb-min-btn span,
+  body.sb-min .sb-user>div:not(.uav),body.sb-min .sb-logout span{display:none!important}
+  body.sb-min .nav-sec{display:none}
+  body.sb-min .ni{justify-content:center;padding:7px 0}
+  body.sb-min .sb-user{justify-content:center;padding:.8rem 0}
+  body.sb-min .sb-logout{justify-content:center}
+  body.sb-min #sb-min-btn{justify-content:center}
+  body.sb-min #sb-min-btn svg{transform:rotate(180deg)}
+}
+@media(max-width:768px){#sb-min-row{display:none}}
+
+/* ── Recuperar ── */
+body.area-geral .ni[onclick*="'recuperar'"]{display:none!important}
+.rc-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.rc-intro{font-size:12.5px;color:var(--g3,#555);margin:-4px 0 14px;max-width:760px;line-height:1.5}
+.rc-tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.rc-pill{border:1px solid var(--line2,#E5E7EB);background:#fff;color:var(--g3,#555);padding:6px 12px;border-radius:20px;font:500 12px Inter,sans-serif;cursor:pointer}
+.rc-pill.on{background:#111827;color:#fff;border-color:#111827}
+.rc-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+.rc-list{display:flex;flex-direction:column;gap:10px}
+.rc-card{background:#fff;border:1px solid var(--line2,#E5E7EB);border-left:4px solid #C0392B;border-radius:12px;padding:14px 16px}
+.rc-card.due{border-left-color:#B7791F;box-shadow:0 0 0 1px #B7791F33}
+.rc-card.ok{border-left-color:#0B6E4F}
+.rc-card.arq{border-left-color:#9CA3AF;opacity:.8}
+.rc-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.rc-name{font-weight:600;font-size:14px;cursor:pointer}
+.rc-sub{font-size:11.5px;color:var(--g4,#888);margin-top:2px}
+.rc-steps{display:flex;gap:4px;margin:10px 0 8px;align-items:center;flex-wrap:wrap}
+.rc-dot{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--g4,#888)}
+.rc-dot i{width:18px;height:18px;border-radius:50%;background:#E5E7EB;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:10px;font-weight:700;color:#6B7280}
+.rc-dot.done i{background:#0B6E4F;color:#fff}
+.rc-dot.cur i{background:#B7791F;color:#fff}
+.rc-dot.cur{color:#111;font-weight:600}
+.rc-line{width:14px;height:2px;background:#E5E7EB}
+.rc-msg{background:#F6F7F9;border-radius:9px;padding:10px 12px;font-size:12.5px;line-height:1.5;color:#333;white-space:pre-wrap;margin:6px 0 10px}
+.rc-acts{display:flex;gap:6px;flex-wrap:wrap}
+.rc-b{border:none;border-radius:8px;padding:7px 11px;font:600 11.5px Inter,sans-serif;cursor:pointer;background:#F3F4F6;color:#333}
+.rc-b:hover{filter:brightness(.95)}
+.rc-b.wa{background:#0B6E4F;color:#fff}
+.rc-b.ok{background:#0B6E4F18;color:#0B6E4F}
+.rc-b.no{background:#C0392B14;color:#C0392B}
+.rc-side{background:#fff;border:1px solid var(--line2,#E5E7EB);border-radius:12px;padding:14px 16px;position:sticky;top:0}
+.rc-side h4{font-size:12px;font-weight:700;margin-bottom:10px}
+.rc-bar{margin-bottom:9px;font-size:11.5px}
+.rc-bar div{height:6px;border-radius:4px;background:#E5E7EB;margin-top:3px;overflow:hidden}
+.rc-bar i{display:block;height:100%;background:#C0392B}
+.rc-seq{margin-top:14px;padding-top:12px;border-top:1px solid #eee;font-size:11.5px;color:#555;line-height:1.6}
+.rc-empty{text-align:center;color:var(--g4,#888);padding:40px 10px;font-size:13px;background:#fff;border:1px dashed #D1D5DB;border-radius:12px}
+@media(max-width:900px){.rc-grid{grid-template-columns:1fr}.rc-kpis{grid-template-columns:repeat(2,1fr)}.rc-side{position:static}}
+</style>
+
+<script>
+/* ═══ Pipeline fixo + menu minimizável ═══ */
+(function(){
+  var LS='hub_sb_min';
+  function aplicaMin(on){
+    document.body.classList.toggle('sb-min',!!on);
+    try{localStorage.setItem(LS,on?'1':'0');}catch(e){}
+  }
+  window.toggleMenuMin=function(){ aplicaMin(!document.body.classList.contains('sb-min')); };
+
+  function titulos(){
+    document.querySelectorAll('.sb .ni').forEach(function(n){
+      var l=n.querySelector('.ni-label'); if(l) n.title=l.textContent.trim();
+    });
+  }
+  function injeta(){
+    var logo=document.querySelector('.sb .sb-logo');
+    if(logo && !document.getElementById('sb-min-row')){
+      var row=document.createElement('div'); row.id='sb-min-row';
+      row.innerHTML='<button id="sb-min-btn" type="button" onclick="toggleMenuMin()" title="Minimizar / expandir menu"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg><span>Minimizar menu</span></button>';
+      var div=document.querySelector('.sb .sb-divider');
+      (div||logo).parentNode.insertBefore(row,div||logo.nextSibling);
+    }
+    titulos();
+    try{ if(localStorage.getItem(LS)==='1') aplicaMin(true); }catch(e){}
+  }
+
+  /* pipeline ocupa o ecrã todo e só as colunas deslizam */
+  var navOrig=window.nav;
+  window.nav=function(id,el){
+    var r=navOrig.apply(this,arguments);
+    document.body.classList.toggle('pipe-fixed',id==='pipeline');
+    return r;
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',injeta); else injeta();
+})();
+
+/* ═══ Recuperar ═══ */
+window.haRecup=(function(){
+  var filtro='hoje';
+  var GAPS=[0,3,7,14]; // dias de espera antes de cada passo (0 = logo)
+  var PASSOS=[
+    {t:'Reabrir a conversa',d:'sem vender nada'},
+    {t:'Valor / prova',d:'caso ou conteúdo útil'},
+    {t:'Nova oferta',d:'adaptada ao motivo'},
+    {t:'Último contacto',d:'porta aberta'}
+  ];
+  function iso(d){return d.toISOString().slice(0,10);}
+  function addDias(dataIso,n){var d=new Date(dataIso+'T12:00:00');d.setDate(d.getDate()+n);return iso(d);}
+  function diasDesde(dataIso){return Math.max(0,Math.floor((new Date(todayISO()+'T12:00:00')-new Date(dataIso+'T12:00:00'))/86400000));}
+  function primeiro(n){return String(n||'').trim().split(/\s+/)[0]||'';}
+
+  function init(l){
+    if(l.etapa!=='perdido') return;
+    if(l.recup && l.recup.estado==='recuperado') l.recup=null; // voltou a perder-se
+    if(!l.recup){
+      var desde=todayISO();
+      var ints=(l.interacoes||[]).filter(function(i){return /→\s*Perdido/.test(i.nota||'');});
+      if(ints.length){ var d=ints[ints.length-1].data; if(d) desde=String(d).slice(0,10); }
+      l.recup={desde:desde,passo:0,ultimo:null,estado:'ativa',hist:[]};
+    }
+  }
+  function proxima(l){ // data do próximo passo
+    var r=l.recup; if(r.passo>=PASSOS.length) return null;
+    return addDias(r.ultimo||r.desde,GAPS[r.passo]);
+  }
+  function mensagem(l,passo){
+    var n=primeiro(l.nome), p=l.produto||'o nosso programa', m=l.motivo||'';
+    if(passo===0) return 'Olá '+n+'! Há algum tempo que não falamos e lembrei-me de si. Como está a correr o negócio? Sem compromisso nenhum, só queria saber como está.';
+    if(passo===1) return 'Olá '+n+', lembrei-me de si ao ver um resultado de uma cliente com um ponto de partida parecido com o seu. Posso enviar-lhe o caso? Pode ser útil mesmo que não avancemos.';
+    if(passo===2){
+      var adapt={
+        'Achou caro':'Preparei uma forma de pagamento em prestações que torna '+p+' bem mais leve de começar.',
+        'Sem orçamento':'Preparei uma forma de pagamento em prestações que torna '+p+' bem mais leve de começar.',
+        'Não era o momento':'Entretanto abrimos novas datas e talvez agora faça mais sentido para si.',
+        'Não respondeu':'Deixo-lhe aqui a proposta resumida em duas linhas, para ver com calma.',
+        'Escolheu concorrente':'Se quiser, mostro-lhe o que fazemos de diferente, sem pressão.',
+        'Não viu valor na oferta':'Reformulei a proposta para ficar mais clara no resultado que obtém.',
+        'Não tinha autoridade de decisão':'Se for útil, preparo um resumo para partilhar com quem decide.'
+      }[m]||'Reformulei a proposta para se ajustar melhor ao que precisa agora.';
+      return 'Olá '+n+'! '+adapt+' Quer que lhe explique em 5 minutos?';
+    }
+    return 'Olá '+n+', não quero ser insistente, por isso este é o meu último contacto. A porta fica sempre aberta: quando fizer sentido, é só dizer. Desejo-lhe muito sucesso!';
+  }
+  function waLink(l,txt){
+    var t=normalizeTel(l.tel||l.contacto||''); if(!t) return '';
+    return 'https://wa.me/'+t+'?text='+encodeURIComponent(txt);
+  }
+  function lead(id){return DB.leads.find(function(x){return x.id===id;});}
+  function log(l,nota){
+    if(!l.interacoes) l.interacoes=[];
+    l.interacoes.push({id:Date.now(),tipo:'Recuperação',nota:nota,data:new Date().toISOString()});
+  }
+
+  function lista(){ return DB.leads.filter(function(l){return l.etapa==='perdido';}); }
+  function recuperados(){ return DB.leads.filter(function(l){return l.recupOk && l.etapa!=='perdido';}); }
+
+  function steps(l){
+    var out=[];
+    PASSOS.forEach(function(p,i){
+      var c=i<l.recup.passo?'done':(i===l.recup.passo?'cur':'');
+      out.push('<span class="rc-dot '+c+'"><i>'+(i<l.recup.passo?'✓':(i+1))+'</i>'+p.t+'</span>');
+      if(i<PASSOS.length-1) out.push('<span class="rc-line"></span>');
+    });
+    return out.join('');
+  }
+
+  function card(l){
+    var r=l.recup, hoje=todayISO(), prox=proxima(l);
+    var arq=r.estado==='arquivada';
+    var due=!arq && prox && prox<=hoje;
+    var fim=!arq && r.passo>=PASSOS.length;
+    var cab='<div class="rc-top"><div><div class="rc-name" onclick="editLead('+l.id+')">'+esc(l.nome)+'</div>'+
+      '<div class="rc-sub">'+esc(l.produto||'—')+' · perdido há '+diasDesde(r.desde)+'d · motivo: '+esc(l.motivo||'não indicado')+'</div></div>'+
+      '<div class="rc-sub" style="text-align:right">'+(arq?'Arquivado':fim?'Sequência concluída':(due?'<b style="color:#B7791F">Contactar hoje</b>':'Próximo: '+fmtDate(prox)))+'</div></div>';
+    var corpo='';
+    if(!arq && !fim){
+      var txt=mensagem(l,r.passo), wa=waLink(l,txt);
+      corpo='<div class="rc-steps">'+steps(l)+'</div>'+
+        '<div class="rc-msg" id="rcm-'+l.id+'">'+esc(txt)+'</div>'+
+        '<div class="rc-acts">'+
+        (wa?'<button class="rc-b wa" onclick="haRecup.enviar('+l.id+')">💬 Abrir WhatsApp e marcar enviado</button>':'<button class="rc-b" disabled title="Sem telefone">Sem telefone</button>')+
+        '<button class="rc-b" onclick="haRecup.copiar('+l.id+')">Copiar</button>'+
+        '<button class="rc-b ok" onclick="haRecup.marcar('+l.id+')">✓ Marcar enviado</button>'+
+        '<button class="rc-b ok" onclick="haRecup.voltar('+l.id+')">↩ Voltou à conversa</button>'+
+        '<button class="rc-b no" onclick="haRecup.arquivar('+l.id+')">Arquivar</button></div>';
+    }else if(fim){
+      corpo='<div class="rc-steps">'+steps(l)+'</div><div class="rc-sub" style="margin-bottom:8px">Os 4 contactos foram feitos. Sugestão: arquivar e voltar a falar daqui a uns meses.</div>'+
+        '<div class="rc-acts"><button class="rc-b ok" onclick="haRecup.voltar('+l.id+')">↩ Voltou à conversa</button><button class="rc-b no" onclick="haRecup.arquivar('+l.id+')">Arquivar</button></div>';
+    }else{
+      corpo='<div class="rc-acts" style="margin-top:8px"><button class="rc-b ok" onclick="haRecup.reativar('+l.id+')">Reativar sequência</button></div>';
+    }
+    return '<div class="rc-card'+(due?' due':'')+(arq?' arq':'')+'">'+cab+corpo+'</div>';
+  }
+  function cardOk(l){
+    return '<div class="rc-card ok"><div class="rc-top"><div><div class="rc-name" onclick="editLead('+l.id+')">'+esc(l.nome)+'</div>'+
+      '<div class="rc-sub">'+esc(l.produto||'—')+' · de volta ao pipeline em '+(ETAPAS.find(function(e){return e.id===l.etapa;})||{l:l.etapa}).l+'</div></div>'+
+      '<div class="rc-sub"><b style="color:#0B6E4F">Recuperado</b></div></div></div>';
+  }
+
+  function render(){
+    var box=document.getElementById('rc-body'); if(!box) return;
+    var all=lista(); all.forEach(init);
+    var ativas=all.filter(function(l){return l.recup.estado!=='arquivada';});
+    var arq=all.filter(function(l){return l.recup.estado==='arquivada';});
+    var hoje=todayISO();
+    var hojeL=ativas.filter(function(l){var p=proxima(l);return p&&p<=hoje;});
+    var rec=recuperados();
+    var valor=ativas.reduce(function(s,l){return s+produtoValor(l.produto);},0);
+
+    // contador no menu e no pipeline
+    var nb=document.getElementById('nb-recup'); if(nb){ nb.textContent=hojeL.length; nb.style.display=hojeL.length?'':'none'; }
+    var pd=document.getElementById('pd-total'); if(pd) pd.textContent=ativas.length;
+
+    document.getElementById('rc-k1').textContent=ativas.length;
+    document.getElementById('rc-k2').textContent=hojeL.length;
+    document.getElementById('rc-k3').textContent=rec.length;
+    document.getElementById('rc-k4').textContent='€'+valor.toFixed(0);
+
+    var pills=[['hoje','Contactar hoje ('+hojeL.length+')'],['ativas','Todas ('+ativas.length+')'],['recuperados','Recuperados ('+rec.length+')'],['arquivadas','Arquivados ('+arq.length+')']];
+    document.getElementById('rc-tools').innerHTML=pills.map(function(p){
+      return '<button class="rc-pill'+(filtro===p[0]?' on':'')+'" onclick="haRecup.filtrar(\''+p[0]+'\')">'+p[1]+'</button>';}).join('');
+
+    var base=filtro==='hoje'?hojeL:filtro==='ativas'?ativas:filtro==='arquivadas'?arq:null;
+    var html;
+    if(filtro==='recuperados') html=rec.length?rec.map(cardOk).join(''):'<div class="rc-empty">Ainda não há leads recuperados.</div>';
+    else html=base.length?base.sort(function(a,b){return (proxima(a)||'9')<(proxima(b)||'9')?-1:1;}).map(card).join(''):
+      '<div class="rc-empty">'+(filtro==='hoje'?'Nada para contactar hoje. 🎉':'Sem leads nesta lista.')+'</div>';
+    document.getElementById('rc-list').innerHTML=html;
+
+    // motivos
+    var cnt={}; all.forEach(function(l){var m=l.motivo||'Não indicado';cnt[m]=(cnt[m]||0)+1;});
+    var ks=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a];}), mx=ks.length?cnt[ks[0]]:1;
+    document.getElementById('rc-motivos').innerHTML=ks.length?ks.map(function(k){
+      return '<div class="rc-bar"><span>'+esc(k)+' <b>'+cnt[k]+'</b></span><div><i style="width:'+Math.round(cnt[k]/mx*100)+'%"></i></div></div>';}).join(''):'<div class="rc-sub">Sem dados.</div>';
+  }
+
+  function guardar(msg,cor){ save(); renderAll(); if(msg) toast(msg,cor); }
+  return {
+    ir:function(){ var el=document.querySelector('.ni[onclick*="\'recuperar\'"]'); nav('recuperar',el); },
+    render:render,
+    filtrar:function(f){filtro=f;render();},
+    copiar:function(id){
+      var l=lead(id); if(!l) return; var t=mensagem(l,l.recup.passo);
+      if(navigator.clipboard) navigator.clipboard.writeText(t).then(function(){toast('Mensagem copiada');});
+      else toast('Copie manualmente a mensagem','#C0392B');
+    },
+    marcar:function(id){
+      var l=lead(id); if(!l||!l.recup) return; var r=l.recup;
+      r.hist.push({passo:r.passo,data:todayISO()});
+      log(l,'Recuperação — passo '+(r.passo+1)+': '+PASSOS[r.passo].t);
+      r.passo++; r.ultimo=todayISO();
+      var p=proxima(l); if(p){ l.proxData=p; l.proxTipo='Recuperação'; }
+      guardar(r.passo>=PASSOS.length?'Sequência concluída — pode arquivar':'Enviado ✓ próximo em '+GAPS[r.passo]+' dias');
+    },
+    enviar:function(id){
+      var l=lead(id); if(!l) return; var w=waLink(l,mensagem(l,l.recup.passo));
+      if(w) window.open(w,'_blank');
+      haRecup.marcar(id);
+    },
+    voltar:function(id){
+      var l=lead(id); if(!l) return;
+      l.recupOk=true; if(l.recup) l.recup.estado='recuperado';
+      l.etapa='sdr'; l.proxData=todayISO(); l.proxTipo='Conversa';
+      log(l,'Recuperado — voltou ao pipeline (SDR)');
+      guardar('🎉 '+l.nome+' voltou ao pipeline','#0B6E4F');
+    },
+    arquivar:function(id){
+      var l=lead(id); if(!l||!l.recup) return;
+      l.recup.estado='arquivada'; l.proxData='';
+      log(l,'Recuperação arquivada');
+      guardar('Arquivado');
+    },
+    reativar:function(id){
+      var l=lead(id); if(!l||!l.recup) return;
+      l.recup={desde:todayISO(),passo:0,ultimo:null,estado:'ativa',hist:[]};
+      log(l,'Recuperação reativada');
+      guardar('Sequência reativada');
+    }
+  };
+})();
+(function(){ if(typeof titles!=='undefined') titles.recuperar='Recuperar'; try{haRecup.render();}catch(e){} })();
+</script>
 
 </body>
 </html>
