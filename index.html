@@ -8314,5 +8314,71 @@ window.haHome=(function(){
   return {render:render,go:go};
 })();
 </script>
+
+<!-- BLOCO 31 · Funil & Metas: Atração → Venda → Entrega (cabeçalho, funil de vendas, perdidos, evento em venda, rotina do dia) -->
+<script>
+window.haFM=(function(){
+  var per={'p-funil':'mes','p-funilsol':'mes'};
+  var ROT=[['09h00','Números de ontem e metas de hoje'],['09h30','WhatsApp: follow-ups e leads novas'],['11h00','Instagram: comentários, DMs e 20 perfis'],['14h30','Conteúdo: stories do dia'],['16h00','WhatsApp 2.ª ronda e acompanhamento (pós-venda)'],['16h30','Fecho do dia: registar tudo aqui']];
+  function addD(d,n){ var x=new Date(d+'T12:00:00'); x.setDate(x.getDate()+n); return isoLocal(x); }
+  function dias(a,b){ return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000); }
+  function eur(n){ return Math.round(n).toLocaleString('pt-PT')+' €'; }
+  function mine(arr,area){ return (arr||[]).filter(function(x){ return (x.area||'mentorias')===area; }); }
+  function go(p){ nav(p,document.querySelector(".ni[onclick*=\"'"+p+"'\"]")); }
+  function etapaOk(l,set){ return set.indexOf(l.etapa)>=0; }
+  function desenhar(id){
+    var P=document.getElementById(id); if(!P||!P.children.length) return;
+    ['fm-top','fm-mid'].forEach(function(k){ var o=P.querySelector('#'+k+'-'+id); if(o) o.remove(); });
+    var area=id==='p-funil'?'mentorias':'solutions', sol=area==='solutions';
+    var hoje=todayISO(), mes=hoje.slice(0,7), L=mine(DB.leads,area), PG=mine(DB.pagamentos,area), pr=per[id];
+    var ini=pr==='mes'?mes+'-01':pr==='30'?addD(hoje,-30):'0000-00-00';
+    var per_l=L.filter(function(l){ var d=(l.createdAt||'').slice(0,10); return d>=ini; });
+    var conv=per_l.filter(function(l){ return etapaOk(l,['sdr','closer','followup','standby','fechado'])||(l.interacoes&&l.interacoes.length); });
+    var neg=per_l.filter(function(l){ return etapaOk(l,['closer','followup','standby','fechado']); });
+    var ven=per_l.filter(function(l){ return l.etapa==='fechado'; });
+    var online=PG.filter(function(p){ return p.estado==='Pago'&&(p.data||'').slice(0,7)===mes&&/workshop|curso|pacote|kit/i.test(p.produto||''); });
+    var onl=online.reduce(function(s,p){return s+(+p.valor||0);},0);
+    var agora=function(set){ return L.filter(function(l){return etapaOk(l,set);}).length; };
+    var st=[{n:'Entraram',val:per_l.length},{n:'Em conversa',val:conv.length},{n:'Em negociação',val:neg.length},{n:'Venderam',val:ven.length}];
+    // evento / workshop
+    var f=(!sol&&DB.funil&&DB.funil.meses&&DB.funil.meses[mes])||null, ti=document.getElementById('fn-tema'), di=document.getElementById('fn-data'), tema=sol?'':((ti&&ti.value)||(f&&f.tema)), dt=sol?'':((di&&di.value)||(f&&f.data));
+    var obj=f&&f.metas&&f.metas.workshop!=null?+f.metas.workshop:20;
+    var insc=PG.filter(function(p){return /workshop/i.test(p.produto||'')&&(p.estado==='Pago'||p.estado==='Pendente')&&(p.data||'').slice(0,7)>=mes.slice(0,4)+'-01';});
+    var pagas=insc.filter(function(p){return p.estado==='Pago';}).length;
+    var topo='<div id="fm-top-'+id+'" style="margin:0 0 14px"><div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--g4);font-weight:700">Atração → Venda → Entrega</div><h2 style="margin:4px 0 4px;font-size:22px;font-weight:700">Funil &amp; Metas'+(sol?' · Solutions':'')+'</h2><div style="font-size:12.5px;color:var(--g3);max-width:720px">Quantas pessoas entram, com quantas estamos a falar, quantas estão em negociação e quantas compraram. E as metas de hoje da equipa.</div>';
+    if(!sol&&dt&&dt>=hoje){ var d=Math.max(1,dias(hoje,dt)), falta=Math.max(0,obj-pagas), cpd=Math.ceil(falta*10/d);
+      topo+='<div class="hm-c" style="margin-top:12px;display:flex;gap:18px;align-items:center;flex-wrap:wrap"><div style="min-width:130px"><div style="font-size:34px;font-weight:700;line-height:1">'+cpd+'</div><div style="font-size:11.5px;color:var(--g4);margin-top:4px">conversas por dia até '+fmtDate(dt)+'</div></div><div style="flex:1;min-width:240px;font-size:12.5px;color:var(--g3)"><b>'+esc(tema||'Workshop')+'</b>: '+pagas+' inscrita'+(pagas===1?'':'s')+'. '+(falta?'Faltam '+falta+' para o objetivo de '+obj+', em '+d+' dias':'Objetivo de '+obj+' atingido')+' (conta feita com 1 venda em cada 10 conversas).</div></div>'; }
+    topo+='</div>';
+    // funil de vendas
+    var tabs=[['mes','Este mês'],['30','30 dias'],['tudo','Tudo']].map(function(t){ return '<button class="rc-pill'+(pr===t[0]?' on':'')+'" onclick="haFM.per(\''+id+'\',\''+t[0]+'\')">'+t[1]+'</button>'; }).join(' ');
+    var funil='<div class="hm-c" style="margin-bottom:12px"><div class="hm-ch"><div><h3>Funil de vendas</h3><div style="font-size:11.5px;color:var(--g4)">Leads que entraram no período e até onde chegaram</div></div><div>'+tabs+'</div></div>'+haFunnel.draw(st)+
+      '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--g3)"><span>Agora: novas por contactar <b>'+agora(['novo'])+'</b></span><span>Agora: em conversa <b>'+agora(['sdr'])+'</b></span><span>Agora: em negociação <b>'+agora(['closer','followup'])+'</b></span><span>Online este mês <b>'+online.length+' · '+eur(onl)+'</b></span></div>'+
+      '<div style="margin-top:8px"><a class="btn bs bsm" onclick="haFM.go(\'pipeline\')">Abrir Vendas</a> <a class="btn bs bsm" onclick="haFM.go(\'pipeline\')">Sequência de mensagens</a></div></div>';
+    // perdidos
+    var perd=L.filter(function(l){return l.etapa==='perdido';}), emRec=perd.filter(function(l){return l.recup&&l.recup.estado==='ativa'&&(l.recup.passo||0)>0;}).length;
+    var pH='<div class="hm-c" style="margin-bottom:12px"><div class="hm-ch"><div><h3>Perdidos: voltar ao funil</h3><div style="font-size:11.5px;color:var(--g4)">Ninguém fica perdido para sempre. Cada pessoa recebe nova data, prova ou a próxima campanha.</div></div><a onclick="haFM.go(\'recuperar\')">Abrir Recuperar</a></div>'+
+      '<div style="display:flex;gap:24px;margin:6px 0 8px"><div><div style="font-size:22px;font-weight:700">'+perd.length+'</div><div style="font-size:11px;color:var(--g4)">Para recuperar</div></div><div><div style="font-size:22px;font-weight:700">'+emRec+'</div><div style="font-size:11px;color:var(--g4)">Já em recuperação</div></div></div>'+
+      perd.slice(0,5).map(function(l){ var n=normalizeTel(l.tel||l.contacto||''); return '<div class="hm-r"><div class="n" onclick="editLead('+l.id+')"><b>'+esc(l.nome)+'</b><span>'+esc(l.produto||'—')+' · há '+Math.max(0,dias((l.recup&&l.recup.desde)||(l.createdAt||hoje).slice(0,10),hoje))+' dias</span></div>'+(n&&n.length>=6?'<a class="btn bs bsm" target="_blank" href="https://wa.me/'+n+'">WhatsApp</a>':'')+'</div>'; }).join('')+
+      '<div style="font-size:11.5px;color:var(--g4);margin-top:8px;line-height:1.6">7 dias depois: nova data ou oferta · 30 dias depois: prova (trabalho de uma cliente recente) · Campanhas: avisar primeiro quem ficou de fora</div></div>';
+    // evento em venda
+    var ev='';
+    if(!sol&&dt){ var dd=dias(hoje,dt); ev='<div class="hm-c" style="margin-bottom:12px"><div class="hm-ch"><div><h3>Evento em venda</h3><div style="font-size:11.5px;color:var(--g4)">Objetivo '+obj+' inscrições. Abaixo do mínimo a poucos dias do evento = decidir se avança.</div></div></div><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b>'+esc(tema||'Workshop')+'</b><div style="font-size:11.5px;color:var(--g4)">'+fmtDate(dt)+(dd>=0?' · faltam '+dd+' dias':' · já passou')+'</div></div><div style="text-align:right"><b style="font-size:20px">'+insc.length+'</b> <span style="font-size:11.5px;color:var(--g4)">inscritas · '+pagas+' pagas</span><div><span class="tag '+(insc.length>=obj?'tg':'ty')+'" style="font-size:10px">'+(insc.length>=obj?'Objetivo atingido':'Abaixo do objetivo')+'</span></div></div></div></div>'; }
+    // rotina
+    var rt='<div class="hm-c" style="margin-bottom:12px"><div class="hm-ch"><div><h3>Rotina do dia</h3><div style="font-size:11.5px;color:var(--g4)">Primeiro vender, depois tudo o resto. Horas de Lisboa.</div></div></div>'+ROT.map(function(r){ return '<div class="hm-r"><div class="m" style="min-width:56px">'+r[0]+'</div><div class="n"><b style="white-space:normal">'+r[1]+'</b></div></div>'; }).join('')+'</div>';
+    var a=document.createElement('div'); a.id='fm-top-'+id; a.innerHTML=topo; P.insertBefore(a.firstChild,P.firstChild);
+    var mid=document.createElement('div'); mid.id='fm-mid-'+id; mid.innerHTML=funil+pH+ev+rt;
+    var C=P.querySelector('.fn-wrap')||P, cards=[].slice.call(C.children).filter(function(c){return /Metas de hoje/.test((c.textContent||'').slice(0,120));});
+    var ref=cards[0]; if(ref&&ref.parentNode===C) C.insertBefore(mid,ref.nextSibling); else P.appendChild(mid);
+  }
+  ['p-funil','p-funilsol'].forEach(function(id){
+    var P=document.getElementById(id); if(!P) return; var mo;
+    function ligar(){ mo.observe(P,{childList:true}); }
+    mo=new MutationObserver(function(){ mo.disconnect(); try{ desenhar(id); }catch(e){ console.error('Funil & Metas:',e); } ligar(); });
+    mo=mo; ligar();
+    mo.disconnect(); try{ desenhar(id); }catch(e){} ligar();
+  });
+  return {per:function(id,v){ per[id]=v; var P=document.getElementById(id); desenhar(id); },go:go};
+})();
+</script>
 </body>
 </html>
