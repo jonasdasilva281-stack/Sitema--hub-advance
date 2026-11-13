@@ -7515,38 +7515,33 @@ window.haMkt=(function(){
     var receita=pagos().filter(function(p){return dentro(p.data,r)&&origemDe(p);}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
     var receitaP=pr?pagos().filter(function(p){return dentro(p.data,pr)&&origemDe(p);}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0):0;
     var cpl=L.length&&inv?inv/L.length:0, cac=fech.length&&inv?inv/fech.length:0, roi=inv?(receita-inv)/inv*100:null;
-    var h='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px"><div style="font-size:12px;color:var(--g4)">Quanto entra, quanto custa e o que funciona</div><div style="display:flex;gap:5px">'+
+    var h='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px"><div style="font-size:12px;color:var(--g4)">Atenção, conteúdo e leads captados</div><div style="display:flex;gap:5px">'+
       [['mes','Este mês'],['30','30 dias'],['90','90 dias'],['tudo','Tudo']].map(function(x){return '<button class="btn bsm '+(per===x[0]?'bp':'bs')+'" onclick="haMkt.per(\''+x[0]+'\')">'+x[1]+'</button>';}).join('')+'</div></div>';
     // KPIs
+    var CPm=(DB.conteudo||[]).filter(function(c){return c.estado==='Publicado'&&dentro(c.data,r);});
+    var alc0=CPm.reduce(function(t,c){return t+(+c.alcance||0);},0), int0=CPm.reduce(function(t,c){return t+(+c.interacoes||0);},0);
     h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px">'+
       kpi('Leads captados',L.length,delta(L.length,Lp.length))+
-      kpi('Clientes fechados',fech.length,delta(fech.length,fechP.length),'var(--g)')+
-      kpi('Conversão',pctf(fech.length,L.length),'lead → cliente')+
-      kpi('Investido',eur(inv),delta(inv,invP,true))+
-      kpi('Custo por lead',cpl?eur(cpl):'—',inv?'':'regista gastos em Financeiro')+
-      kpi('Custo por cliente',cac?eur(cac):'—','CAC')+
-      kpi('Receita de leads',eur(receita),delta(receita,receitaP),'var(--g)')+
-      kpi('Retorno (ROI)',roi==null?'—':Math.round(roi)+'%',inv?'receita ÷ investido':'sem investimento', roi!=null&&roi<0?'var(--re)':'inherit')+'</div>';
+      kpi('Alcance',alc0.toLocaleString('pt-PT'),CPm.length?CPm.length+' conteúdos publicados':'')+
+      kpi('Interações',int0.toLocaleString('pt-PT'),alc0?(Math.round(int0/alc0*1000)/10)+'% do alcance':'')+
+      kpi('Investido em anúncios',eur(inv),delta(inv,invP,true))+
+      kpi('Custo por lead',cpl?eur(cpl):'—',inv?'':'regista gastos em Financeiro')+'</div>';
     // Metas
     var mt=meta(), mesIni=todayISO().slice(0,8)+'01', Lm=leadsEm({ini:mesIni,fim:'2999-12-31'}).length;
     var Cm=(DB.conteudo||[]).filter(function(c){return c.estado==='Publicado'&&(c.data||'')>=mesIni;}).length;
     h+=titulo('Metas do mês','<button class="btn bs bsm" onclick="haMkt.meta()">✏️ Definir metas</button>')+'<div class="card" style="display:grid;grid-template-columns:1fr 1fr;gap:18px">'+
       [['Leads captados',Lm,mt.leads],['Conteúdos publicados',Cm,mt.posts]].map(function(x){ var p=x[2]?Math.round(x[1]/x[2]*100):null;
         return '<div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span>'+x[0]+'</span><b>'+x[1]+(x[2]?' / '+x[2]:'')+'</b></div>'+(p==null?'<div style="font-size:11px;color:var(--g4)">Sem meta definida</div>':barra(p,p>=100?'var(--g)':'#B7791F')+'<div style="font-size:10.5px;color:var(--g4);margin-top:3px">'+p+'% da meta</div>')+'</div>'; }).join('')+'</div>';
-    // Funil
-    var et=ETAPAS.map(function(e){return {e:e,n:L.filter(function(l){return l.etapa===e.id;}).length};});
-    var maxN=Math.max.apply(null,et.map(function(x){return x.n;}).concat([1]));
-    var chegou=function(ids){return L.filter(function(l){return ids.indexOf(l.etapa)>=0;}).length;};
-    h+=titulo('Funil · onde estão os leads do período')+'<div class="card">'+et.map(function(x){ return '<div style="display:grid;grid-template-columns:95px 1fr 34px;gap:10px;align-items:center;margin:5px 0;font-size:12px"><span>'+x.e.l+'</span><div class="sbw" style="width:100%"><div class="sbb" style="width:'+Math.round(x.n/maxN*100)+'%;background:'+x.e.hex+'"></div></div><b style="text-align:right">'+x.n+'</b></div>'; }).join('')+
-      '<div style="font-size:11px;color:var(--g4);margin-top:8px">'+L.length+' leads · '+pctf(chegou(['closer','followup','standby','fechado']),L.length)+' passaram da primeira conversa · '+pctf(L.filter(function(l){return l.etapa==='perdido';}).length,L.length)+' perdidos</div></div>';
+    // Funil de marketing: alcance -> interações -> conversas -> leads
+    var dmsT=CPm.reduce(function(t,c){return t+(+c.dms||0);},0);
+    var etp=[['Alcance',alc0,'pessoas que viram o conteúdo'],['Interações',int0,'gostos, partilhas, guardados'],['Comentários e DMs',dmsT,'pediram mais informação'],['Leads captados',L.length,'entraram no pipeline']];
+    var mx0=Math.max(alc0,1);
+    h+=titulo('Funil de marketing · da atenção ao lead')+'<div class="card">'+etp.map(function(x,i){ var w=i===0?100:Math.max(x[1]?3:0,Math.round(Math.log10(x[1]+1)/Math.log10(mx0+1)*100)); var tx=i>0&&etp[i-1][1]?pctf(x[1],etp[i-1][1])+' do passo anterior':'';
+      return '<div style="display:grid;grid-template-columns:130px 1fr 80px;gap:10px;align-items:center;margin:6px 0;font-size:12px"><span><b>'+x[0]+'</b><br><small style="color:var(--g4)">'+x[2]+'</small></span><div class="sbw" style="width:100%"><div class="sbb" style="width:'+w+'%;background:#0B6E4F"></div></div><span style="text-align:right"><b>'+x[1].toLocaleString('pt-PT')+'</b><br><small style="color:var(--g4)">'+tx+'</small></span></div>'; }).join('')+
+      '<div style="font-size:11px;color:var(--g4);margin-top:8px">'+(alc0?'Cada 1.000 pessoas alcançadas trazem '+Math.round(L.length/alc0*1000*10)/10+' leads. ':'Regista o alcance e as interações em cada conteúdo publicado. ')+'O que acontece a cada lead depois de entrar está no Funil de vendas.</div></div>';
     // Canais
-    var linhas=CANAIS.map(function(c){
-      var ls=L.filter(function(l){return l.origem===c;}), fs=ls.filter(function(l){return l.etapa==='fechado';});
-      var rec=pagos().filter(function(p){return dentro(p.data,r)&&origemDe(p)===c;}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
-      return {c:c,l:ls.length,f:fs.length,rec:rec};
-    }).filter(function(x){return x.l||x.rec;}).sort(function(a,b){return b.l-a.l;});
-    h+=titulo('Canais · de onde vêm os clientes')+'<div class="card" style="padding:0;overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="text-align:left;color:var(--g4);font-size:10.5px"><th style="padding:9px 12px">Canal</th><th>Leads</th><th>Fechados</th><th>Conversão</th><th>Receita</th><th>Ticket médio</th></tr></thead><tbody>'+
-      (linhas.length?linhas.map(function(x){return '<tr style="border-top:1px solid var(--g6)"><td style="padding:9px 12px;font-weight:600">'+E(x.c)+'</td><td>'+x.l+'</td><td>'+x.f+'</td><td>'+pctf(x.f,x.l)+'</td><td>'+(x.rec?eur(x.rec):'—')+'</td><td>'+(x.f&&x.rec?eur(x.rec/x.f):'—')+'</td></tr>';}).join(''):'<tr><td colspan="6" style="padding:14px;color:var(--g4)">Sem leads neste período</td></tr>')+'</tbody></table></div>';
+    var linhas=CANAIS.map(function(c){ return {c:c,l:L.filter(function(l){return l.origem===c;}).length}; }).filter(function(x){return x.l;}).sort(function(a,b){return b.l-a.l;});
+    h+=titulo('Canais · de onde vêm os leads')+'<div class="card">'+(linhas.length?linhas.map(function(x){ return '<div style="display:grid;grid-template-columns:110px 1fr 90px;gap:10px;align-items:center;margin:5px 0;font-size:12px"><b>'+E(x.c)+'</b><div class="sbw" style="width:100%"><div class="sbb" style="width:'+Math.round(x.l/L.length*100)+'%;background:var(--g)"></div></div><span style="text-align:right">'+x.l+' · '+pctf(x.l,L.length)+'</span></div>'; }).join(''):'<div class="empty">Sem leads neste período</div>')+'</div>';
     // Conteúdo
     var C=(DB.conteudo||[]).slice(), CP=C.filter(function(c){return c.estado==='Publicado'&&dentro(c.data,r);});
     var alc=CP.reduce(function(s,c){return s+(+c.alcance||0);},0), inter=CP.reduce(function(s,c){return s+(+c.interacoes||0);},0), lc=CP.reduce(function(s,c){return s+(+c.leads||0);},0);
@@ -7566,18 +7561,26 @@ window.haMkt=(function(){
     h+='<div class="g2"><div class="card"><div class="ct" style="margin-bottom:4px">A produzir / agendado · '+prox.length+'</div>'+(prox.length?prox.map(item).join(''):'<div class="empty">Nada na fila</div>')+'</div><div class="card"><div class="ct" style="margin-bottom:4px">Publicados recentemente</div>'+(rec.length?rec.map(item).join(''):'<div class="empty">Nenhum ainda</div>')+'</div></div>';
     // Campanhas
     var PL=(DB.mktPlanos||[]).filter(function(x){return !HA_AREA||HA_AREA==='geral'||(x.area||'mentorias')===HA_AREA;});
-    h+=titulo('Campanhas & ações','<button class="btn bp bsm" onclick="haMkt.novoPlano()">+ Campanha</button>')+'<div class="card" style="padding:0;overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="text-align:left;color:var(--g4);font-size:10.5px"><th style="padding:9px 12px">Campanha</th><th>Canal</th><th>Período</th><th>Gasto</th><th>Leads</th><th>Custo/lead</th><th>Fechados</th><th>Receita</th><th></th></tr></thead><tbody>'+
+    h+=titulo('Campanhas & ações','<button class="btn bp bsm" onclick="haMkt.novoPlano()">+ Campanha</button>')+'<div class="card" style="padding:0;overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="text-align:left;color:var(--g4);font-size:10.5px"><th style="padding:9px 12px">Campanha</th><th>Canal</th><th>Período</th><th>Gasto</th><th>Leads</th><th>Custo/lead</th><th></th></tr></thead><tbody>'+
       (PL.length?PL.map(function(x){ var fim=x.fim||'2999-12-31', ls=(DB.leads||[]).filter(function(l){return l.origem===x.canal&&dl(l)>=(x.ini||'0')&&dl(l)<=fim;}), fs=ls.filter(function(l){return l.etapa==='fechado';});
         var rec=pagos().filter(function(p){return origemDe(p)===x.canal&&p.data>=(x.ini||'0')&&p.data<=fim;}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0), g=parseFloat(x.gasto||0);
-        return '<tr style="border-top:1px solid var(--g6)"><td style="padding:9px 12px"><b style="cursor:pointer" onclick="haMkt.editPlano('+x.id+')">'+E(x.nome)+'</b>'+(x.obj?'<div style="font-size:10.5px;color:var(--g4)">'+E(x.obj)+'</div>':'')+'</td><td>'+E(x.canal)+'</td><td>'+fmtDate(x.ini)+(x.fim?' → '+fmtDate(x.fim):' →')+'</td><td>'+(g?eur(g):'—')+'</td><td>'+ls.length+'</td><td>'+(g&&ls.length?eur(g/ls.length):'—')+'</td><td>'+fs.length+'</td><td>'+(rec?eur(rec):'—')+'</td><td><button class="btn bd bsm" onclick="haMkt.delPlano('+x.id+')">×</button></td></tr>'; }).join(''):'<tr><td colspan="9" style="padding:14px;color:var(--g4)">Regista aqui anúncios, lançamentos e parcerias para ver o que cada um trouxe.</td></tr>')+'</tbody></table></div>';
+        return '<tr style="border-top:1px solid var(--g6)"><td style="padding:9px 12px"><b style="cursor:pointer" onclick="haMkt.editPlano('+x.id+')">'+E(x.nome)+'</b>'+(x.obj?'<div style="font-size:10.5px;color:var(--g4)">'+E(x.obj)+'</div>':'')+'</td><td>'+E(x.canal)+'</td><td>'+fmtDate(x.ini)+(x.fim?' → '+fmtDate(x.fim):' →')+'</td><td>'+(g?eur(g):'—')+'</td><td>'+ls.length+'</td><td>'+(g&&ls.length?eur(g/ls.length):'—')+'</td><td><button class="btn bd bsm" onclick="haMkt.delPlano('+x.id+')">×</button></td></tr>'; }).join(''):'<tr><td colspan="7" style="padding:14px;color:var(--g4)">Regista aqui anúncios, lançamentos e parcerias para ver o que cada um trouxe.</td></tr>')+'</tbody></table></div>';
     // Leitura
-    var ins=[]; var melhor=linhas.filter(function(x){return x.l>=3;}).sort(function(a,b){return b.f/b.l-a.f/a.l;})[0];
-    if(melhor&&melhor.f) ins.push('<b>'+E(melhor.c)+'</b> é o canal que melhor converte ('+pctf(melhor.f,melhor.l)+').');
-    var semFecho=linhas.filter(function(x){return x.l>=5&&!x.f;})[0]; if(semFecho) ins.push('<b>'+E(semFecho.c)+'</b> trouxe '+semFecho.l+' leads e nenhum cliente: rever a abordagem.');
-    var parados=L.filter(function(l){return l.etapa==='novo';}).length; if(parados) ins.push(parados+' lead'+(parados>1?'s novos ainda sem contacto':' novo ainda sem contacto')+'.');
+    var ins=[]; if(linhas[0]&&L.length) ins.push('<b>'+E(linhas[0].c)+'</b> é o canal que mais leads traz ('+pctf(linhas[0].l,L.length)+').');
+    if(cpl) ins.push('Cada lead está a custar '+eur(cpl)+' em anúncios.');
+    if(alc0&&!L.length) ins.push('Há alcance mas nenhum lead: falta chamada para ação nos conteúdos.');
     if(!Cm&&mt.posts) ins.push('Ainda não publicou conteúdo este mês.');
+    h+=titulo('Ações de marketing')+'<div class="card fn-pb">'+acoesMkt()+'</div>';
     if(ins.length) h+=titulo('Leitura rápida')+'<div class="card" style="font-size:12.5px;line-height:1.7">'+ins.map(function(t){return '• '+t;}).join('<br>')+'</div>';
     P.innerHTML=h;
+  }
+  function acoesMkt(){
+    var f=(DB.funil&&DB.funil.meses&&DB.funil.meses[todayISO().slice(0,7)])||{}, ck=f.checks||{};
+    var it=[['w1-2','Artes de lançamento prontas'],['w1-4','Post e stories de lançamento'],['w2-0','Live com a Rafa sobre o tema']];
+    var h='<div style="font-size:11.5px;color:var(--g4);margin-bottom:6px">Ciclo do mês · só o que é de marketing</div>'+it.map(function(x){ return '<label style="display:flex;gap:8px;align-items:center;padding:4px 0;font-size:12.5px;cursor:pointer"><input type="checkbox" '+(ck[x[0]]?'checked':'')+' style="accent-color:var(--g)" onchange="haFunil.check(\''+x[0]+'\',this.checked)">'+x[1]+'</label>'; }).join('');
+    h+='<details open style="margin-top:10px"><summary><b>Instagram (@jonassilva.pt + Collab com a Rafa)</b></summary><ul><li>1 post por dia às 15h: situação real do atelier ou da Academy, com a lição para salão, clínica, unhas, pestanas.</li><li>CTA único nos posts: "Comente MENTORIA". No período de venda, P.S. com o workshop.</li><li>4 stories por dia, 1 sempre sobre o workshop do mês, a fechar com "Responda EU QUERO".</li><li>1 a 2 Collabs por semana com @rafamendoncanails (bastidores, discussões de preço).</li><li>1 live por mês com a Rafa, na semana 2.</li><li>Tratamento neutro ("a sua agenda", "comente"); realidade portuguesa (IVA, Segurança Social).</li></ul></details>'+
+      '<details><summary><b>Anúncios (Meta)</b></summary><ul><li>Só depois de um workshop com 10+ inscrições orgânicas.</li><li>Começar por promover o post orgânico com mais comentários: 5€/dia durante 5 dias.</li><li>Público: quem já interagiu com o seu perfil e o da Rafa; depois Portugal, mulheres 22–55, interesses de beleza.</li><li>Escalar só se cada inscrição custar menos de 15€.</li><li>Produtos de 17€ sozinhos: não anunciar. Só em pacote com oferta da Comunidade a seguir.</li></ul></details>';
+    return h;
   }
   function conteudoPorId(id){ return (DB.conteudo||[]).find(function(c){return c.id===id;}); }
   function campos(c){ c=c||{}; var set=function(i,v){document.getElementById(i).value=v==null?'':v;};
@@ -7660,11 +7663,13 @@ window.haAgenda=(function(){
 })();
 </script>
 
-<!-- BLOCO 20 · Metas & objetivos com plano de ação, por baixo das estratégias (Funil) -->
+<!-- BLOCO 20 · Objetivos com plano de ação: Vendas (Funil) e Marketing, separados -->
 <script>
-window.haOb=(function(){
+(function(){
+var mk=
+function(TIPO,G,BOX,HOSTS){
   var aberto=false, edit=null;
-  function L(){ DB.objetivos=DB.objetivos||[]; var g=(typeof HA_AREA!=='undefined'?HA_AREA:null); return DB.objetivos.filter(function(o){return !g||g==='geral'||(o.area||'mentorias')===g;}); }
+  function L(){ DB.objetivos=DB.objetivos||[]; var g=(typeof HA_AREA!=='undefined'?HA_AREA:null); return DB.objetivos.filter(function(o){return (o.tipo||'vendas')===TIPO&&(!g||g==='geral'||(o.area||'mentorias')===g);}); }
   function add(d,n){ var x=new Date(d+'T12:00:00'); x.setDate(x.getDate()+n); return isoLocal(x); }
   function dif(a,b){ return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000); }
   function dm(d){ return new Date(d+'T12:00:00').toLocaleDateString('pt-PT',{day:'2-digit',month:'2-digit'}); }
@@ -7672,16 +7677,16 @@ window.haOb=(function(){
   function acoesDe(o){ return (o.acoes||[]).filter(function(a){return a.t;}); }
   function feitoDia(o,d){ var ac=acoesDe(o); if(!ac.length) return null; var n=ac.filter(function(a,i){return o.feitos&&o.feitos[d+'|'+i];}).length; return Math.round(n/ac.length*100); }
   function box(){
-    var P=document.querySelector('#p-funil.on, #p-funilsol.on')||document.getElementById('p-funil')||document.getElementById('p-funilsol'); return P;
+    var P=document.querySelector(HOSTS.map(function(h){return '#'+h+'.on';}).join(','))||document.getElementById(HOSTS[0]); return P;
   }
   function form(){
     var o=edit||{nome:'',meta:'',unidade:'',atual:0,ini:todayISO(),fim:'',acoes:[]};
     var v=function(x){return esc(x==null?'':x);};
     return '<div class="card" style="margin-bottom:12px;background:#FAFAFA"><div class="ct" style="margin-bottom:8px">'+(edit&&edit.id?'Editar objetivo':'Novo objetivo')+'</div>'+
-      '<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px"><label class="fl">Objetivo<input class="fi" id="ob-nome" value="'+v(o.nome)+'" placeholder="Ex.: 40 leads para o workshop"></label><label class="fl">Meta (número)<input class="fi" id="ob-meta" type="number" min="0" value="'+v(o.meta)+'"></label><label class="fl">Unidade<input class="fi" id="ob-un" value="'+v(o.unidade)+'" placeholder="leads, €, vendas"></label></div>'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px"><label class="fl">Já tenho<input class="fi" id="ob-atual" type="number" min="0" value="'+v(o.atual)+'"></label><label class="fl">Começa<input class="fi" id="ob-ini" type="date" value="'+v(o.ini)+'"></label><label class="fl">Prazo<input class="fi" id="ob-fim" type="date" value="'+v(o.fim)+'"></label></div>'+
-      '<label class="fl" style="display:block;margin-top:8px">Ações diárias (uma por linha) — o que fazer todos os dias para chegar lá<textarea class="fi" id="ob-acoes" rows="4" placeholder="Publicar 1 reel&#10;10 stories com chamada para o workshop&#10;Responder a todas as DMs&#10;Contactar 5 leads">'+v(acoesDe(o).map(function(a){return a.t;}).join('\n'))+'</textarea></label>'+
-      '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn bp bsm" onclick="haOb.guardar()">Guardar objetivo</button><button class="btn bs bsm" onclick="haOb.cancelar()">Cancelar</button></div></div>';
+      '<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px"><label class="fl">Objetivo<input class="fi" id="'+BOX+'-nome" value="'+v(o.nome)+'" placeholder="'+(TIPO==='marketing'?'Ex.: 40 leads novos':'Ex.: 12 inscrições no workshop')+'"></label><label class="fl">Meta (número)<input class="fi" id="'+BOX+'-meta" type="number" min="0" value="'+v(o.meta)+'"></label><label class="fl">Unidade<input class="fi" id="'+BOX+'-un" value="'+v(o.unidade)+'" placeholder="leads, €, vendas"></label></div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px"><label class="fl">Já tenho<input class="fi" id="'+BOX+'-atual" type="number" min="0" value="'+v(o.atual)+'"></label><label class="fl">Começa<input class="fi" id="'+BOX+'-ini" type="date" value="'+v(o.ini)+'"></label><label class="fl">Prazo<input class="fi" id="'+BOX+'-fim" type="date" value="'+v(o.fim)+'"></label></div>'+
+      '<label class="fl" style="display:block;margin-top:8px">Ações diárias (uma por linha)<textarea class="fi" id="'+BOX+'-acoes" rows="4" placeholder="'+(TIPO==='marketing'?'Publicar 1 reel&#10;10 stories com chamada&#10;Responder aos comentários':'Contactar 10 leads&#10;Responder a todas as DMs&#10;Marcar 1 call')+'">'+v(acoesDe(o).map(function(a){return a.t;}).join('\n'))+'</textarea></label>'+
+      '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn bp bsm" onclick="'+G+'.guardar()">Guardar objetivo</button><button class="btn bs bsm" onclick="'+G+'.cancelar()">Cancelar</button></div></div>';
   }
   function cartao(o){
     var hoje=todayISO(), meta=+o.meta||0, atual=+o.atual||0, pc=meta?Math.min(100,Math.round(atual/meta*100)):0;
@@ -7690,13 +7695,13 @@ window.haOb=(function(){
     var ac=acoesDe(o);
     var h='<div class="card" style="margin-bottom:12px;'+(o.foco?'border:1.5px solid var(--g)':'')+'">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap"><div><div style="font-size:14px;font-weight:700">'+(o.foco?'⭐ ':'')+esc(o.nome)+'</div><div style="font-size:11.5px;color:var(--g4);margin-top:2px">'+(o.ini?dm(o.ini)+' → ':'')+(o.fim?dm(o.fim)+(dias>=0?' · faltam '+dias+' dia'+(dias===1?'':'s'):' · <span style="color:var(--re)">prazo passou</span>'):'sem prazo')+'</div></div>'+
-      '<div style="display:flex;gap:5px;flex-wrap:wrap"><button class="btn bs bsm" onclick="haOb.foco('+o.id+')">'+(o.foco?'Foco atual':'Pôr em foco')+'</button><button class="btn bs bsm" onclick="haOb.editar('+o.id+')">✏️</button><button class="btn bd bsm" onclick="haOb.apagar('+o.id+')">×</button></div></div>'+
-      '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px"><div style="font-size:22px;font-weight:700">'+fmt(atual)+'<span style="font-size:12px;color:var(--g4);font-weight:500"> / '+fmt(meta)+' '+esc(o.unidade||'')+'</span></div><span style="font-size:12px;color:var(--g4)">'+pc+'%</span><span style="margin-left:auto;font-size:11.5px;color:var(--g4)">Atualizar: <input type="number" min="0" value="'+atual+'" style="width:80px;padding:4px 6px;border:1px solid #D1D5DB;border-radius:6px" onchange="haOb.atual('+o.id+',this.value)"></span></div>'+
+      '<div style="display:flex;gap:5px;flex-wrap:wrap"><button class="btn bs bsm" onclick="'+G+'.foco('+o.id+')">'+(o.foco?'Foco atual':'Pôr em foco')+'</button><button class="btn bs bsm" onclick="'+G+'.editar('+o.id+')">✏️</button><button class="btn bd bsm" onclick="'+G+'.apagar('+o.id+')">×</button></div></div>'+
+      '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px"><div style="font-size:22px;font-weight:700">'+fmt(atual)+'<span style="font-size:12px;color:var(--g4);font-weight:500"> / '+fmt(meta)+' '+esc(o.unidade||'')+'</span></div><span style="font-size:12px;color:var(--g4)">'+pc+'%</span><span style="margin-left:auto;font-size:11.5px;color:var(--g4)">Atualizar: <input type="number" min="0" value="'+atual+'" style="width:80px;padding:4px 6px;border:1px solid #D1D5DB;border-radius:6px" onchange="'+G+'.atual('+o.id+',this.value)"></span></div>'+
       '<div class="sbw" style="width:100%"><div class="sbb" style="width:'+pc+'%;background:'+(pc>=100?'var(--g)':atrasado?'var(--re)':'#B7791F')+'"></div></div>'+
       '<div style="font-size:12px;margin-top:6px;color:'+(atrasado?'var(--re)':'var(--g3)')+'">'+(falta<=0?'✓ Meta alcançada':atrasado?'Faltam '+fmt(falta)+' e o prazo já passou':ritmo?'Faltam <b>'+fmt(falta)+'</b> · precisa de <b>'+fmt(ritmo)+' por dia</b> ('+fmt(ritmo*7)+' por semana)':'Faltam '+fmt(falta))+'</div>';
     if(ac.length){
       h+='<div class="mt-lbl" style="margin:14px 0 6px">Ações de hoje</div>'+ac.map(function(a,i){ var k=hoje+'|'+i, on=o.feitos&&o.feitos[k];
-        return '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12.5px;cursor:pointer;'+(on?'text-decoration:line-through;color:var(--g4)':'')+'"><input type="checkbox" '+(on?'checked':'')+' style="accent-color:var(--g)" onchange="haOb.tick('+o.id+',\''+k+'\',this.checked)">'+esc(a.t)+'</label>'; }).join('');
+        return '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12.5px;cursor:pointer;'+(on?'text-decoration:line-through;color:var(--g4)':'')+'"><input type="checkbox" '+(on?'checked':'')+' style="accent-color:var(--g)" onchange="'+G+'.tick('+o.id+',\''+k+'\',this.checked)">'+esc(a.t)+'</label>'; }).join('');
       var ult=[]; for(var i=6;i>=0;i--){ var d=add(hoje,-i), p=feitoDia(o,d); ult.push('<div style="flex:1;text-align:center;font-size:10px;color:var(--g4)"><div style="height:26px;display:flex;align-items:flex-end"><div style="width:100%;height:'+Math.max(2,Math.round((p||0)/100*26))+'px;background:'+((p||0)>=100?'var(--g)':(p||0)>0?'#B7791F':'#E5E7EB')+';border-radius:3px"></div></div>'+new Date(d+'T12:00:00').toLocaleDateString('pt-PT',{weekday:'narrow'})+'</div>'); }
       h+='<div style="display:flex;gap:4px;margin-top:8px">'+ult.join('')+'</div><div style="font-size:10.5px;color:var(--g4);margin-top:2px">Ações feitas nos últimos 7 dias</div>';
     }
@@ -7709,12 +7714,12 @@ window.haOb=(function(){
     return h+'</div>';
   }
   function desenhar(){
-    var P=box(); if(!P) return; var el=document.getElementById('ob-box');
-    if(!el){ el=document.createElement('div'); el.id='ob-box'; el.style.marginTop='18px'; P.appendChild(el); }
+    var P=box(); if(!P) return; var el=document.getElementById(BOX);
+    if(!el){ el=document.createElement('div'); el.id=BOX; el.style.marginTop='18px'; P.appendChild(el); }
     else if(el.parentNode!==P){ P.appendChild(el); }
     var ls=L().filter(function(o){return !o.concluido;}).sort(function(a,b){return (b.foco?1:0)-(a.foco?1:0)||(a.fim||'9').localeCompare(b.fim||'9');});
     var foco=ls.filter(function(o){return o.foco;})[0];
-    el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><div class="ct">🎯 Metas &amp; objetivos · plano de ação</div><div style="font-size:11.5px;color:var(--g4);margin-top:2px">O que decidimos alcançar, até quando e o que fazer todos os dias</div></div>'+(aberto?'':'<button class="btn bp bsm" onclick="haOb.novo()">+ Objetivo</button>')+'</div>'+
+    el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><div class="ct">🎯 '+(TIPO==='marketing'?'Objetivos de marketing':'Metas &amp; objetivos de vendas')+' · plano de ação</div><div style="font-size:11.5px;color:var(--g4);margin-top:2px">'+(TIPO==='marketing'?'Alcance, leads e conteúdo: o que fazer todos os dias para chegar lá':'Faturação, vendas e calls: o que fazer todos os dias para chegar lá')+'</div></div>'+(aberto?'':'<button class="btn bp bsm" onclick="'+G+'.novo()">+ Objetivo</button>')+'</div>'+
       (foco?'<div class="al algr" style="margin-bottom:10px">⭐ A trabalhar agora: <b>'+esc(foco.nome)+'</b>'+(foco.fim?' · até '+dm(foco.fim):'')+'</div>':'')+
       (aberto?form():'')+
       (ls.length?ls.map(cartao).join(''):(aberto?'':'<div class="card"><div class="empty">Ainda não definiu objetivos. Escolha uma meta, um prazo e as ações de cada dia.</div></div>'));
@@ -7722,9 +7727,9 @@ window.haOb=(function(){
   function find(id){ return (DB.objetivos||[]).find(function(o){return o.id===id;}); }
   var obs=null;
   function init(){
-    ['p-funil','p-funilsol'].forEach(function(id){ var P=document.getElementById(id); if(!P||P._ob) return; P._ob=1;
-      new MutationObserver(function(){ if(P.classList.contains('on')&&!P.querySelector('#ob-box')&&P.children.length) desenhar(); }).observe(P,{childList:true});
-      new MutationObserver(function(){ if(P.classList.contains('on')&&!P.querySelector('#ob-box')&&P.children.length) desenhar(); }).observe(P,{attributes:true,attributeFilter:['class']}); });
+    HOSTS.forEach(function(id){ var P=document.getElementById(id); if(!P||P['_ob'+BOX]) return; P['_ob'+BOX]=1;
+      new MutationObserver(function(){ if(P.classList.contains('on')&&!P.querySelector('#'+BOX+'')&&P.children.length) desenhar(); }).observe(P,{childList:true});
+      new MutationObserver(function(){ if(P.classList.contains('on')&&!P.querySelector('#'+BOX+'')&&P.children.length) desenhar(); }).observe(P,{attributes:true,attributeFilter:['class']}); });
   }
   init();
   return {
@@ -7733,10 +7738,10 @@ window.haOb=(function(){
     editar:function(id){ edit=find(id); aberto=true; desenhar(); },
     cancelar:function(){ aberto=false; edit=null; desenhar(); },
     guardar:function(){
-      var g=function(i){return document.getElementById(i).value;}, nome=g('ob-nome').trim(); if(!nome){ toast('Escreva o objetivo','#C0392B'); return; }
-      var o={nome:nome,meta:+g('ob-meta')||0,unidade:g('ob-un').trim(),atual:+g('ob-atual')||0,ini:g('ob-ini')||todayISO(),fim:g('ob-fim'),acoes:g('ob-acoes').split('\n').map(function(t){return {t:t.trim()};}).filter(function(a){return a.t;})};
+      var g=function(i){return document.getElementById(i).value;}, nome=g(BOX+'-nome').trim(); if(!nome){ toast('Escreva o objetivo','#C0392B'); return; }
+      var o={nome:nome,meta:+g(BOX+'-meta')||0,unidade:g(BOX+'-un').trim(),atual:+g(BOX+'-atual')||0,ini:g(BOX+'-ini')||todayISO(),fim:g(BOX+'-fim'),acoes:g(BOX+'-acoes').split('\n').map(function(t){return {t:t.trim()};}).filter(function(a){return a.t;})};
       DB.objetivos=DB.objetivos||[];
-      if(edit&&edit.id){ var x=find(edit.id); o.feitos=x.feitos; Object.assign(x,o); } else { o.id=uid(); o.area=(typeof HA_AREA!=='undefined'&&HA_AREA)||'mentorias'; o.base=o.atual; o.feitos={}; if(!L().some(function(z){return z.foco&&!z.concluido;})) o.foco=true; DB.objetivos.push(o); }
+      if(edit&&edit.id){ var x=find(edit.id); o.feitos=x.feitos; Object.assign(x,o); } else { o.id=uid(); o.tipo=TIPO; o.area=(typeof HA_AREA!=='undefined'&&HA_AREA)||'mentorias'; o.base=o.atual; o.feitos={}; if(!L().some(function(z){return z.foco&&!z.concluido;})) o.foco=true; DB.objetivos.push(o); }
       aberto=false; edit=null; save(); desenhar(); toast('✓ Objetivo guardado');
     },
     atual:function(id,v){ var o=find(id); if(!o) return; o.atual=+v||0; if(o.meta&&o.atual>=o.meta){ toast('🎉 Meta alcançada!'); } save(); desenhar(); },
@@ -7744,6 +7749,23 @@ window.haOb=(function(){
     foco:function(id){ (DB.objetivos||[]).forEach(function(o){ if(L().indexOf(o)>=0) o.foco=(o.id===id); }); save(); desenhar(); },
     apagar:function(id){ if(!confirm('Apagar este objetivo?')) return; DB.objetivos=(DB.objetivos||[]).filter(function(o){return o.id!==id;}); save(); desenhar(); }
   };
+};
+window.haOb=mk('vendas','haOb','ob-box',['p-funil','p-funilsol']);
+window.haObM=mk('marketing','haObM','obm-box',['p-marketing']);
+})();
+</script>
+
+<!-- BLOCO 21 · Funil de vendas sem ações de marketing -->
+<script>
+(function(){
+  function limpa(P){
+    P.querySelectorAll('.fn-pb details').forEach(function(d){ var t=(d.querySelector('summary')||{}).textContent||''; if(/^Instagram|^Anúncios/.test(t)) d.remove(); });
+    ['w1-2','w1-4','w2-0'].forEach(function(k){ var l=P.querySelector('label[for="fn-'+k+'"]'); if(l) l.style.display='none'; });
+    P.querySelectorAll('.fn-chk').forEach(function(c){ if(/Decisão de anúncios/.test(c.textContent)) c.style.display='none'; });
+    var h=P.querySelector('.fn-pb .ct'); if(h&&!h.dataset.v){ h.dataset.v=1; h.textContent='Ações de vendas'; }
+  }
+  ['p-funil','p-funilsol'].forEach(function(id){ var P=document.getElementById(id); if(!P) return;
+    new MutationObserver(function(){ if(P.children.length) limpa(P); }).observe(P,{childList:true}); });
 })();
 </script>
 </body>
