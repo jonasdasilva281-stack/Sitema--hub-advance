@@ -397,7 +397,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div class="ni" onclick="nav('recuperar',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg></span><span class="ni-label">Recuperar</span><span class="nb nb-blue" id="nb-recup" style="display:none">0</span></div>
     <div class="ni" onclick="nav('metas',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></span><span class="ni-label">Metas</span></div>
     <div class="nav-sec">Negócio</div>
-    <div class="ni" onclick="nav('mentorados',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span><span class="ni-label">Mentorados</span><span class="nb" id="nb-ment">0</span></div>
+    <div class="ni" onclick="nav('mentorados',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span><span class="ni-label">Programas</span><span class="nb" id="nb-ment">0</span></div>
     <div class="ni" onclick="nav('entregas',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="ni-label">Entregas</span><span class="nb" id="nb-ent">0</span></div>
     <div class="ni" onclick="nav('financeiro',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/><circle cx="12" cy="12" r="5"/></svg></span><span class="ni-label">Financeiro</span></div>
     <div class="ni" onclick="nav('produtos',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="ni-label">Produtos</span></div>
@@ -544,7 +544,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
       <!-- Mentorados esta semana por fase -->
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <div class="ct">Mentorados esta semana</div>
+          <div class="ct">Programas esta semana</div>
           <div class="cs" id="ov-ment-sub"></div>
         </div>
         <div id="ov-ment-semana"></div>
@@ -639,8 +639,8 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
 
   <!-- MENTORADOS -->
   <div class="panel" id="p-mentorados">
-    <div class="al algr">ℹ️ Mentorados são criados automaticamente quando um lead é Fechado no pipeline de vendas. A criação manual é só para casos excecionais.</div>
-    <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn bp" onclick="resetMentoradoModal();om('mentorado')">+ Mentorado (manual)</button></div>
+    <div class="al algr">ℹ️ Cada pessoa entra aqui automaticamente quando um lead é Fechado no pipeline de vendas, no programa que comprou. A criação manual é só para casos excecionais.</div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn bp" onclick="resetMentoradoModal();om('mentorado')">+ Pessoa (manual)</button></div>
     <div id="mentorados-list"></div>
   </div>
 
@@ -1106,8 +1106,8 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div><label class="fl">ou dura (dias) <span style="font-size:9.5px;color:var(--g4);font-weight:400">a contar da compra</span></label><input type="number" min="0" class="fi" id="pd-durdias" placeholder="Ex: 30"></div>
   </div>
   <div style="font-size:11px;color:var(--g4);margin:-6px 0 12px">A pessoa só avança para o nível seguinte depois de terminar este.</div>
-  <div class="fg"><label class="fl">Fases do programa <span style="font-size:9.5px;color:var(--g4);font-weight:400">uma linha por fase: data ou +dias | título | o que acontece</span></label>
-    <textarea class="fi" id="pd-cron" rows="5" style="font-size:12px;font-family:monospace" placeholder="23/11/2026 | Workshop ao vivo | Precificação inteligente, 10h às 13h&#10;+1 | Replay e material | Enviado no grupo de WhatsApp&#10;+7 | Sessão de dúvidas | 30 min para tirar dúvidas"></textarea></div>
+  <div class="fg"><label class="fl">Fases do programa <span style="font-size:9.5px;color:var(--g4);font-weight:400">uma linha por fase: data ou +dias | nome | o que acontece | nº encontros | como acontece</span></label>
+    <textarea class="fi" id="pd-cron" rows="5" style="font-size:12px;font-family:monospace" placeholder="23/11/2026 | Workshop ao vivo | Precificação inteligente, 10h às 13h | 1 | Online, ao vivo no Zoom&#10;+1 | Replay e material | Enviado no grupo de WhatsApp | 0 | WhatsApp&#10;+7 | Sessão de dúvidas | 30 min para tirar dúvidas | 1 | Online, em grupo"></textarea></div>
   <div class="fr fg">
     <div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pd-valor-input" placeholder="0.00" oninput="pdCalcParcela();pdCalcPreco()"></div>
     <div><label class="fl">Tipo de cobrança</label>
@@ -1266,7 +1266,7 @@ function save(){ try{ localStorage.setItem('hub_advance_v3_db', JSON.stringify(D
 function load(){ try{ const d=localStorage.getItem('hub_advance_v3_db'); if(d) DB=JSON.parse(d); }catch(e){} }
 function toast(msg,color){ const t=document.getElementById('toast'); t.textContent=msg; t.style.background=color||'#0B6E4F'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
 
-const titles={overview:'Visão Geral',pipeline:'Pipeline de Vendas',mentorados:'Mentorados',entregas:'Entregas',financeiro:'Financeiro',produtos:'Produtos',agenda:'Agenda',marketing:'Marketing',equipa:'Equipa'};
+const titles={overview:'Visão Geral',pipeline:'Pipeline de Vendas',mentorados:'Programas',entregas:'Entregas',financeiro:'Financeiro',produtos:'Produtos',agenda:'Agenda',marketing:'Marketing',equipa:'Equipa'};
 function nav(id,el){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
@@ -1618,7 +1618,7 @@ function editMentorado(id){
   document.getElementById('mt-score').value=m.score;
   document.getElementById('mt-estado').value=m.estado;
   document.getElementById('mt-notas').value=m.notas||'';
-  document.getElementById('mt-title').textContent='✏️ Editar Mentorado';
+  document.getElementById('mt-title').textContent='✏️ Editar pessoa';
 }
 function resetMentoradoModal(){
   document.getElementById('mt-id').value='';
@@ -1627,7 +1627,7 @@ function resetMentoradoModal(){
   document.getElementById('mt-nicho-outro').style.display='none';
   document.getElementById('mt-score').value='B';
   document.getElementById('mt-estado').value='Ativo';
-  document.getElementById('mt-title').textContent='👥 Novo Mentorado';
+  document.getElementById('mt-title').textContent='👥 Nova pessoa';
 }
 function saveMentorado(){
   const id=document.getElementById('mt-id').value;
@@ -1652,7 +1652,7 @@ function saveMentorado(){
     }
   }
   else { DB.mentorados.push({...data,id:uid(),semana:0,tarefas:[],sessoes:[]}); }
-  save();cm('mentorado');renderAll();toast(id?'✓ Guardado':'✓ Mentorado adicionado');
+  save();cm('mentorado');renderAll();toast(id?'✓ Guardado':'✓ Pessoa adicionada');
 }
 
 /* ═══ SESSÕES — UM SÓ FLUXO ═══
@@ -2905,7 +2905,7 @@ function rnSearchWho(q){
     if(!ql||m.nome.toLowerCase().includes(ql)){
       var sem=m.semana||0;
       var fase=SEMANAS[sem]?SEMANAS[sem].l:'Concluído';
-      results.push({nome:m.nome,badge:'Mentorado',badgeCls:'tg',sub:'Semana '+sem+' · '+fase,tipo:'mentorado',obj:m});
+      results.push({nome:m.nome,badge:'Em programa',badgeCls:'tg',sub:'Semana '+sem+' · '+fase,tipo:'mentorado',obj:m});
     }
   });
   // Leads ativos
@@ -3172,7 +3172,7 @@ function renderAgenda(){
   var upcoming=DB.reunioes.filter(function(r){return rEstado(r)==='agendada'&&!rPorFechar(r);}).sort(byDT).slice(0,12);
   document.getElementById('ag-upcoming').innerHTML = upcoming.length ? upcoming.map(function(r){
     var c=etaColors[r.tipo]||'#444', p=rPessoa(r), a=rAcaoLink(r);
-    var badge=p.tipo==='mentorado'?'<span class="tag tg" style="font-size:9.5px">Mentorado</span>':p.tipo==='lead'?'<span class="tag to" style="font-size:9.5px">Lead</span>':'';
+    var badge=p.tipo==='mentorado'?'<span class="tag tg" style="font-size:9.5px">Em programa</span>':p.tipo==='lead'?'<span class="tag to" style="font-size:9.5px">Lead</span>':'';
     return '<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--g6);align-items:center">'
       +'<div style="min-width:66px;font-size:11px;color:var(--g4);text-align:right">'+fmtDate(r.data)+'<br><span style="font-weight:600;color:var(--bk)">'+(r.hora||'—')+'</span></div>'
       +'<div style="width:3px;align-self:stretch;background:'+c+';border-radius:2px;flex-shrink:0"></div>'
@@ -3978,7 +3978,7 @@ function openVendaRapida(leadId){
   document.getElementById('vr-sub').textContent=l.nome+' — '+( l.produto||'—');
   // Update modal title to show flow
   document.getElementById('vr-modal-title').textContent='💰 Registar pagamento';
-  document.getElementById('vr-modal-desc').textContent='Preenche como vai ser pago. Ao guardar, '+l.nome+' passa automaticamente para Mentorados.';
+  document.getElementById('vr-modal-desc').textContent='Preenche como vai ser pago. Ao guardar, '+l.nome+' entra automaticamente em Programas.';
   document.getElementById('vr-data').value=todayISO();
   const parcSel=document.getElementById('vr-parcelas');
   if(parcSel) parcSel.innerHTML=Array.from({length:12},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'x'+(i===0?' (à vista)':'')+'</option>').join('');
@@ -3992,7 +3992,7 @@ function vrEhMentoria(nome){ var p=DB.produtos.find(function(x){return x.nome===
 function vrAutoValor(){ const p=DB.produtos.find(x=>x.nome===document.getElementById('vr-produto').value); if(p) document.getElementById('vr-valor').value=p.valor; vrCalc();
   var _f=document.getElementById('vr-fim'); if(_f){ _f.value=p?(window.haProg?haProg.fimProduto(p.nome,document.getElementById('vr-data').value||todayISO()):'')||'':''; }
   var l=DB.leads.find(x=>x.id===(parseInt(document.getElementById('vr-leadid').value)||0)), d=document.getElementById('vr-modal-desc');
-  if(l&&d) d.textContent='Preenche como vai ser pago. Ao guardar, '+l.nome+' passa automaticamente para Mentorados, no programa que comprou.'; }
+  if(l&&d) d.textContent='Preenche como vai ser pago. Ao guardar, '+l.nome+' entra automaticamente em Programas, no programa que comprou.'; }
 function vrCalc(){
   const valor=parseFloat(document.getElementById('vr-valor').value)||0;
   const parcelas=parseInt(document.getElementById('vr-parcelas').value)||1;
@@ -4046,7 +4046,7 @@ function saveVendaRapida(){
   if(_mb && !novoMentorado) _mb.produto=produto;
   save();cm('venda-rapida');renderAll();
   if(novoMentorado){
-    toast('🎉 Pagamento registado · '+cliente+' é agora mentorado!');
+    toast('🎉 Pagamento registado · '+cliente+' entrou no programa!');
     setTimeout(function(){
       var el=document.querySelector('.ni[onclick*="mentorados"]');
       if(el) el.click();
@@ -4106,7 +4106,7 @@ function pgBuildClientes(){
     var totalPago=DB.pagamentos.filter(function(p){return p.cliente===m.nome&&p.estado==='Pago';}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
     var totalPend=DB.pagamentos.filter(function(p){return p.cliente===m.nome&&p.estado==='Pendente';}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
     var tel=m.tel||m.contacto||'';
-    list.push({nome:m.nome,tel:tel,produto:m.produto||'',sub:'Mentorado · '+(m.produto||'—')+(tel?' · 📱'+tel:'')+(totalPago>0?' · €'+totalPago.toFixed(0)+' recebido':'')+(totalPend>0?' · €'+totalPend.toFixed(0)+' pendente':''),badge:'Mentorado',badgeCls:'tg',tipo:'mentorado'});
+    list.push({nome:m.nome,tel:tel,produto:m.produto||'',sub:'Em programa · '+(m.produto||'—')+(tel?' · 📱'+tel:'')+(totalPago>0?' · €'+totalPago.toFixed(0)+' recebido':'')+(totalPend>0?' · €'+totalPend.toFixed(0)+' pendente':''),badge:'Em programa',badgeCls:'tg',tipo:'mentorado'});
   });
   DB.leads.filter(function(l){return l.etapa==='fechado';}).forEach(function(l){
     if(!list.find(function(x){return x.nome===l.nome;}))
@@ -5012,11 +5012,11 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     if(chip) chip.innerHTML='<span class="ac-dot"></span>'+a.curto+'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16l-4-4 4-4M17 8l4 4-4 4M3 12h18"/></svg>';
     var sub=document.querySelector('.sb-logo .logo-sub'); if(sub) sub.textContent=a.nome;
 
-    var lbl=HA_AREA==='mentorias'?'Mentorados':'Clientes';
+    var lbl='Programas';
     if(typeof titles==='object') titles.mentorados=lbl;
     var ni=document.querySelector('.ni[onclick*="\'mentorados\'"] .ni-label'); if(ni) ni.textContent=lbl;
     var mn=document.querySelector('#mn-mentorados .mob-nav-label');
-    if(mn) mn.textContent=HA_AREA==='mentorias'?'Mentoria':'Clientes';
+    if(mn) mn.textContent='Programas';
     var ov=document.getElementById('ov-ment-semana');
     if(ov){ var t=ov.parentElement.querySelector('.ct'); if(t) t.textContent=lbl+' esta semana'; }
 
@@ -7165,7 +7165,9 @@ window.haProg=(function(){
       l=l.trim(); if(!l) return;
       var pt=l.split('|').map(function(x){return x.trim();});
       if(pt.length<2) return;
-      var st={t:pt[1],d:pt.slice(2).join(' | ')}, q=pt[0], m;
+      var st={t:pt[1],d:pt[2]||''}, q=pt[0], m;
+      if(pt[3]){ var en=pt[3].match(/\d+/); if(en) st.enc=parseInt(en[0],10); }
+      if(pt[4]) st.fmt=pt.slice(4).join(' | ');
       if((m=q.match(/^\+\s*(\d+)/))) st.dia=parseInt(m[1],10);
       else if((m=q.match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/))) st.data=iso(parseInt(m[1],10),parseInt(m[2],10),m[3]?parseInt(m[3],10):0);
       else if((m=q.match(/(\d{4})-(\d{2})-(\d{2})/))) st.data=m[0];
@@ -7177,14 +7179,14 @@ window.haProg=(function(){
   function serializar(arr){
     return (arr||[]).map(function(st){
       var q=st.data?(st.data.slice(8)+'/'+st.data.slice(5,7)+'/'+st.data.slice(0,4)):('+'+(st.dia||0));
-      return q+' | '+st.t+' | '+(st.d||'');
+      return q+' | '+st.t+' | '+(st.d||'')+(st.enc||st.fmt?' | '+(st.enc||'')+(st.fmt?' | '+st.fmt:''):'');
     }).join('\n');
   }
   function materializar(nome,compra){
     var p=prod(nome)||{}, ds=(p.cronograma||[]).filter(function(x){return x.data;}).map(function(x){return x.data;}).sort();
     var ancora=ds.length?ds[0]:compra; // +dias conta a partir do 1.º passo com data (ex.: dia do workshop)
     return (p.cronograma||[]).map(function(st){
-      return {t:st.t,d:st.d||'',data:st.data||addDiasA(ancora,st.dia||0),feito:false};
+      return {t:st.t,d:st.d||'',enc:st.enc||0,fmt:st.fmt||'',data:st.data||addDiasA(ancora,st.dia||0),feito:false};
     }).sort(function(a,b){return a.data<b.data?-1:a.data>b.data?1:0;});
   }
   function cronOf(v){ return v.cron||materializar(v.produto,v.data||todayISO()); }
@@ -7240,7 +7242,7 @@ window.haProg=(function(){
     var atualN=cr.findIndex(function(x){return !x.feito;}), at=atualN>=0?cr[atualN]:null, seg=atualN>=0?cr[atualN+1]:null;
     var pct=tot?Math.round(feitas/tot*100):0;
     return '<div class="mt-grid" style="margin-top:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">'+
-      bloco('Fase atual',!v?'<div style="font-size:12px;color:var(--g4)">Sem compra registada</div>':conc?'<div style="font-size:12px;font-weight:600;color:var(--g)">✓ Programa concluído</div>':at?'<div style="font-size:12px;font-weight:500">Fase '+(atualN+1)+' de '+tot+' · '+esc(at.t)+'</div><div style="font-size:11px;color:var(--g4)">'+fmtDate(at.data)+'</div><div class="sbw" style="width:80px;margin-top:5px"><div class="sbb" style="width:'+pct+'%;background:var(--g)"></div></div>':'<div style="font-size:12px;color:var(--g4)">Sem fases definidas</div>')+
+      bloco('Fase atual',!v?'<div style="font-size:12px;color:var(--g4)">Sem compra registada</div>':conc?'<div style="font-size:12px;font-weight:600;color:var(--g)">✓ Programa concluído</div>':at?'<div style="font-size:12px;font-weight:500">Fase '+(atualN+1)+' de '+tot+' · '+esc(at.t)+'</div><div style="font-size:11px;color:var(--g4)">'+fmtDate(at.data)+(at.enc?' · '+at.enc+' encontro'+(at.enc>1?'s':''):'')+(at.fmt?' · '+esc(at.fmt):'')+'</div><div class="sbw" style="width:80px;margin-top:5px"><div class="sbb" style="width:'+pct+'%;background:var(--g)"></div></div>':'<div style="font-size:12px;color:var(--g4)">Sem fases definidas</div>')+
       bloco('Próxima fase',seg&&!conc?'<div style="font-size:12px;font-weight:500">'+esc(seg.t)+'</div><div style="font-size:11px;color:var(--g4)">'+fmtDate(seg.data)+'</div>':'<div style="font-size:12px;color:var(--g4)">'+(conc?'Escolher próximo nível':'—')+'</div>')+
       bloco('Termina em','<div style="font-size:12px;font-weight:500">'+(f?fmtDate(f):'—')+'</div>')+
       bloco('Valor pago','<div style="font-size:13px;font-weight:600;color:var(--g)">€'+totalPago.toFixed(0)+'</div>')+'</div>';
@@ -7270,15 +7272,16 @@ window.haProg=(function(){
   }
   function timeline(v){
     var cr=cronOf(v), hoje=todayISO(); if(!cr.length) return '<div class="pg-sub" style="margin:4px 0 8px">Sem fases definidas. Preencha-as na ficha do produto ou edite-as abaixo.</div>'+editor(v,cr);
-    var prox=cr.findIndex(function(x){return !x.feito;});
-    return '<div class="pg-tl">'+cr.map(function(x,i){
+    var prox=cr.findIndex(function(x){return !x.feito;}), totE=cr.reduce(function(t,x){return t+(x.enc||0);},0), fe=cr.filter(function(x){return x.feito;}).reduce(function(t,x){return t+(x.enc||0);},0);
+    var resumo='<div class="pg-sub" style="margin:4px 0">'+cr.length+' fases'+(totE?' · <b>'+fe+'/'+totE+' encontros</b> feitos':'')+' · termina a '+fmtDate(cr[cr.length-1].data)+'</div>';
+    return resumo+'<div class="pg-tl">'+cr.map(function(x,i){
       var tag=x.feito?'<span class="pg-chip ok">feito</span>':(x.data<hoje?'<span class="pg-chip" style="background:#C0392B18;color:#C0392B">atrasado</span>':(x.data===hoje?'<span class="pg-chip curso">hoje</span>':''));
       return '<div class="pg-st'+(x.feito?' done':i===prox?' now':'')+'"><div class="pg-dot" onclick="haProg.tick('+v.id+','+i+')" title="Marcar feito">'+(x.feito?'✓':'')+'</div>'+
-        '<div class="pg-sb"><div><span style="color:var(--g4);font-size:11px">Fase '+(i+1)+'</span> <b>'+esc(x.t)+'</b> '+tag+'</div><div class="pg-sub" style="margin:1px 0 0">'+fmtDate(x.data)+(x.d?' · '+esc(x.d):'')+'</div></div></div>';
-    }).join('')+'</div>'+editor(v,cr);
+        '<div class="pg-sb"><div><span style="color:var(--g4);font-size:11px">Fase '+(i+1)+'</span> <b>'+esc(x.t)+'</b> '+tag+'</div><div class="pg-sub" style="margin:1px 0 0">'+fmtDate(x.data)+(x.d?' · '+esc(x.d):'')+'</div>'+((x.enc||x.fmt)?'<div class="pg-sub" style="margin:1px 0 0">'+(x.enc?'<b>'+x.enc+' encontro'+(x.enc>1?'s':'')+'</b>':'')+(x.enc&&x.fmt?' · ':'')+(x.fmt?esc(x.fmt):'')+'</div>':'')+'</div></div>';
+    }).join('')+'<div class="pg-st"><div class="pg-dot" style="border-style:dashed;cursor:default"></div><div class="pg-sb"><div><span style="color:var(--g4);font-size:11px">Próximo passo</span> <b>'+(function(){var nx=proximoAuto(v.produto);return nx?esc(nomeP(nx))+' · €'+(prod(nx)||{}).valor:'Escolher próximo nível';})()+'</b> '+(concluida(v)?'<span class="pg-chip ok">disponível</span>':'<span class="pg-chip" style="background:#F3F4F6;color:#6B7280">🔒 depois da última fase</span>')+'</div></div></div></div>'+editor(v,cr);
   }
   function editor(v,cr){
-    return '<details style="margin:6px 0"><summary style="font-size:11px;color:var(--g3);cursor:pointer">✏️ Editar fases</summary><textarea class="fi" id="pg-cr-'+v.id+'" rows="4" style="font-size:12px;font-family:monospace;margin-top:6px">'+esc(serializar(cr.map(function(x){return {t:x.t,d:x.d,data:x.data};})))+'</textarea>'+
+    return '<details style="margin:6px 0"><summary style="font-size:11px;color:var(--g3);cursor:pointer">✏️ Editar fases</summary><textarea class="fi" id="pg-cr-'+v.id+'" rows="4" style="font-size:12px;font-family:monospace;margin-top:6px">'+esc(serializar(cr.map(function(x){return {t:x.t,d:x.d,enc:x.enc,fmt:x.fmt,data:x.data};})))+'</textarea>'+
       '<button class="btn bs bsm" style="margin-top:4px" onclick="haProg.guardarCron('+v.id+')">Guardar fases</button></details>';
   }
   function corpo(m){
@@ -7330,7 +7333,7 @@ window.haProg=(function(){
       var antigo=cronOf(v), novo=parse(document.getElementById('pg-cr-'+vid).value).map(function(st){
         var _ds=parse(document.getElementById('pg-cr-'+vid).value).filter(function(z){return z.data;}).map(function(z){return z.data;}).sort(), _an=_ds.length?_ds[0]:(v.data||todayISO());
         var data=st.data||addDiasA(_an,st.dia||0), ja=antigo.find(function(a){return a.t===st.t;});
-        return {t:st.t,d:st.d||'',data:data,feito:!!(ja&&ja.feito)};}).sort(function(a,b){return a.data<b.data?-1:1;});
+        return {t:st.t,d:st.d||'',enc:st.enc||0,fmt:st.fmt||'',data:data,feito:!!(ja&&ja.feito)};}).sort(function(a,b){return a.data<b.data?-1:1;});
       v.cron=novo; v.fim=null; save();renderAll();pinta();toast('✓ Fases guardadas');},
     guardarFim:function(vid){var v=(DB.vendas||[]).find(function(x){return x.id===vid;});if(!v)return;var d=document.getElementById('pg-fim-'+vid).value;v.fim=d||null;if(d){var p=prod(v.produto);if(p&&!p.dataFim&&!p.duracaoDias)p.dataFim=d;}save();renderAll();pinta();toast('✓ Data de fim guardada');},
     terminar:function(vid){var v=(DB.vendas||[]).find(function(x){return x.id===vid;});if(!v)return;v.estado='terminada';save();renderAll();pinta();toast('✓ Programa concluído — próximo nível desbloqueado');},
