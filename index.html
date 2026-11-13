@@ -393,6 +393,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div class="nav-sec">Principal</div>
     <div class="ni on" onclick="nav('overview',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span><span class="ni-label">Visão Geral</span></div>
     <div class="nav-sec">Captação</div>
+    <div class="ni" onclick="nav('captacao',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg></span><span class="ni-label">Captação</span></div>
     <div class="ni" onclick="nav('marketing',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span><span class="ni-label">Marketing</span></div>
     <div class="ni" onclick="nav('metas',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></span><span class="ni-label">Metas</span></div>
     <div class="nav-sec">Vendas</div>
@@ -7532,13 +7533,6 @@ window.haMkt=(function(){
     h+=titulo('Metas do mês','<button class="btn bs bsm" onclick="haMkt.meta()">✏️ Definir metas</button>')+'<div class="card" style="display:grid;grid-template-columns:1fr 1fr;gap:18px">'+
       [['Leads captados',Lm,mt.leads],['Conteúdos publicados',Cm,mt.posts]].map(function(x){ var p=x[2]?Math.round(x[1]/x[2]*100):null;
         return '<div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span>'+x[0]+'</span><b>'+x[1]+(x[2]?' / '+x[2]:'')+'</b></div>'+(p==null?'<div style="font-size:11px;color:var(--g4)">Sem meta definida</div>':barra(p,p>=100?'var(--g)':'#B7791F')+'<div style="font-size:10.5px;color:var(--g4);margin-top:3px">'+p+'% da meta</div>')+'</div>'; }).join('')+'</div>';
-    // Funil de marketing: alcance -> interações -> conversas -> leads
-    var dmsT=CPm.reduce(function(t,c){return t+(+c.dms||0);},0);
-    var etp=[['Alcance',alc0,'pessoas que viram o conteúdo'],['Interações',int0,'gostos, partilhas, guardados'],['Comentários e DMs',dmsT,'pediram mais informação'],['Leads captados',L.length,'entraram no pipeline']];
-    var mx0=Math.max(alc0,1);
-    h+=titulo('Funil de marketing · da atenção ao lead')+'<div class="card">'+etp.map(function(x,i){ var w=i===0?100:Math.max(x[1]?3:0,Math.round(Math.log10(x[1]+1)/Math.log10(mx0+1)*100)); var tx=i>0&&etp[i-1][1]?pctf(x[1],etp[i-1][1])+' do passo anterior':'';
-      return '<div style="display:grid;grid-template-columns:130px 1fr 80px;gap:10px;align-items:center;margin:6px 0;font-size:12px"><span><b>'+x[0]+'</b><br><small style="color:var(--g4)">'+x[2]+'</small></span><div class="sbw" style="width:100%"><div class="sbb" style="width:'+w+'%;background:#0B6E4F"></div></div><span style="text-align:right"><b>'+x[1].toLocaleString('pt-PT')+'</b><br><small style="color:var(--g4)">'+tx+'</small></span></div>'; }).join('')+
-      '<div style="font-size:11px;color:var(--g4);margin-top:8px">'+(alc0?'Cada 1.000 pessoas alcançadas trazem '+Math.round(L.length/alc0*1000*10)/10+' leads. ':'Regista o alcance e as interações em cada conteúdo publicado. ')+'O que acontece a cada lead depois de entrar está no Funil de vendas.</div></div>';
     // Canais
     var linhas=CANAIS.map(function(c){ return {c:c,l:L.filter(function(l){return l.origem===c;}).length}; }).filter(function(x){return x.l;}).sort(function(a,b){return b.l-a.l;});
     h+=titulo('Canais · de onde vêm os leads')+'<div class="card">'+(linhas.length?linhas.map(function(x){ return '<div style="display:grid;grid-template-columns:110px 1fr 90px;gap:10px;align-items:center;margin:5px 0;font-size:12px"><b>'+E(x.c)+'</b><div class="sbw" style="width:100%"><div class="sbb" style="width:'+Math.round(x.l/L.length*100)+'%;background:var(--g)"></div></div><span style="text-align:right">'+x.l+' · '+pctf(x.l,L.length)+'</span></div>'; }).join(''):'<div class="empty">Sem leads neste período</div>')+'</div>';
@@ -7570,7 +7564,6 @@ window.haMkt=(function(){
     if(cpl) ins.push('Cada lead está a custar '+eur(cpl)+' em anúncios.');
     if(alc0&&!L.length) ins.push('Há alcance mas nenhum lead: falta chamada para ação nos conteúdos.');
     if(!Cm&&mt.posts) ins.push('Ainda não publicou conteúdo este mês.');
-    h+=titulo('Ações de marketing')+'<div class="card fn-pb">'+acoesMkt()+'</div>';
     if(ins.length) h+=titulo('Leitura rápida')+'<div class="card" style="font-size:12.5px;line-height:1.7">'+ins.map(function(t){return '• '+t;}).join('<br>')+'</div>';
     P.innerHTML=h;
   }
@@ -7614,7 +7607,7 @@ window.haMkt=(function(){
     }
   };
 })();
-(function(){ var _rm=window.renderMarketing; window.renderMarketing=function(){ try{ haMkt.render(); }catch(e){ console.error(e); } }; })();
+(function(){ var _rm=window.renderMarketing; window.renderMarketing=function(){ try{ haMkt.render(); }catch(e){ console.error(e); } try{ if(window.haCap) haCap.render(); }catch(e){ console.error(e); } }; })();
 </script>
 
 <!-- BLOCO 19 · Agenda da empresa (tudo o que acontece) -->
@@ -7751,7 +7744,7 @@ function(TIPO,G,BOX,HOSTS){
   };
 };
 window.haOb=mk('vendas','haOb','ob-box',['p-funil','p-funilsol']);
-window.haObM=mk('marketing','haObM','obm-box',['p-marketing']);
+window.haObM=mk('marketing','haObM','obm-box',['p-captacao']);
 })();
 </script>
 
@@ -7766,6 +7759,66 @@ window.haObM=mk('marketing','haObM','obm-box',['p-marketing']);
   }
   ['p-funil','p-funilsol'].forEach(function(id){ var P=document.getElementById(id); if(!P) return;
     new MutationObserver(function(){ if(P.children.length) limpa(P); }).observe(P,{childList:true}); });
+})();
+</script>
+
+<!-- BLOCO 22 · Captação: funil de captação, próximos passos e objetivos -->
+<script>
+window.haCap=(function(){
+  var ET=[{k:'alcance',n:'Alcance',d:'pessoas que viram'},{k:'interacoes',n:'Interações',d:'gostos, partilhas, guardados'},{k:'conversas',n:'Conversas',d:'comentários e DMs'},{k:'leads',n:'Leads',d:'entraram no pipeline'}];
+  var SUG={alcance:['Publicar 1 reel com o tema do mês','Collab com a Rafa','Publicar carrossel de autoridade'],interacoes:['4 stories com caixa de perguntas','Responder a todos os comentários','Story com enquete'],conversas:['Pedir "Comente MENTORIA" no post','Enviar DM a quem interagiu','Responder a todas as DMs hoje'],leads:['Contactar 10 pessoas novas','Passar as conversas quentes para o Pipeline','Convidar quem interagiu para o workshop']};
+  var P=document.getElementById('content');
+  if(P&&!document.getElementById('p-captacao')){ var d=document.createElement('div'); d.className='panel'; d.id='p-captacao'; P.appendChild(d); }
+  if(typeof titles==='object') titles.captacao='Captação';
+  function C(){ DB.captacao=DB.captacao||{passos:[],metas:{}}; DB.captacao.passos=DB.captacao.passos||[]; DB.captacao.metas=DB.captacao.metas||{}; return DB.captacao; }
+  function ga(){ return (typeof HA_AREA!=='undefined'&&HA_AREA)||null; }
+  function meus(){ var g=ga(); return C().passos.filter(function(x){return !g||g==='geral'||(x.area||'mentorias')===g;}); }
+  function mes(){ return todayISO().slice(0,7); }
+  function nums(){
+    var m=mes(), CP=(DB.conteudo||[]).filter(function(c){return c.estado==='Publicado'&&(c.data||'').slice(0,7)===m;});
+    var r={alcance:0,interacoes:0,conversas:0,leads:(DB.leads||[]).filter(function(l){return (l.createdAt||'').slice(0,7)===m;}).length};
+    CP.forEach(function(c){ r.alcance+=+c.alcance||0; r.interacoes+=+c.interacoes||0; r.conversas+=+c.dms||0; });
+    var extra={alcance:0,interacoes:0,conversas:0,leads:0}, feitos={}, pend={};
+    meus().forEach(function(x){ if(x.feito&&(x.feitoEm||'').slice(0,7)===m){ extra[x.etapa]+=+x.resultado||0; feitos[x.etapa]=(feitos[x.etapa]||0)+1; } else if(!x.feito) pend[x.etapa]=(pend[x.etapa]||0)+1; });
+    ET.forEach(function(e){ r[e.k]+=extra[e.k]; });
+    return {v:r,extra:extra,feitos:feitos,pend:pend};
+  }
+  function pct(a,b){ return b?Math.round(a/b*100)+'%':'—'; }
+  function render(){
+    var el=document.getElementById('p-captacao'); if(!el) return;
+    var n=nums(), mt=C().metas[mes()]||{}, hoje=todayISO(), v=n.v;
+    // gargalo: etapa com menor conversão para a seguinte (ou menor % da meta)
+    var gar=null, pior=1e9;
+    ET.forEach(function(e,i){ var m=mt[e.k]; var sc=m?v[e.k]/m:(i<3&&v[e.k]?v[ET[i+1].k]/v[e.k]:null); if(sc!=null&&sc<pior){pior=sc;gar=e;} });
+    var h='<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div class="ct">Funil de captação · este mês</div><div style="font-size:11.5px;color:var(--g4);margin-top:2px">Muda sozinho com o conteúdo publicado, os leads novos e os passos que marcar como feitos</div></div></div>';
+    ET.forEach(function(e,i){ var val=v[e.k], m=+mt[e.k]||0, p=m?Math.min(100,Math.round(val/m*100)):0, prev=i?v[ET[i-1].k]:0;
+      var w=m?p:(i===0?100:Math.max(val?4:0,Math.round(Math.log10(val+1)/Math.log10((v.alcance||1)+1)*100)));
+      h+='<div style="display:grid;grid-template-columns:140px 1fr 150px;gap:12px;align-items:center;margin:9px 0"><div><b style="font-size:13px">'+e.n+'</b><div style="font-size:10.5px;color:var(--g4)">'+e.d+'</div></div>'+
+        '<div><div class="sbw" style="width:100%;height:12px"><div class="sbb" style="width:'+w+'%;background:'+(gar&&gar.k===e.k?'#B7791F':'var(--g)')+'"></div></div><div style="font-size:10.5px;color:var(--g4);margin-top:3px">'+(i?pct(val,prev)+' do passo anterior':'topo do funil')+(n.extra[e.k]?' · <b style="color:var(--g)">+'+n.extra[e.k].toLocaleString('pt-PT')+' pelas suas ações</b>':'')+(n.feitos[e.k]?' · '+n.feitos[e.k]+' ação'+(n.feitos[e.k]>1?'ões':'')+' feita'+(n.feitos[e.k]>1?'s':''):'')+'</div></div>'+
+        '<div style="text-align:right"><b style="font-size:17px">'+val.toLocaleString('pt-PT')+'</b><span style="font-size:11px;color:var(--g4)"> / </span><input type="number" min="0" value="'+(m||'')+'" placeholder="meta" style="width:62px;padding:3px 5px;border:1px solid #D1D5DB;border-radius:6px;font-size:11.5px" onchange="haCap.meta(\''+e.k+'\',this.value)"></div></div>'; });
+    h+=(gar?'<div class="al" style="background:#FFFBEA;border:1px solid #FEF08A;color:#854D0E;margin-top:8px;font-size:12px">⚠ Onde mais precisa de trabalhar agora: <b>'+gar.n+'</b> <button class="btn bs bsm" style="margin-left:8px" onclick="haCap.sugerir(\''+gar.k+'\')">+ Sugerir passos</button></div>':'')+'</div>';
+    // próximos passos
+    var ps=meus(), abertos=ps.filter(function(x){return !x.feito;}).sort(function(a,b){return (a.data||'9').localeCompare(b.data||'9');}), feitos=ps.filter(function(x){return x.feito;}).sort(function(a,b){return (b.feitoEm||'').localeCompare(a.feitoEm||'');}).slice(0,5);
+    var li=function(x){ var et=ET.find(function(e){return e.k===x.etapa;})||{n:''}, atras=!x.feito&&x.data&&x.data<hoje;
+      return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--g6);'+(x.feito?'opacity:.6':'')+'"><input type="checkbox" '+(x.feito?'checked':'')+' style="accent-color:var(--g);width:17px;height:17px" onchange="haCap.tick('+x.id+',this.checked)"><div style="flex:1;'+(x.feito?'text-decoration:line-through':'')+'"><div style="font-size:13px;font-weight:600">'+esc(x.t)+'</div><div style="font-size:11px;color:var(--g4)"><span class="tag tg" style="font-size:9.5px">'+et.n+'</span> '+(x.data?'<span style="color:'+(atras?'var(--re)':'inherit')+'">'+(x.data===hoje?'hoje':fmtDate(x.data))+(atras?' · atrasado':'')+'</span>':'sem data')+(x.feito&&x.resultado?' · trouxe '+x.resultado:'')+'</div></div><button class="btn bd bsm" onclick="haCap.apagar('+x.id+')">×</button></div>'; };
+    h+='<div class="card" style="margin-bottom:14px"><div class="ct" style="margin-bottom:8px">Próximos passos · o que precisamos fazer</div>'+
+      '<div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;margin-bottom:6px"><input class="fi" id="cap-t" placeholder="O que fazer? Ex.: Publicar reel do preço"><select class="fi" id="cap-e">'+ET.map(function(e){return '<option value="'+e.k+'">'+e.n+'</option>';}).join('')+'</select><input class="fi" type="date" id="cap-d" value="'+hoje+'"><button class="btn bp bsm" onclick="haCap.novo()">+ Passo</button></div>'+
+      (abertos.length?abertos.map(li).join(''):'<div class="empty" style="padding:14px">Sem passos pendentes. Adicione um acima ou use "Sugerir passos".</div>')+
+      (feitos.length?'<div class="mt-lbl" style="margin:12px 0 2px">Feitos recentemente</div>'+feitos.map(li).join(''):'')+'</div>';
+    el.innerHTML='<div id="cap-main">'+h+'</div>';
+  }
+  return {
+    render:render,
+    meta:function(k,vv){ var m=C().metas; m[mes()]=m[mes()]||{}; m[mes()][k]=+vv||0; save(); renderAll(); },
+    novo:function(){ var t=document.getElementById('cap-t').value.trim(); if(!t){ toast('Escreva o que fazer','#C0392B'); return; }
+      C().passos.push({id:uid(),area:ga()||'mentorias',t:t,etapa:document.getElementById('cap-e').value,data:document.getElementById('cap-d').value,feito:false}); save(); renderAll(); },
+    sugerir:function(k){ (SUG[k]||[]).forEach(function(t){ C().passos.push({id:uid(),area:ga()||'mentorias',t:t,etapa:k,data:todayISO(),feito:false}); }); save(); renderAll(); toast('✓ Passos sugeridos adicionados'); },
+    tick:function(id,on){ var x=C().passos.find(function(p){return p.id===id;}); if(!x) return;
+      if(on){ var r=prompt('Quanto trouxe de '+(ET.find(function(e){return e.k===x.etapa;})||{n:''}).n.toLowerCase()+'? (número, ou deixe vazio)',''); x.resultado=r&&!isNaN(+r)?+r:0; x.feito=true; x.feitoEm=todayISO(); toast('✓ Passo feito · o funil foi atualizado'); }
+      else { x.feito=false; delete x.feitoEm; x.resultado=0; }
+      save(); renderAll(); },
+    apagar:function(id){ C().passos=C().passos.filter(function(p){return p.id!==id;}); save(); renderAll(); }
+  };
 })();
 </script>
 </body>
