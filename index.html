@@ -3985,6 +3985,7 @@ function openVendaRapida(leadId){
 }
 function vrEhMentoria(nome){ var p=DB.produtos.find(function(x){return x.nome===nome;}); return !!p && (/mentoria|acompanhamento|90d/i.test(p.nome) || parseFloat(p.valor)>=500); }
 function vrAutoValor(){ const p=DB.produtos.find(x=>x.nome===document.getElementById('vr-produto').value); if(p) document.getElementById('vr-valor').value=p.valor; vrCalc();
+  var _f=document.getElementById('vr-fim'); if(_f){ _f.value=p?(window.haProg?haProg.fimProduto(p.nome,document.getElementById('vr-data').value||todayISO()):'')||'':''; }
   var l=DB.leads.find(x=>x.id===(parseInt(document.getElementById('vr-leadid').value)||0)), d=document.getElementById('vr-modal-desc');
   if(l&&d) d.textContent='Preenche como vai ser pago. Ao guardar, '+l.nome+' passa automaticamente para Mentorados, no programa que comprou.'; }
 function vrCalc(){
@@ -4033,6 +4034,9 @@ function saveVendaRapida(){
     }
   }
   criarVenda(grupoId,cliente,produto,dataInicio);
+  var _fimv=(document.getElementById('vr-fim')||{}).value||'';
+  var _vv=(DB.vendas||[]).find(function(v){return v.grupoId===grupoId;});
+  if(_vv&&_fimv){ _vv.fim=_fimv; var _pp=prodPorNome(produto); if(_pp&&!_pp.dataFim&&!_pp.duracaoDias) _pp.dataFim=_fimv; }
   if(_mb && !novoMentorado) _mb.produto=produto;
   save();cm('venda-rapida');renderAll();
   if(novoMentorado){
@@ -4407,6 +4411,7 @@ window.addEventListener('appinstalled',function(){ pwaDismiss(); toast('✓ App 
     <div><label class="fl">Data 1ª parcela</label><input type="date" class="fi" id="vr-data"></div>
     <div><label class="fl">Estado</label><select class="fi" id="vr-estado"><option value="Pago">Pago</option><option value="Pendente">Pendente</option></select></div>
   </div>
+  <div class="fg"><label class="fl">Programa termina em <span style="font-size:9.5px;color:var(--g4);font-weight:400">(ex.: dia do workshop) — o próximo nível só abre depois</span></label><input type="date" class="fi" id="vr-fim"></div>
   <div id="vr-info" style="display:none" class="al alg"></div>
   <div style="display:flex;gap:8px;margin-top:4px">
     <button class="btn bp" style="flex:1" onclick="saveVendaRapida()">✓ Registar venda</button>
@@ -7140,7 +7145,15 @@ window.haProg=(function(){
   function prod(n){return DB.produtos.find(function(p){return p.nome===n;});}
   function nomeP(n){var p=prod(n);return p?(p.nomeC||p.nome):n;}
   function addDiasA(d,n){var x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);}
+  function fimProduto(nome,c){
+    var p=prod(nome)||{};
+    if(p.dataFim&&p.dataFim>=c) return p.dataFim;
+    if(p.duracaoDias) return addDiasA(c,p.duracaoDias);
+    if(p.meses) return addDiasA(c,p.meses*30);
+    return null;
+  }
   function fimDe(v){
+    if(v.fim) return v.fim;
     var p=prod(v.produto)||{}, c=v.data||todayISO();
     if(p.dataFim&&p.dataFim>=c) return p.dataFim;
     if(p.duracaoDias) return addDiasA(c,p.duracaoDias);
@@ -7185,6 +7198,7 @@ window.haProg=(function(){
       h+='<div class="pg-prog"><h4>'+esc(nomeP(x.produto))+' '+chip(x)+'</h4>'+
         '<div class="pg-sub">Comprado a '+fmtDate(x.data)+(f?' · termina a '+fmtDate(f):'')+(s?' · '+s.f+' de '+s.q+' sessões':'')+'</div>'+
         entregaBarras(x,false)+
+        '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:11.5px"><span style="color:var(--g3)">Termina em</span><input type="date" class="fi" style="width:150px;padding:5px 8px" id="pg-fim-'+x.id+'" value="'+(f||'')+'"><button class="btn bs bsm" onclick="haProg.guardarFim('+x.id+')">Guardar</button></div>'+
         (x.estado!=='terminada'&&!concluida(x)?'<button class="btn bs bsm" style="margin-top:6px" onclick="haProg.terminar('+x.id+')">✓ Marcar programa concluído</button>':'')+'</div>';
     });
     if(!v) return '<div class="empty">Ainda sem programa registado.</div>';
@@ -7217,9 +7231,10 @@ window.haProg=(function(){
   var _ag=false;
   function agendar(){ if(_ag) return; _ag=true; setTimeout(function(){_ag=false; try{ if(migrar()){save();renderAll();} }catch(e){console.error('Programa:',e);} },60); }
   return {
-    linha:linha, concluida:concluida, ultimo:ultimo, fim:fimDe, agendar:agendar,
+    fimProduto:fimProduto, linha:linha, concluida:concluida, ultimo:ultimo, fim:fimDe, agendar:agendar,
     abrir:function(id){atual=id;pinta();document.getElementById('modal-programa').classList.add('open');},
     fechar:function(){document.getElementById('modal-programa').classList.remove('open');},
+    guardarFim:function(vid){var v=(DB.vendas||[]).find(function(x){return x.id===vid;});if(!v)return;var d=document.getElementById('pg-fim-'+vid).value;v.fim=d||null;if(d){var p=prod(v.produto);if(p&&!p.dataFim&&!p.duracaoDias)p.dataFim=d;}save();renderAll();pinta();toast('✓ Data de fim guardada');},
     terminar:function(vid){var v=(DB.vendas||[]).find(function(x){return x.id===vid;});if(!v)return;v.estado='terminada';save();renderAll();pinta();toast('✓ Programa concluído — próximo nível desbloqueado');},
     subir:function(id){
       var m=DB.mentorados.find(function(x){return x.id===id;}); if(!m) return;
