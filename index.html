@@ -1106,7 +1106,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div><label class="fl">ou dura (dias) <span style="font-size:9.5px;color:var(--g4);font-weight:400">a contar da compra</span></label><input type="number" min="0" class="fi" id="pd-durdias" placeholder="Ex: 30"></div>
   </div>
   <div style="font-size:11px;color:var(--g4);margin:-6px 0 12px">A pessoa só avança para o nível seguinte depois de terminar este.</div>
-  <div class="fg"><label class="fl">Cronograma do programa <span style="font-size:9.5px;color:var(--g4);font-weight:400">uma linha por passo: data ou +dias | título | o que acontece</span></label>
+  <div class="fg"><label class="fl">Fases do programa <span style="font-size:9.5px;color:var(--g4);font-weight:400">uma linha por fase: data ou +dias | título | o que acontece</span></label>
     <textarea class="fi" id="pd-cron" rows="5" style="font-size:12px;font-family:monospace" placeholder="23/11/2026 | Workshop ao vivo | Precificação inteligente, 10h às 13h&#10;+1 | Replay e material | Enviado no grupo de WhatsApp&#10;+7 | Sessão de dúvidas | 30 min para tirar dúvidas"></textarea></div>
   <div class="fr fg">
     <div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pd-valor-input" placeholder="0.00" oninput="pdCalcParcela();pdCalcPreco()"></div>
@@ -2195,7 +2195,7 @@ function renderMentorados(){
           +(m.estado==='Concluído'||!haProg.ehMentoria(m)?'':'<button class="btn '+(aberta?'bp':'bs')+' bsm" onclick="concluirMentorado('+m.id+')">✅ Concluir sessão</button>'
           +'<button class="btn bs bsm" onclick="openMarcar(\'mentorado\','+m.id+')">📅 Marcar</button>')
           +'<button class="btn bs bsm" onclick="openHistorico('+m.id+')">🕑 Histórico</button>'
-          +(haProg.ehMentoria(m)?'<button class="btn bs bsm" onclick="openProcesso('+m.id+')" title="Fases do processo">Fases</button>':'')
+          +(haProg.temCron(m)?'<button class="btn bs bsm" onclick="haProg.abrir('+m.id+')" title="Fases do programa">Fases</button>':haProg.ehMentoria(m)?'<button class="btn bs bsm" onclick="openProcesso('+m.id+')" title="Fases do processo">Fases</button>':'')
           +'<button class="btn bs bsm" onclick="editMentorado('+m.id+')">✏️</button>'
           +'<button class="btn bd bsm" onclick="deleteMentorado('+m.id+')">×</button>'
         +'</div>'
@@ -2812,7 +2812,7 @@ function renderProdutos(){
       +'<div style="font-size:24px;font-weight:700;color:var(--g);margin:8px 0 4px">'+precoStr+'</div>'
       +(duracaoStr?'<div style="font-size:10.5px;color:var(--g4);margin-bottom:4px">'+duracaoStr+'</div>':'')
       +(p.desc?'<div style="font-size:11px;color:var(--g4);margin-bottom:8px">'+esc(p.desc)+'</div>':'')
-      +((p.cronograma&&p.cronograma.length)?'<div style="font-size:10.5px;color:var(--g4);margin-bottom:4px">📋 '+p.cronograma.length+' passos no cronograma</div>':'')
+      +((p.cronograma&&p.cronograma.length)?'<div style="font-size:10.5px;color:var(--g4);margin-bottom:4px">📋 '+p.cronograma.length+' fases no programa</div>':'')
       +((p.dataFim||p.duracaoDias)?'<div style="font-size:10.5px;color:var(--g4);margin-bottom:4px">⏳ '+(p.dataFim?'Termina a '+fmtDate(p.dataFim):'Dura '+p.duracaoDias+' dias')+'</div>':'')
       +(p.link?'<div style="font-size:11px;margin-bottom:8px"><a href="'+esc(p.link)+'" target="_blank" rel="noopener" style="color:var(--bl);text-decoration:none;font-weight:500">🔗 Abrir link do produto</a> <span style="cursor:pointer;color:var(--g4)" onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+esc(p.link)+'\');toast(\'Link copiado\')" title="Copiar link">⧉</span></div>':'')
       +'<div style="font-size:10.5px;color:var(--g3);margin-bottom:4px">📦 Entrega: '+entregaTexto(p)+'</div>'
@@ -7148,7 +7148,7 @@ window.haPerda=(function(){
 .pg-next.lock{background:#F3F4F6;border-color:#E5E7EB;color:#6B7280}
 </style>
 <div class="mo" id="modal-programa"><div class="mbox" style="max-width:560px">
-  <div class="mh"><div><div class="mt" id="pg-m-nome">Programa</div><div style="font-size:11px;color:var(--g4)">Programa em curso e histórico</div></div><span class="mx" onclick="haProg.fechar()">✕</span></div>
+  <div class="mh"><div><div class="mt" id="pg-m-nome">Programa</div><div style="font-size:11px;color:var(--g4)">Fases do programa e histórico</div></div><span class="mx" onclick="haProg.fechar()">✕</span></div>
   <div id="pg-m-corpo" style="max-height:70vh;overflow-y:auto"></div>
 </div></div>
 <script>
@@ -7236,9 +7236,12 @@ window.haProg=(function(){
   function grelha(m,totalPago){
     var v=ultimo(m), cr=v?cronOf(v):[], n=cr.find(function(x){return !x.feito;}), f=v?fimDe(v):null;
     function bloco(l,h){return '<div><div class="mt-lbl">'+l+'</div>'+h+'</div>';}
+    var feitas=cr.filter(function(x){return x.feito;}).length, tot=cr.length, conc=v&&concluida(v);
+    var atualN=cr.findIndex(function(x){return !x.feito;}), at=atualN>=0?cr[atualN]:null, seg=atualN>=0?cr[atualN+1]:null;
+    var pct=tot?Math.round(feitas/tot*100):0;
     return '<div class="mt-grid" style="margin-top:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">'+
-      bloco('Programa','<div style="font-size:12px;font-weight:500">'+esc(nomeP(m.produto))+'</div><div style="font-size:11px;color:var(--g4)">'+(v?(concluida(v)?'Concluído':'Em curso'):'Sem compra registada')+'</div>')+
-      bloco('Próximo passo',n&&!concluida(v)?'<div style="font-size:12px;font-weight:500">'+esc(n.t)+'</div><div style="font-size:11px;color:var(--g4)">'+fmtDate(n.data)+'</div>':'<div style="font-size:12px;color:var(--g4)">'+(v&&concluida(v)?'Escolher próximo nível':'—')+'</div>')+
+      bloco('Fase atual',!v?'<div style="font-size:12px;color:var(--g4)">Sem compra registada</div>':conc?'<div style="font-size:12px;font-weight:600;color:var(--g)">✓ Programa concluído</div>':at?'<div style="font-size:12px;font-weight:500">Fase '+(atualN+1)+' de '+tot+' · '+esc(at.t)+'</div><div style="font-size:11px;color:var(--g4)">'+fmtDate(at.data)+'</div><div class="sbw" style="width:80px;margin-top:5px"><div class="sbb" style="width:'+pct+'%;background:var(--g)"></div></div>':'<div style="font-size:12px;color:var(--g4)">Sem fases definidas</div>')+
+      bloco('Próxima fase',seg&&!conc?'<div style="font-size:12px;font-weight:500">'+esc(seg.t)+'</div><div style="font-size:11px;color:var(--g4)">'+fmtDate(seg.data)+'</div>':'<div style="font-size:12px;color:var(--g4)">'+(conc?'Escolher próximo nível':'—')+'</div>')+
       bloco('Termina em','<div style="font-size:12px;font-weight:500">'+(f?fmtDate(f):'—')+'</div>')+
       bloco('Valor pago','<div style="font-size:13px;font-weight:600;color:var(--g)">€'+totalPago.toFixed(0)+'</div>')+'</div>';
   }
@@ -7256,27 +7259,27 @@ window.haProg=(function(){
   }
   function linha(m){
     var v=ultimo(m);
-    if(!v) return '<div class="pg-lin" onclick="haProg.registarPag('+m.id+')"><span>⚠ <b>'+esc(nomeP(m.produto)||'Programa')+'</b> sem pagamento registado</span><span class="pg-sp"></span><span style="color:#B7791F;font-weight:600">Registar pagamento e cronograma →</span></div>';
+    if(!v) return '<div class="pg-lin" onclick="haProg.registarPag('+m.id+')"><span>⚠ <b>'+esc(nomeP(m.produto)||'Programa')+'</b> sem pagamento registado</span><span class="pg-sp"></span><span style="color:#B7791F;font-weight:600">Registar pagamento e fases →</span></div>';
     var s=sessoes(v), c=concluida(v);
     return '<div class="pg-lin" onclick="haProg.abrir('+m.id+')" title="Abrir programa">'+
       '<span>🎯 <b>'+esc(nomeP(v.produto))+'</b></span>'+chip(v)+
       (s?'<span style="color:var(--g3)">Sessões <b>'+s.f+'/'+s.q+'</b></span>':'')+
-      (function(){var n=cronOf(v).find(function(x){return !x.feito;});return (!c&&n)?'<span style="color:var(--g3)">Próximo: <b>'+esc(n.t)+'</b> · '+fmtDate(n.data)+'</span>':'';})()+
+      (function(){var n=cronOf(v).find(function(x){return !x.feito;});return (!c&&n)?'<span style="color:var(--g3)">Fase '+(cronOf(v).indexOf(n)+1)+'/'+cronOf(v).length+': <b>'+esc(n.t)+'</b> · '+fmtDate(n.data)+'</span>':'';})()+
       '<span class="pg-sp"></span>'+
       (c?'<span style="color:#0B6E4F;font-weight:600">⬆ Próximo nível disponível</span>':'<span style="color:#9CA3AF">🔒 Próximo nível depois de terminar</span>')+'</div>';
   }
   function timeline(v){
-    var cr=cronOf(v), hoje=todayISO(); if(!cr.length) return '<div class="pg-sub" style="margin:4px 0 8px">Sem cronograma. Preencha-o na ficha do produto ou edite-o abaixo.</div>'+editor(v,cr);
+    var cr=cronOf(v), hoje=todayISO(); if(!cr.length) return '<div class="pg-sub" style="margin:4px 0 8px">Sem fases definidas. Preencha-as na ficha do produto ou edite-as abaixo.</div>'+editor(v,cr);
     var prox=cr.findIndex(function(x){return !x.feito;});
     return '<div class="pg-tl">'+cr.map(function(x,i){
       var tag=x.feito?'<span class="pg-chip ok">feito</span>':(x.data<hoje?'<span class="pg-chip" style="background:#C0392B18;color:#C0392B">atrasado</span>':(x.data===hoje?'<span class="pg-chip curso">hoje</span>':''));
       return '<div class="pg-st'+(x.feito?' done':i===prox?' now':'')+'"><div class="pg-dot" onclick="haProg.tick('+v.id+','+i+')" title="Marcar feito">'+(x.feito?'✓':'')+'</div>'+
-        '<div class="pg-sb"><div><b>'+esc(x.t)+'</b> '+tag+'</div><div class="pg-sub" style="margin:1px 0 0">'+fmtDate(x.data)+(x.d?' · '+esc(x.d):'')+'</div></div></div>';
+        '<div class="pg-sb"><div><span style="color:var(--g4);font-size:11px">Fase '+(i+1)+'</span> <b>'+esc(x.t)+'</b> '+tag+'</div><div class="pg-sub" style="margin:1px 0 0">'+fmtDate(x.data)+(x.d?' · '+esc(x.d):'')+'</div></div></div>';
     }).join('')+'</div>'+editor(v,cr);
   }
   function editor(v,cr){
-    return '<details style="margin:6px 0"><summary style="font-size:11px;color:var(--g3);cursor:pointer">✏️ Editar cronograma</summary><textarea class="fi" id="pg-cr-'+v.id+'" rows="4" style="font-size:12px;font-family:monospace;margin-top:6px">'+esc(serializar(cr.map(function(x){return {t:x.t,d:x.d,data:x.data};})))+'</textarea>'+
-      '<button class="btn bs bsm" style="margin-top:4px" onclick="haProg.guardarCron('+v.id+')">Guardar cronograma</button></details>';
+    return '<details style="margin:6px 0"><summary style="font-size:11px;color:var(--g3);cursor:pointer">✏️ Editar fases</summary><textarea class="fi" id="pg-cr-'+v.id+'" rows="4" style="font-size:12px;font-family:monospace;margin-top:6px">'+esc(serializar(cr.map(function(x){return {t:x.t,d:x.d,data:x.data};})))+'</textarea>'+
+      '<button class="btn bs bsm" style="margin-top:4px" onclick="haProg.guardarCron('+v.id+')">Guardar fases</button></details>';
   }
   function corpo(m){
     var ps=programas(m), v=ps[0], h='';
@@ -7318,7 +7321,7 @@ window.haProg=(function(){
   var _ag=false;
   function agendar(){ if(_ag) return; _ag=true; setTimeout(function(){_ag=false; try{ if(migrar()){save();renderAll();} }catch(e){console.error('Programa:',e);} },60); }
   return {
-    ehMentoria:ehMentoria, grelha:grelha, registarPag:registarPag, fimProduto:fimProduto, linha:linha, concluida:concluida, ultimo:ultimo, fim:fimDe, agendar:agendar,
+    temCron:function(m){var v=ultimo(m);return !!v&&cronOf(v).length>0;}, ehMentoria:ehMentoria, grelha:grelha, registarPag:registarPag, fimProduto:fimProduto, linha:linha, concluida:concluida, ultimo:ultimo, fim:fimDe, agendar:agendar,
     abrir:function(id){atual=id;pinta();document.getElementById('modal-programa').classList.add('open');},
     fechar:function(){document.getElementById('modal-programa').classList.remove('open');},
     parse:parse, serializar:serializar, materializar:materializar,
@@ -7328,7 +7331,7 @@ window.haProg=(function(){
         var _ds=parse(document.getElementById('pg-cr-'+vid).value).filter(function(z){return z.data;}).map(function(z){return z.data;}).sort(), _an=_ds.length?_ds[0]:(v.data||todayISO());
         var data=st.data||addDiasA(_an,st.dia||0), ja=antigo.find(function(a){return a.t===st.t;});
         return {t:st.t,d:st.d||'',data:data,feito:!!(ja&&ja.feito)};}).sort(function(a,b){return a.data<b.data?-1:1;});
-      v.cron=novo; v.fim=null; save();renderAll();pinta();toast('✓ Cronograma guardado');},
+      v.cron=novo; v.fim=null; save();renderAll();pinta();toast('✓ Fases guardadas');},
     guardarFim:function(vid){var v=(DB.vendas||[]).find(function(x){return x.id===vid;});if(!v)return;var d=document.getElementById('pg-fim-'+vid).value;v.fim=d||null;if(d){var p=prod(v.produto);if(p&&!p.dataFim&&!p.duracaoDias)p.dataFim=d;}save();renderAll();pinta();toast('✓ Data de fim guardada');},
     terminar:function(vid){var v=(DB.vendas||[]).find(function(x){return x.id===vid;});if(!v)return;v.estado='terminada';save();renderAll();pinta();toast('✓ Programa concluído — próximo nível desbloqueado');},
     subir:function(id){
