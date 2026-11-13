@@ -7763,6 +7763,30 @@ window.haObM=mk('marketing','haObM','obm-box',['p-captacao']);
 })();
 </script>
 
+
+<!-- Desenho de funil (usado na Captação e nos Funis) -->
+<script>
+window.haFunnel=(function(){
+  var COR=['#0B6E4F','#138A63','#1A9E75','#3DB88F','#6CCBA7'];
+  function esc2(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function draw(st){
+    var n=st.length, H=62, G=5, W=560, bot=Math.round(W*0.22), cx=300, h=n*(H+G)+4;
+    var wt=[]; for(var i=0;i<=n;i++) wt.push(Math.round(W-(W-bot)*i/n));
+    var svg='<svg viewBox="0 0 600 '+h+'" width="100%" style="max-width:760px;display:block;margin:0 auto" role="img" aria-label="Funil">';
+    st.forEach(function(s,i){
+      var y=2+i*(H+G), t=wt[i]/2, b=wt[i+1]/2, c=s.warn?'#B7791F':COR[Math.min(i,COR.length-1)];
+      svg+='<polygon points="'+(cx-t)+','+y+' '+(cx+t)+','+y+' '+(cx+b)+','+(y+H)+' '+(cx-b)+','+(y+H)+'" fill="'+c+'"/>';
+      var pc=s.meta?Math.round(s.val/s.meta*100):null;
+      svg+='<text x="'+cx+'" y="'+(y+25)+'" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="13" font-weight="600">'+esc2(s.n)+'</text>'+
+           '<text x="'+cx+'" y="'+(y+46)+'" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="19" font-weight="700">'+Number(s.val||0).toLocaleString('pt-PT')+(s.meta?'<tspan font-size="11" font-weight="500" opacity=".85"> / '+Number(s.meta).toLocaleString('pt-PT')+' · '+pc+'%</tspan>':'')+'</text>';
+      if(i>0){ var prev=st[i-1].val||0, cv=prev?Math.round((s.val||0)/prev*100):null;
+        svg+='<text x="598" y="'+(y+3)+'" text-anchor="end" fill="#6B7280" font-family="Inter,sans-serif" font-size="11">↓ '+(cv==null?'—':cv+'%')+' passam</text>'; }
+    });
+    return svg+'</svg>';
+  }
+  return {draw:draw};
+})();
+</script>
 <!-- BLOCO 22 · Captação: funil de captação, próximos passos e objetivos -->
 <script>
 window.haCap=(function(){
@@ -7792,11 +7816,10 @@ window.haCap=(function(){
     var gar=null, pior=1e9;
     ET.forEach(function(e,i){ var m=mt[e.k]; var sc=m?v[e.k]/m:(i<3&&v[e.k]?v[ET[i+1].k]/v[e.k]:null); if(sc!=null&&sc<pior){pior=sc;gar=e;} });
     var h='<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div class="ct">Funil de captação · este mês</div><div style="font-size:11.5px;color:var(--g4);margin-top:2px">Muda sozinho com o conteúdo publicado, os leads novos e os passos que marcar como feitos</div></div></div>';
-    ET.forEach(function(e,i){ var val=v[e.k], m=+mt[e.k]||0, p=m?Math.min(100,Math.round(val/m*100)):0, prev=i?v[ET[i-1].k]:0;
-      var w=m?p:(i===0?100:Math.max(val?4:0,Math.round(Math.log10(val+1)/Math.log10((v.alcance||1)+1)*100)));
-      h+='<div style="display:grid;grid-template-columns:140px 1fr 150px;gap:12px;align-items:center;margin:9px 0"><div><b style="font-size:13px">'+e.n+'</b><div style="font-size:10.5px;color:var(--g4)">'+e.d+'</div></div>'+
-        '<div><div class="sbw" style="width:100%;height:12px"><div class="sbb" style="width:'+w+'%;background:'+(gar&&gar.k===e.k?'#B7791F':'var(--g)')+'"></div></div><div style="font-size:10.5px;color:var(--g4);margin-top:3px">'+(i?pct(val,prev)+' do passo anterior':'topo do funil')+(n.extra[e.k]?' · <b style="color:var(--g)">+'+n.extra[e.k].toLocaleString('pt-PT')+' pelas suas ações</b>':'')+(n.feitos[e.k]?' · '+n.feitos[e.k]+' ação'+(n.feitos[e.k]>1?'ões':'')+' feita'+(n.feitos[e.k]>1?'s':''):'')+'</div></div>'+
-        '<div style="text-align:right"><b style="font-size:17px">'+val.toLocaleString('pt-PT')+'</b><span style="font-size:11px;color:var(--g4)"> / </span><input type="number" min="0" value="'+(m||'')+'" placeholder="meta" style="width:62px;padding:3px 5px;border:1px solid #D1D5DB;border-radius:6px;font-size:11.5px" onchange="haCap.meta(\''+e.k+'\',this.value)"></div></div>'; });
+    h+=haFunnel.draw(ET.map(function(e,i){ return {n:e.n,d:e.d,val:v[e.k],meta:+mt[e.k]||0,warn:!!(gar&&gar.k===e.k)}; }));
+    h+='<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--g6);font-size:11.5px;color:var(--g4)"><b style="color:inherit">Metas do mês</b>'+ET.map(function(e){ return '<label style="display:flex;gap:5px;align-items:center">'+e.n+' <input type="number" min="0" value="'+(+mt[e.k]||'')+'" placeholder="meta" style="width:64px;padding:3px 5px;border:1px solid #D1D5DB;border-radius:6px;font-size:11.5px" onchange="haCap.meta(\''+e.k+'\',this.value)"></label>'; }).join('')+'</div>';
+    var ex=ET.filter(function(e){return n.extra[e.k];}).map(function(e){return e.n+' +'+n.extra[e.k].toLocaleString('pt-PT');});
+    if(ex.length) h+='<div style="font-size:11px;color:var(--g);margin-top:6px">Somado pelas suas ações feitas: '+ex.join(' · ')+'</div>';
     h+=(gar?'<div class="al" style="background:#FFFBEA;border:1px solid #FEF08A;color:#854D0E;margin-top:8px;font-size:12px">⚠ Onde mais precisa de trabalhar agora: <b>'+gar.n+'</b> <button class="btn bs bsm" style="margin-left:8px" onclick="haCap.sugerir(\''+gar.k+'\')">+ Sugerir passos</button></div>':'')+'</div>';
     // próximos passos
     var ps=meus(), abertos=ps.filter(function(x){return !x.feito;}).sort(function(a,b){return (a.data||'9').localeCompare(b.data||'9');}), feitos=ps.filter(function(x){return x.feito;}).sort(function(a,b){return (b.feitoEm||'').localeCompare(a.feitoEm||'');}).slice(0,5);
@@ -8110,6 +8133,27 @@ window.haPV=(function(){
     feito:function(id){ var m=get(id); if(!m) return; marcar(m); save(); renderAll(); toast('Passo marcado ✓'); },
     copiar:function(id){ var m=get(id); if(!m) return; if(navigator.clipboard) navigator.clipboard.writeText(msg(m,atual(m))).then(function(){toast('Mensagem copiada');}); }
   };
+})();
+</script>
+
+<!-- BLOCO 28 · Desenho de funil nos painéis Funil (Mentorias e Solutions) -->
+<script>
+(function(){
+  function val(r){ var i=r.querySelectorAll('input'); var b=r.querySelector('.fn-num b'); var real=b?+b.textContent:(i.length>1?+i[0].value:0); var meta=i.length?+i[i.length-1].value:0; return {real:real||0,meta:meta||0}; }
+  function pintar(id){
+    var P=document.getElementById(id); if(!P) return; var box=P.querySelector('.fn-stages'); if(!box) return;
+    var rows=[].slice.call(box.querySelectorAll('.fn-st')); if(!rows.length) return;
+    var st=rows.map(function(r){ var v=val(r), nm=r.querySelector('.nm'); return {n:(nm.childNodes[0]||{}).textContent||'',val:v.real,meta:v.meta}; });
+    var card=box.parentNode, old=card.querySelector('.fn-draw'); if(old) old.remove();
+    var d=document.createElement('div'); d.className='fn-draw'; d.style.cssText='margin:4px 0 14px'; d.innerHTML=haFunnel.draw(st)+'<div style="font-size:11px;color:var(--g4);text-align:center;margin-top:6px">Ajuste os números reais e as metas nas linhas abaixo</div>';
+    card.insertBefore(d,box);
+  }
+  ['p-funil','p-funilsol'].forEach(function(id){
+    var P=document.getElementById(id); if(!P) return; var mo;
+    function ligar(){ mo.observe(P,{childList:true,subtree:true}); }
+    mo=new MutationObserver(function(){ mo.disconnect(); try{ pintar(id); }catch(e){ console.error('Funil desenho:',e); } ligar(); });
+    ligar(); mo.disconnect(); try{ pintar(id); }catch(e){} ligar();
+  });
 })();
 </script>
 </body>
