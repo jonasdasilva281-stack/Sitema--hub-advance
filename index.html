@@ -8056,5 +8056,61 @@ window.haGuia=(function(){
   return {render:render,copiar:function(gi,mi){ var t=G[gi].m[mi].t; if(navigator.clipboard) navigator.clipboard.writeText(t).then(function(){toast('Mensagem copiada — troque [nome] pelo nome do lead');}); }};
 })();
 </script>
+
+<!-- BLOCO 27 · Pós-venda em Entregas: sequência de acompanhamento (quadro) -->
+<script>
+window.haPV=(function(){
+  var PASSOS=[
+   {d:0,t:'Boas-vindas',x:'Olá {n}! Bem-vindo(a) a {p}. Estou muito contente por começarmos. Nos próximos dias envio-lhe o acesso e o primeiro passo.'},
+   {d:1,t:'Acesso e 1.º passo',x:'Olá {n}, já tem tudo para começar. O primeiro passo é simples e deve levar menos de 30 minutos. Se algo não abrir, diga-me logo.'},
+   {d:3,t:'Check-in',x:'Olá {n}, como correu o primeiro passo? Ficou alguma dúvida? Respondo-lhe hoje mesmo.'},
+   {d:7,t:'Primeira vitória',x:'Olá {n}, já passou uma semana! Qual foi a primeira coisa que já mudou? Quero celebrar consigo.'},
+   {d:14,t:'Ponto de situação',x:'Olá {n}, duas semanas! Vamos ver o que está a funcionar e o que precisa de ajuste? Diga-me como se sente.'},
+   {d:30,t:'Feedback do 1.º mês',x:'Olá {n}, um mês juntos. De 0 a 10, como está a experiência? O que posso melhorar para si?'},
+   {d:60,t:'Resultados e testemunho',x:'Olá {n}, tenho visto a sua evolução e estou muito contente. Podia partilhar, em duas linhas, o resultado que já teve? Ajuda muito outras pessoas.'},
+   {d:90,t:'Próximo nível',x:'Olá {n}, o que gostaria de alcançar a seguir? Tenho uma proposta para o seu próximo passo.'}
+  ];
+  function addD(d,n){ var x=new Date(d+'T12:00:00'); x.setDate(x.getDate()+n); return isoLocal(x); }
+  function pn(m){ return String(m.nome||'').trim().split(/\s+/)[0]; }
+  function prog(m){ var pr=(DB.produtos||[]).find(function(x){return x.nome===m.produto;}); return (pr&&(pr.nomeC||pr.nome))||m.produto||'o programa'; }
+  function msg(m,i){ return PASSOS[i].x.replace('{n}',pn(m)).replace('{p}',prog(m)); }
+  function inicio(m){
+    if(m.pv&&m.pv.inicio) return m.pv.inicio;
+    var vs=(DB.vendas||[]).filter(function(v){return v.cliente===m.nome&&v.data;}).map(function(v){return v.data;}).sort();
+    if(vs.length) return vs[0];
+    var mt=/em (\d{4}-\d{2}-\d{2})/.exec(m.notas||''); return mt?mt[1]:todayISO();
+  }
+  function atual(m){ var f=(m.pv&&m.pv.feitos)||[]; for(var i=0;i<PASSOS.length;i++) if(f.indexOf(i)<0) return i; return PASSOS.length; }
+  function data(m,i){ return addD(inicio(m),PASSOS[i].d); }
+  function ativos(){ return (DB.mentorados||[]).filter(function(m){ return !m.estado||m.estado==='Ativo'; }); }
+  function wa(m,t){ var n=normalizeTel(m.tel||m.contacto||''); return n&&n.length>=6?'https://wa.me/'+n+'?text='+encodeURIComponent(t):''; }
+  function get(id){ return DB.mentorados.find(function(x){return x.id===id;}); }
+  function marcar(m){ if(!m.pv) m.pv={feitos:[]}; var i=atual(m); if(i<PASSOS.length) m.pv.feitos.push(i); }
+  function render(){
+    var P=document.getElementById('p-entregas'); if(!P) return;
+    var box=document.getElementById('pv-box');
+    if(!box){ box=document.createElement('div'); box.id='pv-box'; var ref=document.getElementById('ent-pessoas'); P.insertBefore(box,ref||P.firstChild); }
+    var hoje=todayISO(), A=ativos(), dueN=A.filter(function(m){var i=atual(m);return i<PASSOS.length&&data(m,i)<=hoje;}).length;
+    var cols=PASSOS.map(function(ps,i){
+      var ls=A.filter(function(m){return atual(m)===i;}), ex=ls[0]||{nome:'[nome]',produto:''};
+      var cards=ls.map(function(m){ var dt=data(m,i), due=dt<=hoje;
+        return '<div class="rq-k'+(due?' due':'')+'"><b onclick="haProg.abrir('+m.id+')">'+esc(m.nome)+'</b><div class="s">'+esc(prog(m))+'<br>'+(due?'<b style="color:#B7791F;cursor:default">'+(dt<hoje?'Atrasado desde '+fmtDate(dt):'Enviar hoje')+'</b>':'Para '+fmtDate(dt))+'</div>'+
+          '<button class="go" onclick="haPV.enviar('+m.id+')">Enviar</button><button onclick="haPV.feito('+m.id+')">Feito</button><button onclick="haPV.copiar('+m.id+')">Copiar</button></div>'; }).join('');
+      return '<div class="rq-c" style="--hx:#0B6E4F"><div class="rq-h"><b>'+(i+1)+' · '+ps.t+'</b><span>'+(ps.d===0?'Dia 0 (compra)':'Dia '+ps.d+' após a compra')+' · '+ls.length+'</span></div><div class="rq-m">'+esc(msg(ex,i))+'</div>'+(cards||'<div class="rq-v">Ninguém neste passo</div>')+'</div>';
+    });
+    var fim=A.filter(function(m){return atual(m)>=PASSOS.length;});
+    cols.push('<div class="rq-c" style="--hx:#777"><div class="rq-h"><b>Sequência concluída</b><span>'+fim.length+'</span></div>'+(fim.map(function(m){return '<div class="rq-k"><b onclick="haProg.abrir('+m.id+')">'+esc(m.nome)+'</b><div class="s">'+esc(prog(m))+'</div></div>';}).join('')||'<div class="rq-v">Ninguém</div>')+'</div>');
+    box.innerHTML='<div class="mt-lbl" style="margin:2px 0 8px">💬 Pós-venda · sequência de acompanhamento'+(dueN?' <span class="tag ty" style="font-size:10px">'+dueN+' para hoje</span>':'')+'</div><div style="font-size:11.5px;color:var(--g4);margin-bottom:8px">Cada pessoa percorre estes passos a contar do dia da compra. Enviar abre o WhatsApp e marca o passo como feito.</div>'+(A.length?'<div class="rq">'+cols.join('')+'</div>':'<div class="rq-v">Ainda não há pessoas em acompanhamento.</div>');
+  }
+  var _r=window.renderEntregas; window.renderEntregas=function(){ var r=_r.apply(this,arguments); try{render();}catch(e){console.error('Pós-venda:',e);} return r; };
+  return {render:render,PASSOS:PASSOS,atual:atual,data:data,ativos:ativos,
+    enviar:function(id){ var m=get(id); if(!m) return; var t=msg(m,atual(m)), w=wa(m,t);
+      if(w) window.open(w,'_blank'); else { try{navigator.clipboard.writeText(t);}catch(e){} toast('Sem telemóvel — mensagem copiada','#B7791F'); }
+      marcar(m); save(); renderAll(); },
+    feito:function(id){ var m=get(id); if(!m) return; marcar(m); save(); renderAll(); toast('Passo marcado ✓'); },
+    copiar:function(id){ var m=get(id); if(!m) return; if(navigator.clipboard) navigator.clipboard.writeText(msg(m,atual(m))).then(function(){toast('Mensagem copiada');}); }
+  };
+})();
+</script>
 </body>
 </html>
