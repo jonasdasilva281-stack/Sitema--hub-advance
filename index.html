@@ -7659,5 +7659,92 @@ window.haAgenda=(function(){
   return {f:function(k){ filtro=k; renderAgenda(); }, eventos:eventos};
 })();
 </script>
+
+<!-- BLOCO 20 · Metas & objetivos com plano de ação, por baixo das estratégias (Funil) -->
+<script>
+window.haOb=(function(){
+  var aberto=false, edit=null;
+  function L(){ DB.objetivos=DB.objetivos||[]; var g=(typeof HA_AREA!=='undefined'?HA_AREA:null); return DB.objetivos.filter(function(o){return !g||g==='geral'||(o.area||'mentorias')===g;}); }
+  function add(d,n){ var x=new Date(d+'T12:00:00'); x.setDate(x.getDate()+n); return isoLocal(x); }
+  function dif(a,b){ return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000); }
+  function dm(d){ return new Date(d+'T12:00:00').toLocaleDateString('pt-PT',{day:'2-digit',month:'2-digit'}); }
+  function fmt(n){ return (Math.round(n*10)/10).toLocaleString('pt-PT'); }
+  function acoesDe(o){ return (o.acoes||[]).filter(function(a){return a.t;}); }
+  function feitoDia(o,d){ var ac=acoesDe(o); if(!ac.length) return null; var n=ac.filter(function(a,i){return o.feitos&&o.feitos[d+'|'+i];}).length; return Math.round(n/ac.length*100); }
+  function box(){
+    var P=document.querySelector('#p-funil.on, #p-funilsol.on')||document.getElementById('p-funil')||document.getElementById('p-funilsol'); return P;
+  }
+  function form(){
+    var o=edit||{nome:'',meta:'',unidade:'',atual:0,ini:todayISO(),fim:'',acoes:[]};
+    var v=function(x){return esc(x==null?'':x);};
+    return '<div class="card" style="margin-bottom:12px;background:#FAFAFA"><div class="ct" style="margin-bottom:8px">'+(edit&&edit.id?'Editar objetivo':'Novo objetivo')+'</div>'+
+      '<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px"><label class="fl">Objetivo<input class="fi" id="ob-nome" value="'+v(o.nome)+'" placeholder="Ex.: 40 leads para o workshop"></label><label class="fl">Meta (número)<input class="fi" id="ob-meta" type="number" min="0" value="'+v(o.meta)+'"></label><label class="fl">Unidade<input class="fi" id="ob-un" value="'+v(o.unidade)+'" placeholder="leads, €, vendas"></label></div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px"><label class="fl">Já tenho<input class="fi" id="ob-atual" type="number" min="0" value="'+v(o.atual)+'"></label><label class="fl">Começa<input class="fi" id="ob-ini" type="date" value="'+v(o.ini)+'"></label><label class="fl">Prazo<input class="fi" id="ob-fim" type="date" value="'+v(o.fim)+'"></label></div>'+
+      '<label class="fl" style="display:block;margin-top:8px">Ações diárias (uma por linha) — o que fazer todos os dias para chegar lá<textarea class="fi" id="ob-acoes" rows="4" placeholder="Publicar 1 reel&#10;10 stories com chamada para o workshop&#10;Responder a todas as DMs&#10;Contactar 5 leads">'+v(acoesDe(o).map(function(a){return a.t;}).join('\n'))+'</textarea></label>'+
+      '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn bp bsm" onclick="haOb.guardar()">Guardar objetivo</button><button class="btn bs bsm" onclick="haOb.cancelar()">Cancelar</button></div></div>';
+  }
+  function cartao(o){
+    var hoje=todayISO(), meta=+o.meta||0, atual=+o.atual||0, pc=meta?Math.min(100,Math.round(atual/meta*100)):0;
+    var dias=o.fim?dif(hoje,o.fim):null, falta=Math.max(0,meta-atual);
+    var ritmo=(dias!=null&&dias>0&&falta>0)?falta/dias:0, atrasado=dias!=null&&dias<0&&falta>0;
+    var ac=acoesDe(o);
+    var h='<div class="card" style="margin-bottom:12px;'+(o.foco?'border:1.5px solid var(--g)':'')+'">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap"><div><div style="font-size:14px;font-weight:700">'+(o.foco?'⭐ ':'')+esc(o.nome)+'</div><div style="font-size:11.5px;color:var(--g4);margin-top:2px">'+(o.ini?dm(o.ini)+' → ':'')+(o.fim?dm(o.fim)+(dias>=0?' · faltam '+dias+' dia'+(dias===1?'':'s'):' · <span style="color:var(--re)">prazo passou</span>'):'sem prazo')+'</div></div>'+
+      '<div style="display:flex;gap:5px;flex-wrap:wrap"><button class="btn bs bsm" onclick="haOb.foco('+o.id+')">'+(o.foco?'Foco atual':'Pôr em foco')+'</button><button class="btn bs bsm" onclick="haOb.editar('+o.id+')">✏️</button><button class="btn bd bsm" onclick="haOb.apagar('+o.id+')">×</button></div></div>'+
+      '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px"><div style="font-size:22px;font-weight:700">'+fmt(atual)+'<span style="font-size:12px;color:var(--g4);font-weight:500"> / '+fmt(meta)+' '+esc(o.unidade||'')+'</span></div><span style="font-size:12px;color:var(--g4)">'+pc+'%</span><span style="margin-left:auto;font-size:11.5px;color:var(--g4)">Atualizar: <input type="number" min="0" value="'+atual+'" style="width:80px;padding:4px 6px;border:1px solid #D1D5DB;border-radius:6px" onchange="haOb.atual('+o.id+',this.value)"></span></div>'+
+      '<div class="sbw" style="width:100%"><div class="sbb" style="width:'+pc+'%;background:'+(pc>=100?'var(--g)':atrasado?'var(--re)':'#B7791F')+'"></div></div>'+
+      '<div style="font-size:12px;margin-top:6px;color:'+(atrasado?'var(--re)':'var(--g3)')+'">'+(falta<=0?'✓ Meta alcançada':atrasado?'Faltam '+fmt(falta)+' e o prazo já passou':ritmo?'Faltam <b>'+fmt(falta)+'</b> · precisa de <b>'+fmt(ritmo)+' por dia</b> ('+fmt(ritmo*7)+' por semana)':'Faltam '+fmt(falta))+'</div>';
+    if(ac.length){
+      h+='<div class="mt-lbl" style="margin:14px 0 6px">Ações de hoje</div>'+ac.map(function(a,i){ var k=hoje+'|'+i, on=o.feitos&&o.feitos[k];
+        return '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12.5px;cursor:pointer;'+(on?'text-decoration:line-through;color:var(--g4)':'')+'"><input type="checkbox" '+(on?'checked':'')+' style="accent-color:var(--g)" onchange="haOb.tick('+o.id+',\''+k+'\',this.checked)">'+esc(a.t)+'</label>'; }).join('');
+      var ult=[]; for(var i=6;i>=0;i--){ var d=add(hoje,-i), p=feitoDia(o,d); ult.push('<div style="flex:1;text-align:center;font-size:10px;color:var(--g4)"><div style="height:26px;display:flex;align-items:flex-end"><div style="width:100%;height:'+Math.max(2,Math.round((p||0)/100*26))+'px;background:'+((p||0)>=100?'var(--g)':(p||0)>0?'#B7791F':'#E5E7EB')+';border-radius:3px"></div></div>'+new Date(d+'T12:00:00').toLocaleDateString('pt-PT',{weekday:'narrow'})+'</div>'); }
+      h+='<div style="display:flex;gap:4px;margin-top:8px">'+ult.join('')+'</div><div style="font-size:10.5px;color:var(--g4);margin-top:2px">Ações feitas nos últimos 7 dias</div>';
+    }
+    if(o.fim&&o.ini&&meta&&dif(o.ini,o.fim)>=7){
+      var tot=dif(o.ini,o.fim)+1, sems=Math.ceil(tot/7), base=+o.base||0, linhas='';
+      for(var s=0;s<sems;s++){ var a=add(o.ini,s*7), b=add(o.ini,Math.min(tot-1,s*7+6)), acum=base+(meta-base)*Math.min(1,(s*7+7)/tot), atual_=a<=hoje&&hoje<=b;
+        linhas+='<div style="display:flex;justify-content:space-between;padding:5px 8px;border-radius:6px;font-size:11.5px;'+(atual_?'background:var(--g7);font-weight:600':'')+'"><span>Semana '+(s+1)+' · '+dm(a)+' a '+dm(b)+(atual_?' · agora':'')+'</span><span>até '+fmt(acum)+' '+esc(o.unidade||'')+'</span></div>'; }
+      h+='<details style="margin-top:10px"><summary style="font-size:11.5px;color:var(--g3);cursor:pointer">📅 Plano por semanas (onde devia estar em cada data)</summary><div style="margin-top:6px">'+linhas+'</div></details>';
+    }
+    return h+'</div>';
+  }
+  function desenhar(){
+    var P=box(); if(!P) return; var el=document.getElementById('ob-box');
+    if(!el){ el=document.createElement('div'); el.id='ob-box'; el.style.marginTop='18px'; P.appendChild(el); }
+    else if(el.parentNode!==P){ P.appendChild(el); }
+    var ls=L().filter(function(o){return !o.concluido;}).sort(function(a,b){return (b.foco?1:0)-(a.foco?1:0)||(a.fim||'9').localeCompare(b.fim||'9');});
+    var foco=ls.filter(function(o){return o.foco;})[0];
+    el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><div class="ct">🎯 Metas &amp; objetivos · plano de ação</div><div style="font-size:11.5px;color:var(--g4);margin-top:2px">O que decidimos alcançar, até quando e o que fazer todos os dias</div></div>'+(aberto?'':'<button class="btn bp bsm" onclick="haOb.novo()">+ Objetivo</button>')+'</div>'+
+      (foco?'<div class="al algr" style="margin-bottom:10px">⭐ A trabalhar agora: <b>'+esc(foco.nome)+'</b>'+(foco.fim?' · até '+dm(foco.fim):'')+'</div>':'')+
+      (aberto?form():'')+
+      (ls.length?ls.map(cartao).join(''):(aberto?'':'<div class="card"><div class="empty">Ainda não definiu objetivos. Escolha uma meta, um prazo e as ações de cada dia.</div></div>'));
+  }
+  function find(id){ return (DB.objetivos||[]).find(function(o){return o.id===id;}); }
+  var obs=null;
+  function init(){
+    ['p-funil','p-funilsol'].forEach(function(id){ var P=document.getElementById(id); if(!P||P._ob) return; P._ob=1;
+      new MutationObserver(function(){ if(P.classList.contains('on')&&!P.querySelector('#ob-box')&&P.children.length) desenhar(); }).observe(P,{childList:true});
+      new MutationObserver(function(){ if(P.classList.contains('on')&&!P.querySelector('#ob-box')&&P.children.length) desenhar(); }).observe(P,{attributes:true,attributeFilter:['class']}); });
+  }
+  init();
+  return {
+    desenhar:desenhar,
+    novo:function(){ edit=null; aberto=true; desenhar(); },
+    editar:function(id){ edit=find(id); aberto=true; desenhar(); },
+    cancelar:function(){ aberto=false; edit=null; desenhar(); },
+    guardar:function(){
+      var g=function(i){return document.getElementById(i).value;}, nome=g('ob-nome').trim(); if(!nome){ toast('Escreva o objetivo','#C0392B'); return; }
+      var o={nome:nome,meta:+g('ob-meta')||0,unidade:g('ob-un').trim(),atual:+g('ob-atual')||0,ini:g('ob-ini')||todayISO(),fim:g('ob-fim'),acoes:g('ob-acoes').split('\n').map(function(t){return {t:t.trim()};}).filter(function(a){return a.t;})};
+      DB.objetivos=DB.objetivos||[];
+      if(edit&&edit.id){ var x=find(edit.id); o.feitos=x.feitos; Object.assign(x,o); } else { o.id=uid(); o.area=(typeof HA_AREA!=='undefined'&&HA_AREA)||'mentorias'; o.base=o.atual; o.feitos={}; if(!L().some(function(z){return z.foco&&!z.concluido;})) o.foco=true; DB.objetivos.push(o); }
+      aberto=false; edit=null; save(); desenhar(); toast('✓ Objetivo guardado');
+    },
+    atual:function(id,v){ var o=find(id); if(!o) return; o.atual=+v||0; if(o.meta&&o.atual>=o.meta){ toast('🎉 Meta alcançada!'); } save(); desenhar(); },
+    tick:function(id,k,on){ var o=find(id); if(!o) return; o.feitos=o.feitos||{}; if(on) o.feitos[k]=1; else delete o.feitos[k]; save(); desenhar(); },
+    foco:function(id){ (DB.objetivos||[]).forEach(function(o){ if(L().indexOf(o)>=0) o.foco=(o.id===id); }); save(); desenhar(); },
+    apagar:function(id){ if(!confirm('Apagar este objetivo?')) return; DB.objetivos=(DB.objetivos||[]).filter(function(o){return o.id!==id;}); save(); desenhar(); }
+  };
+})();
+</script>
 </body>
 </html>
