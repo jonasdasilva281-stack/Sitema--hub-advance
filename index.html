@@ -1115,6 +1115,11 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
   <div class="fg"><label class="fl">Nome curto</label><input class="fi" id="pd-nomec"></div>
   <div class="fg"><label class="fl">Link do produto <span style="font-size:9.5px;color:var(--g4);font-weight:400">página de venda, checkout ou Hotmart</span></label><input class="fi" id="pd-link" type="url" placeholder="https://"></div>
   <div class="fr fg">
+    <div><label class="fl">Termina em <span style="font-size:9.5px;color:var(--g4);font-weight:400">ex.: dia do workshop</span></label><input type="date" class="fi" id="pd-datafim"></div>
+    <div><label class="fl">ou dura (dias) <span style="font-size:9.5px;color:var(--g4);font-weight:400">a contar da compra</span></label><input type="number" min="0" class="fi" id="pd-durdias" placeholder="Ex: 30"></div>
+  </div>
+  <div style="font-size:11px;color:var(--g4);margin:-6px 0 12px">A pessoa só avança para o nível seguinte depois de terminar este.</div>
+  <div class="fr fg">
     <div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pd-valor-input" placeholder="0.00" oninput="pdCalcParcela();pdCalcPreco()"></div>
     <div><label class="fl">Tipo de cobrança</label>
       <select class="fi" id="pd-tipo" onchange="pdToggleTipo()">
@@ -2717,7 +2722,7 @@ function entregaTexto(p){
 }
 function novoProduto(){
   document.getElementById('pd-id').value='';
-  ['pd-nome','pd-nomec','pd-link','pd-desc','pd-valor-input','pd-parcelas','pd-horas','pd-horasmes','pd-meses'].forEach(function(id){document.getElementById(id).value='';});
+  ['pd-nome','pd-nomec','pd-link','pd-datafim','pd-durdias','pd-desc','pd-valor-input','pd-parcelas','pd-horas','pd-horasmes','pd-meses'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('pd-digital').checked=false;
   pdSetEntregaveis([]);
   document.getElementById('pd-tipo').value='unico'; pdToggleTipo();
@@ -2732,6 +2737,8 @@ function editProduto(id){
   document.getElementById('pd-nome').value=p.nome;
   document.getElementById('pd-nomec').value=p.nomeC||'';
   document.getElementById('pd-link').value=p.link||'';
+  document.getElementById('pd-datafim').value=p.dataFim||'';
+  document.getElementById('pd-durdias').value=p.duracaoDias||'';
   document.getElementById('pd-valor-input').value=p.valor;
   document.getElementById('pd-tipo').value=p.tipo||'unico'; pdToggleTipo();
   document.getElementById('pd-parcelas').value=p.parcelas||'';
@@ -2758,6 +2765,8 @@ function saveProduto(){
   var obj={nome:nome,nomeC:document.getElementById('pd-nomec').value||nome,valor:valor,tipo:tipo,parcelas:parcelas,duracao:duracao,ate:ate,
     desc:document.getElementById('pd-desc').value,
     link:(function(v){v=(v||'').trim();return v&&!/^https?:\/\//i.test(v)?'https://'+v:v;})(document.getElementById('pd-link').value),
+    dataFim:document.getElementById('pd-datafim').value||'',
+    duracaoDias:parseInt(document.getElementById('pd-durdias').value)||null,
     horas:parseFloat(document.getElementById('pd-horas').value)||null,
     horasMes:parseFloat(document.getElementById('pd-horasmes').value)||null,
     meses:parseInt(document.getElementById('pd-meses').value)||null,
@@ -2811,6 +2820,7 @@ function renderProdutos(){
       +'<div style="font-size:24px;font-weight:700;color:var(--g);margin:8px 0 4px">'+precoStr+'</div>'
       +(duracaoStr?'<div style="font-size:10.5px;color:var(--g4);margin-bottom:4px">'+duracaoStr+'</div>':'')
       +(p.desc?'<div style="font-size:11px;color:var(--g4);margin-bottom:8px">'+esc(p.desc)+'</div>':'')
+      +((p.dataFim||p.duracaoDias)?'<div style="font-size:10.5px;color:var(--g4);margin-bottom:4px">⏳ '+(p.dataFim?'Termina a '+fmtDate(p.dataFim):'Dura '+p.duracaoDias+' dias')+'</div>':'')
       +(p.link?'<div style="font-size:11px;margin-bottom:8px"><a href="'+esc(p.link)+'" target="_blank" rel="noopener" style="color:var(--bl);text-decoration:none;font-weight:500">🔗 Abrir link do produto</a> <span style="cursor:pointer;color:var(--g4)" onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+esc(p.link)+'\');toast(\'Link copiado\')" title="Copiar link">⧉</span></div>':'')
       +'<div style="font-size:10.5px;color:var(--g3);margin-bottom:4px">📦 Entrega: '+entregaTexto(p)+'</div>'
       +((p.horas||p.horasMes)?'<div style="font-size:10.5px;color:var(--g3);margin-bottom:8px">⏱ '+(p.horas?p.horas+'h para entregar':'')+(p.horas&&p.horasMes?' · ':'')+(p.horasMes?p.horasMes+'h/mês':'')
@@ -4006,6 +4016,8 @@ function saveVendaRapida(){
   const estado=document.getElementById('vr-estado').value;
   const dataInicio=document.getElementById('vr-data').value||todayISO();
   const leadId=parseInt(document.getElementById('vr-leadid').value)||0;
+  var _lb=leadId&&DB.leads.find(function(l){return l.id===leadId;});
+  if(_lb&&_lb.cliente&&_lb.cliente.produto!==produto&&!haClientes.concluido(_lb)){ toast('⏳ '+_lb.nome+' ainda está em '+_lb.cliente.produto+' até '+fmtDate(haClientes.fim(_lb))+'. Só pode começar o próximo depois de terminar.','#C0392B'); return; }
   if(!cliente||!valor){toast('Preenche cliente e valor','#C0392B');return;}
   if(!produto||!prodPorNome(produto)){toast('⚠ Toda a compra tem de estar ligada a um produto','#C0392B');return;}
   const vlParcela=parseFloat((valor/parcelas).toFixed(2));
@@ -7147,6 +7159,7 @@ window.haClientes=(function(){
     return null;
   }
   function mensagem(l){
+    if(!concluido(l)) return 'Olá '+primeiro(l.nome)+'! Está tudo bem com o '+nomeP(prod(l.cliente.produto))+'? Se tiver alguma dúvida até '+fmtDate(fim(l))+', diga-me.';
     var c=l.cliente, atual=prod(c.produto), nx=prod(c.proximo);
     var n=primeiro(l.nome);
     if(!nx) return 'Olá '+n+'! Como está a correr depois do '+nomeP(atual)+'? Diga-me o que já conseguiu aplicar e onde sente mais dificuldade.';
@@ -7154,6 +7167,16 @@ window.haClientes=(function(){
       'Pelo que me conta, o passo seguinte natural é o '+nomeP(nx)+'. Quer que lhe explique em 5 minutos como funciona?'+(nx.link?'\nDetalhes: '+nx.link:'');
   }
   // chamado ao registar o pagamento de um produto que não é mentoria
+  function calcFim(nome,compra){
+    var p=prod(nome)||{};
+    if(p.dataFim&&p.dataFim>=compra) return p.dataFim;
+    if(p.duracaoDias) return addDiasA(compra,p.duracaoDias);
+    if(p.meses) return addDiasA(compra,p.meses*30);
+    return compra;
+  }
+  function addDiasA(d,n){var x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);}
+  function fim(l){return l.cliente.fim||calcFim(l.cliente.produto,l.cliente.desde);}
+  function concluido(l){return todayISO()>fim(l);}
   function registar(l,produto,valor){
     var c=l.cliente;
     if(!c){ l.cliente=c={desde:todayISO(),historico:[]}; }
@@ -7161,7 +7184,8 @@ window.haClientes=(function(){
     c.historico.push({produto:produto,data:todayISO(),valor:valor});
     c.proximo=proximoAuto(produto);
     c.nivel=c.historico.length;
-    l.etapa='fechado'; l.proxData=addDias(3); l.proxTipo='Acompanhamento';
+    c.fim=calcFim(produto,todayISO());
+    l.etapa='fechado'; l.proxData=c.fim>todayISO()?addDiasA(c.fim,1):addDias(3); l.proxTipo='Acompanhamento';
     log(l,'Cliente do funil: '+produto);
   }
   function lista(){return DB.leads.filter(function(l){return l.cliente;});}
@@ -7175,7 +7199,7 @@ window.haClientes=(function(){
     log(l,'Passou a mentorada'); l.cliente.mentorado=true; save(); renderAll(); toast('🎉 '+l.nome+' é agora mentorada');
   }
   function card(l){
-    var c=l.cliente, hoje=todayISO(), due=l.proxData&&l.proxData<=hoje;
+    var c=l.cliente, hoje=todayISO(), due=l.proxData&&l.proxData<=hoje, curso=!concluido(l);
     var opts='<option value="">— sem próximo nível —</option>'+DB.produtos.filter(function(x){return x.nome!==c.produto;}).map(function(x){
       return '<option value="'+esc(x.nome)+'"'+(x.nome===c.proximo?' selected':'')+'>'+esc(nomeP(x))+' · €'+x.valor+'</option>';}).join('');
     var hist=c.historico.map(function(h,i){return '<span'+(i===c.historico.length-1?' class="at"':'')+'>'+esc(nomeP(prod(h.produto))||h.produto)+'</span>';}).join('<i>→</i>');
@@ -7183,15 +7207,15 @@ window.haClientes=(function(){
     var txt=mensagem(l), ch=canal(l,txt);
     return '<div class="rc-card'+(due?' due':' ok')+'" style="border-left-color:'+(due?'#B7791F':'#0B6E4F')+'">'+
       '<div class="rc-top"><div><div class="rc-name" onclick="editLead('+l.id+')">'+esc(l.nome)+'</div>'+
-      '<div class="rc-sub">Cliente desde '+fmtDate(c.desde)+' · comprou '+esc(nomeP(prod(c.produto))||c.produto)+'</div></div>'+
+      '<div class="rc-sub">Cliente desde '+fmtDate(c.desde)+' · comprou '+esc(nomeP(prod(c.produto))||c.produto)+(curso?' · <b style="color:#B7791F">⏳ em curso até '+fmtDate(fim(l))+'</b>':' · <b style="color:#0B6E4F">concluído</b>')+'</div></div>'+
       '<div class="rc-sub" style="text-align:right">'+(due?'<b style="color:#B7791F">Contactar hoje</b>':'Próximo contacto: '+fmtDate(l.proxData))+'</div></div>'+
       '<div class="cl-lv">'+hist+(nx?'<i>→</i><span class="nx">'+esc(nomeP(nx))+' · €'+nx.valor+'</span>':'')+'</div>'+
       '<div class="rc-msg">'+esc(txt)+'</div>'+
       '<div class="rc-acts">'+
         (ch?'<button class="rc-b wa" onclick="haClientes.enviar('+l.id+')">'+(ch.k==='wa'?'💬 Abrir WhatsApp e marcar contactado':'📸 Copiar mensagem, abrir Instagram e marcar contactado')+'</button>':'<button class="rc-b" onclick="editLead('+l.id+')">Adicionar telemóvel ou Instagram</button>')+
         '<button class="rc-b ok" onclick="haClientes.contactado('+l.id+')">✓ Já contactei</button>'+
-        '<button class="rc-b ok" onclick="haClientes.comprou('+l.id+')" '+(nx?'':'disabled')+'>🛒 Comprou o próximo nível</button>'+
-        '<button class="rc-b" onclick="if(confirm(\'Passar '+esc(primeiro(l.nome))+' a mentorada?\'))haClientes.promover('+l.id+')">🎓 Passar a mentorada</button>'+
+        '<button class="rc-b ok" onclick="haClientes.comprou('+l.id+')" '+(nx&&!curso?'':'disabled')+(curso?' title="Só depois de terminar o nível atual"':'')+'>🛒 Comprou o próximo nível</button>'+
+        '<button class="rc-b" '+(curso?'disabled ':'')+'onclick="if(confirm(\'Passar '+esc(primeiro(l.nome))+' a mentorada?\'))haClientes.promover('+l.id+')">🎓 Passar a mentorada</button>'+
         '<select class="cl-sel" onchange="haClientes.proximo('+l.id+',this.value)" title="Próximo nível">'+opts+'</select>'+
       '</div></div>';
   }
@@ -7234,8 +7258,8 @@ window.haClientes=(function(){
     box.innerHTML=ls.length?ls.map(card).join(''):'<div class="rc-empty">Ainda não há clientes no funil. Quando fechar um lead num produto de entrada (ex.: workshop), ele aparece aqui.</div>';
   }
   return {
-    render:render, registar:registar, promover:promover,
-    contactado:function(id){var l=lead(id);if(!l)return;log(l,'Acompanhamento feito');l.proxData=addDias(7);l.proxTipo='Acompanhamento';save();renderAll();toast('✓ Próximo contacto daqui a 7 dias');},
+    render:render, registar:registar, promover:promover, concluido:concluido, fim:fim,
+    contactado:function(id){var l=lead(id);if(!l)return;log(l,'Acompanhamento feito');var f=fim(l);l.proxData=(f>=todayISO())?addDiasA(f,1):addDias(7);l.proxTipo='Acompanhamento';save();renderAll();toast('✓ Próximo contacto a '+fmtDate(l.proxData));},
     enviar:function(id){var l=lead(id);if(!l)return;var t=mensagem(l),c=canal(l,t);if(!c)return;
       if(c.k==='ig'){try{navigator.clipboard.writeText(t);}catch(e){} toast('Mensagem copiada — cole na conversa do Instagram');}
       window.open(c.url,'_blank'); haClientes.contactado(id);},
