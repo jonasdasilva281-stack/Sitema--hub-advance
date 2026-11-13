@@ -7833,10 +7833,11 @@ window.haCap=(function(){
       return '<button type="button" onclick="'+go(t[0])+'" style="flex:1;min-width:150px;text-align:left;padding:10px 14px;border-radius:10px;border:1.5px solid '+(on?'#0B6E4F':'#E5E7EB')+';background:'+(on?'#0B6E4F':'#fff')+';color:'+(on?'#fff':'inherit')+';cursor:pointer;font-family:inherit"><div style="font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.05em">'+(i+1)+'</div><div style="font-size:13.5px;font-weight:700">'+t[1]+'</div><div style="font-size:11px;opacity:.8">'+t[2]+'</div></button>'; }).join('')+'</div>';
   }
   function ga(){ return (typeof HA_AREA!=='undefined'&&HA_AREA)||null; }
+  function at(x){ var g=ga(); if(g==='mentorias'||g==='solutions') return ''; return ' <span class="tag tgr" style="font-size:9.5px">'+((x.area||'mentorias')==='solutions'?'Solutions':'Mentorias')+'</span>'; }
   function agora(){
     var hoje=todayISO(), g=ga(), its=[];
     var ok=function(x){return !g||g==='geral'||(x.area||'mentorias')===g;};
-    ((DB.captacao&&DB.captacao.passos)||[]).forEach(function(x){ if(!x.feito&&ok(x)&&(!x.data||x.data<=hoje)) its.push({h:'<label style="display:flex;gap:9px;align-items:center;cursor:pointer"><input type="checkbox" style="accent-color:var(--g);width:17px;height:17px" onchange="haCap.tick('+x.id+',this.checked)"><span style="font-size:13px;font-weight:600">'+esc(x.t)+'</span>'+(x.data&&x.data<hoje?' <span class="tag tr" style="font-size:9.5px">atrasado</span>':'')+'<span class="tag tg" style="font-size:9.5px">Passo</span></label>'}); });
+    ((DB.captacao&&DB.captacao.passos)||[]).forEach(function(x){ if(!x.feito&&ok(x)&&(!x.data||x.data<=hoje)) its.push({h:'<label style="display:flex;gap:9px;align-items:center;cursor:pointer"><input type="checkbox" style="accent-color:var(--g);width:17px;height:17px" onchange="haCap.tick('+x.id+',this.checked)"><span style="font-size:13px;font-weight:600">'+esc(x.t)+'</span>'+at(x)+(x.data&&x.data<hoje?' <span class="tag tr" style="font-size:9.5px">atrasado</span>':'')+'<span class="tag tg" style="font-size:9.5px">Passo</span></label>'}); });
     (DB.objetivos||[]).filter(function(o){return (o.tipo||'vendas')==='marketing'&&!o.concluido&&ok(o);}).forEach(function(o){ (o.acoes||[]).forEach(function(a,i){ var k=hoje+'|'+i; if(a.t&&!(o.feitos&&o.feitos[k])) its.push({h:'<label style="display:flex;gap:9px;align-items:center;cursor:pointer"><input type="checkbox" style="accent-color:var(--g);width:17px;height:17px" onchange="haObM.tick('+o.id+',\''+k+'\',this.checked);renderAll()"><span style="font-size:13px;font-weight:600">'+esc(a.t)+'</span><span class="tag ty" style="font-size:9.5px">Diário · '+esc(o.nome)+'</span></label>'}); }); });
     var lim=(function(){var d=new Date(hoje+'T12:00:00');d.setDate(d.getDate()+2);return isoLocal(d);})();
     (DB.conteudo||[]).filter(function(c){return c.estado!=='Publicado'&&ok(c)&&c.data&&c.data<=lim;}).forEach(function(c){ its.push({h:'<div style="display:flex;gap:9px;align-items:center;cursor:pointer" onclick="'+go('marketing')+'"><span style="width:17px;text-align:center">📸</span><span style="font-size:13px;font-weight:600">Publicar: '+esc(c.titulo)+'</span><span class="tag to" style="font-size:9.5px">'+(c.data<hoje?'atrasado':c.data===hoje?'hoje':fmtDate(c.data))+'</span></div>'}); });
@@ -7854,61 +7855,68 @@ window.haCap=(function(){
 })();
 </script>
 
-<!-- BLOCO 24 · Plano de marketing atual (nov–dez 2026): workshop, Black Friday, Combo 3 em 1 -->
+<!-- BLOCO 24 · Planos de marketing atuais, separados por área: Hub Mentorias e Hub Advance Solutions -->
 <script>
 (function(){
   function C(){ DB.captacao=DB.captacao||{passos:[],metas:{}}; DB.captacao.passos=DB.captacao.passos||[]; return DB.captacao; }
   var Y='2026-';
-  var PASSOS=[
-    ['11-13','alcance','Reel de lançamento do workshop Precificação Inteligente (23/11) — em colab com a Rafa','mentorias'],
-    ['11-14','conversas','Mensagem a 30 pessoas da lista quente com o convite do workshop','mentorias'],
-    ['11-15','leads','Fim da pré-venda: balanço das inscrições e lembrete nos stories','mentorias'],
-    ['11-16','alcance','Live com a Rafa sobre precificação','mentorias'],
-    ['11-18','interacoes','Stories com caixa de perguntas: "qual o seu maior erro ao cobrar?"','mentorias'],
-    ['11-19','conversas','@hub_advance · evento de quinta: post + stories, DMs → orçamento','solutions'],
-    ['11-20','conversas','Pedir testemunho a uma mentorada (Thalia ou Débora) para prova social','mentorias'],
-    ['11-22','leads','Véspera: lembrete aos inscritos com o link do Google Meet e do grupo de WhatsApp','mentorias'],
-    ['11-23','leads','Workshop 10h–13h (Google Meet) com a Rafa · oferta da mentoria nos últimos 15 min','mentorias'],
-    ['11-24','conversas','Mensagem a quem escreveu MENTORIA e marcar calls de 20–30 min em 48h','mentorias'],
-    ['11-25','alcance','Teaser da Black Friday: pacote com a gravação do workshop (sem desconto na mentoria)','mentorias'],
-    ['11-26','conversas','@hub_advance · evento de quinta: post + stories, DMs → orçamento','solutions'],
-    ['11-27','leads','Black Friday arranca (27–30/11): post, stories e DMs com o pacote da gravação','mentorias'],
-    ['11-30','leads','Último dia da Black Friday: urgência e balanço de vendas','mentorias'],
-    ['12-02','alcance','Começar a campanha do Combo 3 em 1 (6 e 7 dez): último curso do ano','mentorias'],
-    ['12-04','conversas','Fechar inscrições do Combo 3 em 1: DMs e lembretes','mentorias']
-  ];
-  var CONT=[
-    ['11-13','Reel · lançamento do workshop Precificação Inteligente','Reel','Vender'],
-    ['11-15','Carrossel · 3 erros ao precificar um serviço','Carrossel','Atrair'],
-    ['11-16','Live com a Rafa · precificação','Live','Autoridade'],
-    ['11-20','Reel · testemunho de mentorada','Reel','Autoridade'],
-    ['11-22','Post · véspera do workshop, o que vai levar','Post','Vender'],
-    ['11-25','Reel · teaser Black Friday','Reel','Vender'],
-    ['12-02','Reel · Combo 3 em 1, último curso do ano','Reel','Vender']
-  ];
-  var OBJ=[
-    {nome:'10+ inscrições orgânicas no workshop (23/11)',meta:10,unidade:'inscrições',fim:'11-22',acoes:['Post às 15h sobre precificação (colab com a Rafa)','4 stories: 1 sobre o workshop, a fechar com "Responda EU QUERO"','Responder a todas as DMs e comentários']},
-    {nome:'Lista quente: mensagem a 30 pessoas',meta:30,unidade:'mensagens',fim:'11-16',acoes:['Enviar 10 mensagens personalizadas']},
-    {nome:'Páginas de venda: Black Friday e Combo 3 em 1',meta:2,unidade:'páginas',fim:'11-26',acoes:['Avançar 1h na página de venda']}
-  ];
-  var CAMP=[
-    ['Workshop Precificação Inteligente','Instagram','11-13','11-23','10+ inscrições orgânicas antes de pensar em anúncios'],
-    ['Black Friday · pacote da gravação','Instagram','11-27','11-30','Vender o pacote com a gravação do workshop'],
-    ['Combo 3 em 1 · último curso do ano','Instagram','12-02','12-07','Inscrições para 6 e 7 de dezembro']
-  ];
-  window.haCap.carregarPlano=function(){
-    var c=C(); if(c.plano){ toast('O plano já foi carregado'); return; }
-    PASSOS.forEach(function(x){ c.passos.push({id:uid(),area:x[3],t:x[2],etapa:x[1],data:Y+x[0],feito:false}); });
-    DB.conteudo=DB.conteudo||[]; CONT.forEach(function(x){ DB.conteudo.push({id:uid(),area:'mentorias',titulo:x[1],canal:'Instagram',formato:x[2],data:Y+x[0],objetivo:x[3],estado:'Rascunho'}); });
-    DB.objetivos=DB.objetivos||[]; OBJ.forEach(function(o,i){ DB.objetivos.push({id:uid(),area:'mentorias',tipo:'marketing',nome:o.nome,meta:o.meta,unidade:o.unidade,atual:0,base:0,ini:todayISO(),fim:Y+o.fim,acoes:o.acoes.map(function(t){return {t:t};}),feitos:{},foco:i===0}); });
-    DB.mktPlanos=DB.mktPlanos||[]; CAMP.forEach(function(x){ DB.mktPlanos.push({id:uid(),area:'mentorias',nome:x[0],canal:x[1],gasto:'',ini:Y+x[2],fim:Y+x[3],obj:x[4]}); });
-    c.plano='2026-11-13'; save(); renderAll(); toast('✓ Plano de marketing carregado');
+  var PL={
+    mentorias:{
+      nome:'Hub Mentorias', resumo:'Workshop Precificação Inteligente (23/11, com a Rafa) → Black Friday (27–30/11, pacote da gravação) → Combo 3 em 1 (6 e 7 dez).',
+      passos:[
+        ['11-13','alcance','Reel de lançamento do workshop Precificação Inteligente (23/11) — em colab com a Rafa'],
+        ['11-14','conversas','Mensagem a 30 pessoas da lista quente com o convite do workshop'],
+        ['11-15','leads','Fim da pré-venda: balanço das inscrições e lembrete nos stories'],
+        ['11-16','alcance','Live com a Rafa sobre precificação'],
+        ['11-18','interacoes','Stories com caixa de perguntas: "qual o seu maior erro ao cobrar?"'],
+        ['11-20','conversas','Pedir testemunho a uma mentorada (Thalia ou Débora) para prova social'],
+        ['11-22','leads','Véspera: lembrete aos inscritos com o link do Google Meet e do grupo de WhatsApp'],
+        ['11-23','leads','Workshop 10h–13h (Google Meet) com a Rafa · oferta da mentoria nos últimos 15 min'],
+        ['11-24','conversas','Mensagem a quem escreveu MENTORIA e marcar calls de 20–30 min em 48h'],
+        ['11-25','alcance','Teaser da Black Friday: pacote com a gravação do workshop (sem desconto na mentoria)'],
+        ['11-27','leads','Black Friday arranca (27–30/11): post, stories e DMs com o pacote da gravação'],
+        ['11-30','leads','Último dia da Black Friday: urgência e balanço de vendas'],
+        ['12-02','alcance','Começar a campanha do Combo 3 em 1 (6 e 7 dez): último curso do ano'],
+        ['12-04','conversas','Fechar inscrições do Combo 3 em 1: DMs e lembretes']],
+      conteudo:[['11-13','Reel · lançamento do workshop Precificação Inteligente','Reel','Vender'],['11-15','Carrossel · 3 erros ao precificar um serviço','Carrossel','Atrair'],['11-16','Live com a Rafa · precificação','Live','Autoridade'],['11-20','Reel · testemunho de mentorada','Reel','Autoridade'],['11-22','Post · véspera do workshop, o que vai levar','Post','Vender'],['11-25','Reel · teaser Black Friday','Reel','Vender'],['12-02','Reel · Combo 3 em 1, último curso do ano','Reel','Vender']],
+      objetivos:[{nome:'10+ inscrições orgânicas no workshop (23/11)',meta:10,unidade:'inscrições',fim:'11-22',acoes:['Post às 15h sobre precificação (colab com a Rafa)','4 stories: 1 sobre o workshop, a fechar com "Responda EU QUERO"','Responder a todas as DMs e comentários']},{nome:'Lista quente: mensagem a 30 pessoas',meta:30,unidade:'mensagens',fim:'11-16',acoes:['Enviar 10 mensagens personalizadas']},{nome:'Páginas de venda: Black Friday e Combo 3 em 1',meta:2,unidade:'páginas',fim:'11-26',acoes:['Avançar 1h na página de venda']}],
+      campanhas:[['Workshop Precificação Inteligente','11-13','11-23','10+ inscrições orgânicas antes de pensar em anúncios'],['Black Friday · pacote da gravação','11-27','11-30','Vender o pacote com a gravação do workshop'],['Combo 3 em 1 · último curso do ano','12-02','12-07','Inscrições para 6 e 7 de dezembro']]
+    },
+    solutions:{
+      nome:'Hub Advance Solutions', resumo:'@hub_advance só serviços: evento semanal de quinta (post + stories), DMs → orçamento e anúncio, com o portefólio como prova.',
+      passos:[
+        ['11-17','alcance','Rever o anúncio do @hub_advance (revisão de terça, 11h)'],
+        ['11-19','alcance','Evento de quinta: post + stories com a palavra única para comentar'],
+        ['11-19','conversas','DMs de quem comentou → perguntar o que precisa e enviar orçamento'],
+        ['11-20','leads','Enviar o portefólio (hubadvance.pt/solutions/portfolio) a quem pediu orçamento'],
+        ['11-24','alcance','Rever o anúncio do @hub_advance (revisão de terça, 11h)'],
+        ['11-26','alcance','Evento de quinta: post + stories com a palavra única para comentar'],
+        ['11-26','conversas','DMs de quem comentou → orçamento'],
+        ['12-03','alcance','Evento de quinta: post + stories com a palavra única para comentar'],
+        ['12-03','conversas','DMs de quem comentou → orçamento']],
+      conteudo:[['11-19','Post · evento de quinta: solução do problema do cliente','Post','Atrair'],['11-26','Post · evento de quinta: resultado de um cliente','Post','Autoridade'],['12-03','Post · evento de quinta','Post','Atrair']],
+      objetivos:[{nome:'3 eventos de quinta publicados no @hub_advance',meta:3,unidade:'eventos',fim:'12-03',acoes:['Preparar o post e os stories do evento de quinta']},{nome:'Primeiros leads de Solutions no pipeline',meta:5,unidade:'leads',fim:'12-04',acoes:['Responder às DMs e passar cada pessoa ao Pipeline','Enviar 1 orçamento ou o portefólio']}],
+      campanhas:[['Evento semanal de quinta · @hub_advance','11-19','12-03','Posts e stories todas as quintas, DMs → orçamento']]
+    }
+  };
+  function nomeArea(a){ return PL[a].nome; }
+  function feito(a){ var c=C(); return !!((c.planos&&c.planos[a])||(a==='mentorias'&&c.plano)); }
+  window.haCap.carregarPlano=function(a){
+    a=a||'mentorias'; var c=C(); if(feito(a)){ toast('Esse plano já foi carregado'); return; }
+    var P=PL[a]; c.planos=c.planos||{};
+    P.passos.forEach(function(x){ c.passos.push({id:uid(),area:a,t:x[2],etapa:x[1],data:Y+x[0],feito:false}); });
+    DB.conteudo=DB.conteudo||[]; P.conteudo.forEach(function(x){ DB.conteudo.push({id:uid(),area:a,titulo:x[1],canal:'Instagram',formato:x[2],data:Y+x[0],objetivo:x[3],estado:'Rascunho'}); });
+    DB.objetivos=DB.objetivos||[]; P.objetivos.forEach(function(o,i){ DB.objetivos.push({id:uid(),area:a,tipo:'marketing',nome:o.nome,meta:o.meta,unidade:o.unidade,atual:0,base:0,ini:todayISO(),fim:Y+o.fim,acoes:o.acoes.map(function(t){return {t:t};}),feitos:{},foco:i===0}); });
+    DB.mktPlanos=DB.mktPlanos||[]; P.campanhas.forEach(function(x){ DB.mktPlanos.push({id:uid(),area:a,nome:x[0],canal:'Instagram',gasto:'',ini:Y+x[1],fim:Y+x[2],obj:x[3]}); });
+    c.planos[a]=todayISO(); save(); renderAll(); toast('✓ Plano '+nomeArea(a)+' carregado');
   };
   function banner(){
     var P=document.getElementById('p-captacao'); if(!P||!P.querySelector('#cap-main')||P.querySelector('#cap-plano')) return;
-    if(C().plano) return;
-    var t=P.querySelector('.cap-tabs'); var h='<div id="cap-plano" class="card" style="margin-bottom:14px;background:#F0FAF6;border:1px solid #0B6E4F55"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><div class="ct">Plano de marketing atualizado</div><div style="font-size:12px;color:var(--g3);margin-top:3px;line-height:1.6">Workshop Precificação Inteligente (23/11, com a Rafa) → Black Friday (27–30/11, pacote da gravação) → Combo 3 em 1 (6 e 7 dez). Traz 16 passos com datas, 3 objetivos com ações diárias, 7 conteúdos e 3 campanhas.</div></div><button class="btn bp" onclick="haCap.carregarPlano()">Carregar no sistema</button></div></div>';
-    if(t) t.insertAdjacentHTML('afterend',h); else P.insertAdjacentHTML('afterbegin',h);
+    var g=(typeof HA_AREA!=='undefined'&&HA_AREA)||null, quais=(g==='mentorias'||g==='solutions')?[g]:['mentorias','solutions'];
+    quais=quais.filter(function(a){return !feito(a);}); if(!quais.length) return;
+    var h='<div id="cap-plano" style="display:grid;grid-template-columns:repeat('+quais.length+',1fr);gap:12px;margin-bottom:14px">'+quais.map(function(a){ var p=PL[a];
+      return '<div class="card" style="background:#F0FAF6;border:1px solid #0B6E4F55"><div class="ct">Plano de marketing · '+p.nome+'</div><div style="font-size:12px;color:var(--g3);margin:4px 0 10px;line-height:1.6">'+p.resumo+' Traz '+p.passos.length+' passos com datas, '+p.objetivos.length+' objetivos, '+p.conteudo.length+' conteúdos e '+p.campanhas.length+' campanha'+(p.campanhas.length>1?'s':'')+'.</div><button class="btn bp bsm" onclick="haCap.carregarPlano(\''+a+'\')">Carregar plano '+p.nome+'</button></div>'; }).join('')+'</div>';
+    var t=P.querySelector('.cap-tabs'); if(t) t.insertAdjacentHTML('afterend',h); else P.insertAdjacentHTML('afterbegin',h);
   }
   var _rm=window.renderMarketing; window.renderMarketing=function(){ var r=_rm.apply(this,arguments); try{ banner(); }catch(e){ console.error(e); } return r; };
 })();
