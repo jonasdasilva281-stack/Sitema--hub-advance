@@ -7806,6 +7806,7 @@ window.haCap=(function(){
       (abertos.length?abertos.map(li).join(''):'<div class="empty" style="padding:14px">Sem passos pendentes. Adicione um acima ou use "Sugerir passos".</div>')+
       (feitos.length?'<div class="mt-lbl" style="margin:12px 0 2px">Feitos recentemente</div>'+feitos.map(li).join(''):'')+'</div>';
     el.innerHTML='<div id="cap-main">'+h+'</div>';
+    try{ if(window.haObM) haObM.desenhar(); }catch(e){ console.error(e); }
   }
   return {
     render:render,
@@ -7819,6 +7820,37 @@ window.haCap=(function(){
       save(); renderAll(); },
     apagar:function(id){ C().passos=C().passos.filter(function(p){return p.id!==id;}); save(); renderAll(); }
   };
+})();
+</script>
+
+<!-- BLOCO 23 · Secção Captação organizada: 3 separadores + "Agora" -->
+<script>
+(function(){
+  var TABS=[['captacao','Captação','o que fazer'],['marketing','Marketing','como estamos'],['metas','Metas','o que queremos']];
+  function go(p){ return "nav('"+p+"',document.querySelector('.ni[onclick*=&quot;\\'"+p+"\\'&quot;]'))"; }
+  function barra(at){
+    return '<div class="cap-tabs" style="display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap">'+TABS.map(function(t,i){ var on=t[0]===at;
+      return '<button type="button" onclick="'+go(t[0])+'" style="flex:1;min-width:150px;text-align:left;padding:10px 14px;border-radius:10px;border:1.5px solid '+(on?'#0B6E4F':'#E5E7EB')+';background:'+(on?'#0B6E4F':'#fff')+';color:'+(on?'#fff':'inherit')+';cursor:pointer;font-family:inherit"><div style="font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.05em">'+(i+1)+'</div><div style="font-size:13.5px;font-weight:700">'+t[1]+'</div><div style="font-size:11px;opacity:.8">'+t[2]+'</div></button>'; }).join('')+'</div>';
+  }
+  function ga(){ return (typeof HA_AREA!=='undefined'&&HA_AREA)||null; }
+  function agora(){
+    var hoje=todayISO(), g=ga(), its=[];
+    var ok=function(x){return !g||g==='geral'||(x.area||'mentorias')===g;};
+    ((DB.captacao&&DB.captacao.passos)||[]).forEach(function(x){ if(!x.feito&&ok(x)&&(!x.data||x.data<=hoje)) its.push({h:'<label style="display:flex;gap:9px;align-items:center;cursor:pointer"><input type="checkbox" style="accent-color:var(--g);width:17px;height:17px" onchange="haCap.tick('+x.id+',this.checked)"><span style="font-size:13px;font-weight:600">'+esc(x.t)+'</span>'+(x.data&&x.data<hoje?' <span class="tag tr" style="font-size:9.5px">atrasado</span>':'')+'<span class="tag tg" style="font-size:9.5px">Passo</span></label>'}); });
+    (DB.objetivos||[]).filter(function(o){return (o.tipo||'vendas')==='marketing'&&!o.concluido&&ok(o);}).forEach(function(o){ (o.acoes||[]).forEach(function(a,i){ var k=hoje+'|'+i; if(a.t&&!(o.feitos&&o.feitos[k])) its.push({h:'<label style="display:flex;gap:9px;align-items:center;cursor:pointer"><input type="checkbox" style="accent-color:var(--g);width:17px;height:17px" onchange="haObM.tick('+o.id+',\''+k+'\',this.checked);renderAll()"><span style="font-size:13px;font-weight:600">'+esc(a.t)+'</span><span class="tag ty" style="font-size:9.5px">Diário · '+esc(o.nome)+'</span></label>'}); }); });
+    var lim=(function(){var d=new Date(hoje+'T12:00:00');d.setDate(d.getDate()+2);return isoLocal(d);})();
+    (DB.conteudo||[]).filter(function(c){return c.estado!=='Publicado'&&ok(c)&&c.data&&c.data<=lim;}).forEach(function(c){ its.push({h:'<div style="display:flex;gap:9px;align-items:center;cursor:pointer" onclick="'+go('marketing')+'"><span style="width:17px;text-align:center">📸</span><span style="font-size:13px;font-weight:600">Publicar: '+esc(c.titulo)+'</span><span class="tag to" style="font-size:9.5px">'+(c.data<hoje?'atrasado':c.data===hoje?'hoje':fmtDate(c.data))+'</span></div>'}); });
+    var prox=((DB.captacao&&DB.captacao.passos)||[]).filter(function(x){return !x.feito&&ok(x)&&x.data&&x.data>hoje;}).sort(function(a,b){return a.data.localeCompare(b.data);})[0];
+    return '<div class="card" style="margin-bottom:14px;border:1.5px solid '+(its.length?'#B7791F':'var(--g)')+'"><div style="display:flex;justify-content:space-between;align-items:baseline"><div class="ct">'+(its.length?'👉 Agora · '+its.length+' coisa'+(its.length>1?'s':'')+' para fazer hoje':'✅ Hoje está em dia')+'</div><div style="font-size:11px;color:var(--g4)">'+new Date().toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'})+'</div></div>'+
+      (its.length?'<div style="display:flex;flex-direction:column;gap:9px;margin-top:10px">'+its.map(function(x){return x.h;}).join('')+'</div>':'<div style="font-size:12.5px;color:var(--g3);margin-top:6px">'+(prox?'Próximo passo: <b>'+esc(prox.t)+'</b> · '+fmtDate(prox.data):'Sem passos marcados. Adicione abaixo o que vem a seguir.')+'</div>')+'</div>';
+  }
+  function decorar(){
+    var c=document.getElementById('p-captacao'); if(c&&c.querySelector('#cap-main')&&!c.querySelector('.cap-tabs')) c.insertAdjacentHTML('afterbegin',barra('captacao')+agora());
+    var m=document.getElementById('p-marketing'); if(m&&m.children.length&&!m.querySelector('.cap-tabs')) m.insertAdjacentHTML('afterbegin',barra('marketing'));
+    var t=document.getElementById('p-metas'); if(t&&!t.querySelector('.cap-tabs')) t.insertAdjacentHTML('afterbegin',barra('metas'));
+  }
+  var _rm=window.renderMarketing; window.renderMarketing=function(){ var r=_rm.apply(this,arguments); try{ decorar(); }catch(e){ console.error(e); } return r; };
+  decorar();
 })();
 </script>
 </body>
