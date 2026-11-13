@@ -7195,8 +7195,29 @@ window.haClientes=(function(){
         '<select class="cl-sel" onchange="haClientes.proximo('+l.id+',this.value)" title="Próximo nível">'+opts+'</select>'+
       '</div></div>';
   }
+  // recolhe quem já fechou um produto de entrada antes desta regra (ficou fechada ou foi criada como mentorada)
+  function adotar(){
+    var mudou=false;
+    DB.mentorados.slice().forEach(function(m){
+      if(!m.origemLeadId||vrEhMentoria(m.produto)) return;
+      if((m.tarefas&&m.tarefas.length)||(m.sessoes&&m.sessoes.length)||!/^Convertido do pipeline/.test(m.notas||'')) return;
+      var l=lead(m.origemLeadId); if(!l) return;
+      DB.mentorados=DB.mentorados.filter(function(x){return x!==m;});
+      (DB.reunioes||[]).forEach(function(r){ if(r.personType==='mentorado'&&r.personId===m.id){ r.personType='lead'; r.personId=l.id; } });
+      mudou=true;
+    });
+    DB.leads.forEach(function(l){
+      if(l.cliente||l.etapa!=='fechado'||vrEhMentoria(l.produto)) return;
+      if(DB.mentorados.some(function(m){return m.nome===l.nome;})) return;
+      var pg=(DB.pagamentos||[]).filter(function(x){return x.cliente===l.nome&&x.produto===l.produto;}).pop();
+      registar(l,l.produto,pg?parseFloat(pg.valorTotal||pg.valor)||0:(prod(l.produto)||{}).valor||0);
+      mudou=true;
+    });
+    if(mudou) save();
+  }
   function render(){
     var box=document.getElementById('cl-list'); if(!box) return;
+    adotar();
     var ls=lista().filter(function(l){return !l.cliente.mentorado;}), hoje=todayISO();
     var hojeN=ls.filter(function(l){return l.proxData&&l.proxData<=hoje;}).length;
     var subiram=lista().filter(function(l){return l.cliente.historico.length>1||l.cliente.mentorado;}).length;
