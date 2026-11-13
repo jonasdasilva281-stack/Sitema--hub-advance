@@ -8156,5 +8156,73 @@ window.haPV=(function(){
   });
 })();
 </script>
+
+<!-- BLOCO 29 · Financeiro: rotina de sexta (Hub Mentorias e Hub Serviços Web) -->
+<script>
+window.haFinR=(function(){
+  var TS=['Confirmar sinais e pagamentos dos projetos','Ver parcelas em atraso e enviar lembretes','Registar despesas (domínios, alojamento, ferramentas)','Ver faturação da semana e do mês vs. objetivo'];
+  var TM=['Confirmar pagamentos da mentoria e parcelas em atraso','Mensalidades da Comunidade Advance (30€)','Vendas dos produtos digitais (Hotmart)','Ver faturação da semana e do mês vs. objetivo'];
+  var TAREFAS=TM;
+  function ga(){ return (typeof HA_AREA!=='undefined'&&HA_AREA)||null; }
+  function addD(d,n){ var x=new Date(d+'T12:00:00'); x.setDate(x.getDate()+n); return isoLocal(x); }
+  function seg(h){ var d=new Date(h+'T12:00:00'), w=(d.getDay()+6)%7; return addD(h,-w); } // segunda
+  function eur(n){ return '€'+Math.round(n).toLocaleString('pt-PT'); }
+  function nome(){ var g=ga(); return g==='solutions'?'🌐 Hub Serviços Web':'🎯 Mentoria Jonas'; }
+  function tipo(p){ var n=(p.produto||''); return /comunidade/i.test(n)?'com':/curso|workshop|pacote|kit|agenda|ebook|livro|hotmart|precifica/i.test(n)?'dig':'men'; }
+  function meta(mes){
+    var g=ga();
+    if(g==='solutions'){ var s=DB.funilSol&&DB.funilSol.metas; return s&&s.faturado!=null?+s.faturado:0; }
+    var f=DB.funil&&DB.funil.meses&&DB.funil.meses[mes]; return f&&f.metas&&f.metas.faturado!=null?+f.metas.faturado:2294;
+  }
+  function chave(){ return todayISO()+'|'+(ga()||'geral'); }
+  function ticks(){ DB.finRotina=DB.finRotina||{}; return DB.finRotina; }
+  function tel(c){ var m=(DB.mentorados||[]).concat(DB.leads||[]).find(function(x){return x.nome===c;}); var n=m?normalizeTel(m.tel||m.contacto||''):''; return n&&n.length>=6?n:''; }
+  function render(){
+    var P=document.getElementById('p-financeiro'); if(!P) return;
+    var box=document.getElementById('fin-rotina'); if(!box){ box=document.createElement('div'); box.id='fin-rotina'; box.style.marginBottom='16px'; P.insertBefore(box,P.firstChild); }
+    var sol=ga()==='solutions'; TAREFAS=sol?TS:TM; var hoje=todayISO(), mes=hoje.slice(0,7), ini=seg(hoje), PG=DB.pagamentos||[], DS=DB.despesas||[];
+    var sexta=new Date(hoje+'T12:00:00').getDay()===5;
+    var pagos=PG.filter(function(p){return p.estado==='Pago';});
+    var semana=pagos.filter(function(p){return p.data>=ini&&p.data<=addD(ini,6);}).reduce(function(s,p){return s+(+p.valor||0);},0);
+    var mesV=pagos.filter(function(p){return (p.data||'').slice(0,7)===mes;}).reduce(function(s,p){return s+(+p.valor||0);},0);
+    var mt=meta(mes), pc=mt?Math.min(100,Math.round(mesV/mt*100)):0;
+    var porConf=PG.filter(function(p){return p.estado!=='Pago'&&p.data>=addD(hoje,-7)&&p.data<=addD(hoje,7)&&p.data>=hoje;});
+    var atraso=PG.filter(function(p){return p.estado!=='Pago'&&p.data&&p.data<hoje;}).sort(function(a,b){return a.data.localeCompare(b.data);});
+    var dsem=DS.filter(function(d){return d.data>=ini&&d.data<=addD(ini,6);}), dtot=dsem.reduce(function(s,d){return s+(+d.valor||0);},0);
+    var tk=ticks()[chave()]||{};
+    var linha=function(p,tipo){ var t=tel(p.cliente), dias=Math.floor((new Date(hoje+'T12:00:00')-new Date(p.data+'T12:00:00'))/86400000);
+      var txt='Olá '+String(p.cliente||'').split(' ')[0]+'! Passo só para lembrar a parcela '+(p.parcela||1)+'/'+(p.totalParcelas||1)+' de '+eur(+p.valor||0)+(p.produto?' ('+p.produto+')':'')+', com vencimento a '+fmtDate(p.data)+'. Se já pagou, ignore esta mensagem. Obrigado!';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--g6);font-size:12px"><div style="flex:1"><b>'+esc(p.cliente)+'</b> <span style="color:var(--g4)">'+esc(p.produto||'')+' · '+(p.parcela||1)+'/'+(p.totalParcelas||1)+' · '+fmtDate(p.data)+(tipo==='atraso'?' · <b style="color:#C0392B">'+dias+'d em atraso</b>':'')+'</span></div><b>'+eur(+p.valor||0)+'</b>'+
+        (tipo==='atraso'&&t?'<a class="btn bs bsm" target="_blank" href="https://wa.me/'+t+'?text='+encodeURIComponent(txt)+'">Lembrete</a>':'')+'<button class="btn bsm bp" onclick="haFinR.pago('+p.id+')">Pago</button></div>'; };
+    var item=function(i,tit,corpo,tag){ return '<div class="card" style="padding:12px 14px"><label style="display:flex;gap:9px;align-items:center;cursor:pointer;margin-bottom:4px"><input type="checkbox" '+(tk[i]?'checked':'')+' style="accent-color:var(--g);width:17px;height:17px" onchange="haFinR.tick('+i+',this.checked)"><span class="ct" style="margin:0'+(tk[i]?';text-decoration:line-through;opacity:.6':'')+'">'+(i+1)+' · '+tit+'</span>'+(tag||'')+'</label>'+corpo+'</div>'; };
+    var feitos=TAREFAS.filter(function(_,i){return tk[i];}).length;
+    var h='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;flex-wrap:wrap;gap:6px"><div><div style="font-size:16px;font-weight:700">'+nome()+' · Financeiro</div><div style="font-size:11.5px;color:var(--g4)">Rotina de sexta-feira, '+(sol?'9h00–10h00':'11h00–12h00')+' · '+feitos+' de 4 feitos'+(sexta?' · <b style="color:#B7791F">é hoje</b>':'')+'</div></div><div style="display:flex;gap:6px"><button class="btn bd bsm" onclick="om(\'despesa\')">+ Saída</button><button class="btn bp bsm" onclick="om(\'pagamento\')">+ Pagamento</button></div></div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px">';
+    if(sol){
+    h+=item(0,TAREFAS[0],'<div style="font-size:11.5px;color:var(--g4);margin-bottom:4px">Recebido esta semana: <b style="color:var(--g)">'+eur(semana)+'</b> · a confirmar nos próximos 7 dias: <b>'+porConf.length+'</b></div>'+(porConf.length?porConf.slice(0,5).map(function(p){return linha(p,'conf');}).join(''):'<div style="font-size:12px;color:var(--g4);padding:6px 0">Nada para confirmar.</div>'));
+    h+=item(1,TAREFAS[1],atraso.length?atraso.slice(0,6).map(function(p){return linha(p,'atraso');}).join('')+(atraso.length>6?'<div style="font-size:11px;color:var(--g4);padding-top:6px">+ '+(atraso.length-6)+' mais em Pagamentos & Parcelas</div>':''):'<div style="font-size:12px;color:var(--g4);padding:6px 0">Sem parcelas em atraso.</div>',atraso.length?'<span class="tag tr" style="font-size:10px">'+atraso.length+'</span>':'');
+    h+=item(2,TAREFAS[2],'<div style="font-size:11.5px;color:var(--g4);margin-bottom:6px">Esta semana: <b>'+dsem.length+'</b> saída'+(dsem.length===1?'':'s')+' registada'+(dsem.length===1?'':'s')+' · '+eur(dtot)+'</div>'+(dsem.length?dsem.slice(0,4).map(function(d){return '<div style="display:flex;gap:8px;font-size:12px;padding:5px 0;border-top:1px solid var(--g6)"><span style="color:var(--g4);min-width:46px">'+fmtDate(d.data)+'</span><span style="flex:1">'+esc(d.desc||'')+'</span><b>'+eur(+d.valor||0)+'</b></div>';}).join(''):'')+'<div style="font-size:11px;color:var(--g4);margin-top:6px">Não esquecer: domínios, alojamento e ferramentas. <a style="color:var(--g);cursor:pointer;font-weight:600" onclick="om(\'despesa\')">+ Registar saída</a></div>');
+    }else{
+      var men=PG.filter(function(p){return tipo(p)==='men';}), com=PG.filter(function(p){return tipo(p)==='com';}), dig=PG.filter(function(p){return tipo(p)==='dig';});
+      var menAt=men.filter(function(p){return p.estado!=='Pago'&&p.data&&p.data<hoje;}).sort(function(a,b){return a.data.localeCompare(b.data);});
+      var menPx=men.filter(function(p){return p.estado!=='Pago'&&p.data>=hoje&&p.data<=addD(hoje,7);});
+      h+=item(0,TAREFAS[0],'<div style="font-size:11.5px;color:var(--g4);margin-bottom:4px">A confirmar nos próximos 7 dias: <b>'+menPx.length+'</b> · em atraso: <b style="color:'+(menAt.length?'#C0392B':'inherit')+'">'+menAt.length+'</b></div>'+(menAt.concat(menPx).length?menAt.slice(0,5).map(function(p){return linha(p,'atraso');}).join('')+menPx.slice(0,4).map(function(p){return linha(p,'conf');}).join(''):'<div style="font-size:12px;color:var(--g4);padding:6px 0">Tudo em dia.</div>'),menAt.length?'<span class="tag tr" style="font-size:10px">'+menAt.length+'</span>':'');
+      var comPg=com.filter(function(p){return p.estado==='Pago'&&(p.data||'').slice(0,7)===mes;}), comPend=com.filter(function(p){return p.estado!=='Pago'&&p.data&&p.data<=addD(hoje,7)&&(p.data||'').slice(0,7)<=mes;});
+      h+=item(1,TAREFAS[1],'<div style="font-size:11.5px;color:var(--g4);margin-bottom:4px">Recebidas este mês: <b style="color:var(--g)">'+comPg.length+'</b> · '+eur(comPg.reduce(function(s,p){return s+(+p.valor||0);},0))+' · por receber: <b>'+comPend.length+'</b></div>'+(comPend.length?comPend.slice(0,6).map(function(p){return linha(p,p.data<hoje?'atraso':'conf');}).join(''):'<div style="font-size:12px;color:var(--g4);padding:6px 0">Sem mensalidades por receber.</div>'),comPend.length?'<span class="tag ty" style="font-size:10px">'+comPend.length+'</span>':'');
+      var digSem=dig.filter(function(p){return p.estado==='Pago'&&p.data>=ini&&p.data<=addD(ini,6);}), digMes=dig.filter(function(p){return p.estado==='Pago'&&(p.data||'').slice(0,7)===mes;});
+      var ts=function(a){return eur(a.reduce(function(s,p){return s+(+p.valor||0);},0));};
+      h+=item(2,TAREFAS[2],'<div style="font-size:11.5px;color:var(--g4);margin-bottom:4px">Esta semana: <b>'+digSem.length+'</b> venda'+(digSem.length===1?'':'s')+' · '+ts(digSem)+' · este mês: <b>'+digMes.length+'</b> · '+ts(digMes)+'</div>'+(digMes.slice(-4).reverse().map(function(p){return '<div style="display:flex;gap:8px;font-size:12px;padding:5px 0;border-top:1px solid var(--g6)"><span style="color:var(--g4);min-width:46px">'+fmtDate(p.data)+'</span><span style="flex:1">'+esc(p.cliente||'')+' · '+esc(p.produto||'')+'</span><b>'+eur(+p.valor||0)+'</b></div>';}).join(''))+'<div style="font-size:11px;color:var(--g4);margin-top:6px">Confirme as vendas da Hotmart e registe as que faltam. <a style="color:var(--g);cursor:pointer;font-weight:600" onclick="om(\'pagamento\')">+ Registar venda</a></div>');
+    }
+    h+=item(3,TAREFAS[3],'<div style="display:flex;gap:18px;margin:4px 0 8px"><div><div style="font-size:20px;font-weight:700;color:var(--g)">'+eur(semana)+'</div><div style="font-size:10.5px;color:var(--g4);text-transform:uppercase">esta semana</div></div><div><div style="font-size:20px;font-weight:700">'+eur(mesV)+'</div><div style="font-size:10.5px;color:var(--g4);text-transform:uppercase">este mês</div></div><div><div style="font-size:20px;font-weight:700;color:var(--g4)">'+(mt?eur(mt):'—')+'</div><div style="font-size:10.5px;color:var(--g4);text-transform:uppercase">objetivo do mês</div></div></div>'+(mt?'<div class="sbw" style="height:10px"><div class="sbb" style="width:'+pc+'%;background:'+(pc<40?'#C0392B':pc<80?'#B7791F':'var(--g)')+'"></div></div><div style="font-size:11px;color:var(--g4);margin-top:4px">'+pc+'% do objetivo · faltam '+eur(Math.max(0,mt-mesV))+'</div>':'<div style="font-size:11.5px;color:var(--g4)">Defina a meta de faturação no Funil para ver quanto falta.</div>'));
+    h+='</div>';
+    box.innerHTML=h;
+  }
+  var _r=window.renderFinanceiro; window.renderFinanceiro=function(){ var r=_r.apply(this,arguments); try{render();}catch(e){console.error('Rotina financeira:',e);} return r; };
+  return {render:render,
+    tick:function(i,on){ var t=ticks(), k=chave(); t[k]=t[k]||{}; if(on) t[k][i]=1; else delete t[k][i]; save(); render(); },
+    pago:function(id){ var p=(DB.pagamentos||[]).find(function(x){return x.id===id;}); if(!p) return; p.estado='Pago'; save(); renderAll(); toast('Marcado como pago ✓'); }
+  };
+})();
+</script>
 </body>
 </html>
