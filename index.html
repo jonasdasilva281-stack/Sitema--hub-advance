@@ -395,7 +395,6 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div class="nav-sec">Vendas</div>
     <div class="ni" onclick="nav('pipeline',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="4" height="18" rx="1.5"/><rect x="10" y="7" width="4" height="14" rx="1.5"/><rect x="17" y="11" width="4" height="10" rx="1.5"/></svg></span><span class="ni-label">Pipeline</span><span class="nb" id="nb-leads">0</span></div>
     <div class="ni" onclick="nav('recuperar',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg></span><span class="ni-label">Recuperar</span><span class="nb nb-blue" id="nb-recup" style="display:none">0</span></div>
-    <div class="ni" onclick="nav('clientes',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M3 20l5-5 4 3 8-9"/><polyline points="15 9 20 9 20 14"/></svg></span><span class="ni-label">Clientes do funil</span><span class="nb nb-blue" id="nb-clientes" style="display:none">0</span></div>
     <div class="ni" onclick="nav('metas',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></span><span class="ni-label">Metas</span></div>
     <div class="nav-sec">Negócio</div>
     <div class="ni" onclick="nav('mentorados',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span><span class="ni-label">Mentorados</span><span class="nb" id="nb-ment">0</span></div>
@@ -637,18 +636,6 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
 
   <!-- METAS -->
   <div class="panel" id="p-metas"><div id="mt-root"></div></div>
-
-  <!-- CLIENTES DO FUNIL -->
-  <div class="panel" id="p-clientes">
-    <div class="rc-kpis">
-      <div class="card kpi"><div class="kl">Clientes no funil</div><div class="kv" id="cl-k1">0</div></div>
-      <div class="card kpi"><div class="kl">Contactar hoje</div><div class="kv" style="color:var(--or)" id="cl-k2">0</div></div>
-      <div class="card kpi"><div class="kl">Já subiram de nível</div><div class="kv" style="color:var(--g)" id="cl-k3">0</div></div>
-      <div class="card kpi"><div class="kl">Potencial do próximo nível</div><div class="kv" id="cl-k4">€0</div></div>
-    </div>
-    <div class="rc-intro">Quem comprou um produto de entrada (workshop, curso…) e ainda não é mentorada. O objetivo é sempre subir um nível: acompanhe, peça feedback e proponha o passo seguinte.</div>
-    <div class="rc-list" id="cl-list"></div>
-  </div>
 
   <!-- MENTORADOS -->
   <div class="panel" id="p-mentorados">
@@ -2197,7 +2184,7 @@ function renderMentorados(){
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">'
         +'<div style="display:flex;gap:10px;align-items:center">'
           +'<div class="av" style="background:'+avatarColors[idx%avatarColors.length]+'">'+initials(m.nome)+'</div>'
-          +'<div><div style="font-size:13px;font-weight:600">'+esc(m.nome)+' <span class="tag '+(estadoCls[m.estado]||'tgr')+'" style="font-size:9px">'+esc(m.estado)+'</span></div>'
+          +'<div><div style="font-size:13px;font-weight:600;cursor:pointer" onclick="haProg.abrir('+m.id+')" title="Abrir programa">'+esc(m.nome)+' <span class="tag '+(estadoCls[m.estado]||'tgr')+'" style="font-size:9px">'+esc(m.estado)+'</span></div>'
           +'<div style="font-size:11px;color:var(--g4)">'+esc(m.nicho||'—')+' · '+esc(m.produto)
           +(tel?' · <a href="https://wa.me/'+normalizeTel(tel)+'" target="_blank" style="color:#25D366;text-decoration:none">📱 WhatsApp</a>':' · <span style="color:var(--re)">⚠ sem telefone</span>')
           +'</div></div>'
@@ -2232,6 +2219,7 @@ function renderMentorados(){
         +'</div>'
         +'<div><div class="mt-lbl">Valor pago</div><div style="font-size:13px;font-weight:600;color:var(--g)">€'+totalPago.toFixed(0)+'</div></div>'
       +'</div>'
+      +haProg.linha(m)
       // Entregas das compras
       +(function(){ var vs=vendasDeMentorado(m).filter(function(v){return v.estado!=='terminada'&&(v.itens.some(function(it){return it.u!=='acesso';})||v.itens.some(function(it){return it.mensal;}));});
           return vs.length?'<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--g6)"><div class="mt-lbl">Entregas</div>'
@@ -3998,7 +3986,7 @@ function openVendaRapida(leadId){
 function vrEhMentoria(nome){ var p=DB.produtos.find(function(x){return x.nome===nome;}); return !!p && (/mentoria|acompanhamento|90d/i.test(p.nome) || parseFloat(p.valor)>=500); }
 function vrAutoValor(){ const p=DB.produtos.find(x=>x.nome===document.getElementById('vr-produto').value); if(p) document.getElementById('vr-valor').value=p.valor; vrCalc();
   var l=DB.leads.find(x=>x.id===(parseInt(document.getElementById('vr-leadid').value)||0)), d=document.getElementById('vr-modal-desc');
-  if(l&&d) d.textContent='Preenche como vai ser pago. '+(p&&vrEhMentoria(p.nome)?'Ao guardar, '+l.nome+' passa automaticamente para Mentorados.':'Ao guardar, '+l.nome+' fica em Clientes do funil, para a acompanhar até ao próximo nível.'); }
+  if(l&&d) d.textContent='Preenche como vai ser pago. Ao guardar, '+l.nome+' passa automaticamente para Mentorados, no programa que comprou.'; }
 function vrCalc(){
   const valor=parseFloat(document.getElementById('vr-valor').value)||0;
   const parcelas=parseInt(document.getElementById('vr-parcelas').value)||1;
@@ -4016,10 +4004,10 @@ function saveVendaRapida(){
   const estado=document.getElementById('vr-estado').value;
   const dataInicio=document.getElementById('vr-data').value||todayISO();
   const leadId=parseInt(document.getElementById('vr-leadid').value)||0;
-  var _lb=leadId&&DB.leads.find(function(l){return l.id===leadId;});
-  if(_lb&&_lb.cliente&&_lb.cliente.produto!==produto&&!haClientes.concluido(_lb)){ toast('⏳ '+_lb.nome+' ainda está em '+_lb.cliente.produto+' até '+fmtDate(haClientes.fim(_lb))+'. Só pode começar o próximo depois de terminar.','#C0392B'); return; }
   if(!cliente||!valor){toast('Preenche cliente e valor','#C0392B');return;}
   if(!produto||!prodPorNome(produto)){toast('⚠ Toda a compra tem de estar ligada a um produto','#C0392B');return;}
+  var _mb=DB.mentorados.find(function(m){return m.nome===cliente;}), _ub=_mb&&haProg.ultimo(_mb);
+  if(_ub&&_ub.produto!==produto&&!haProg.concluida(_ub)){ toast('⏳ '+cliente+' ainda está em '+_ub.produto+(haProg.fim(_ub)?' até '+fmtDate(haProg.fim(_ub)):'')+'. Só pode começar o próximo depois de terminar.','#C0392B'); return; }
   const vlParcela=parseFloat((valor/parcelas).toFixed(2));
   const datas=gerarDatas(dataInicio,parcelas);
   const grupoId=uid();
@@ -4027,7 +4015,7 @@ function saveVendaRapida(){
   var novoMentorado=false;
   if(leadId){
     var lead2=DB.leads.find(function(l){return l.id===leadId;});
-    if(lead2 && vrEhMentoria(produto) && !DB.mentorados.find(function(m){return m.nome===lead2.nome;})){
+    if(lead2 && !DB.mentorados.find(function(m){return m.nome===lead2.nome;})){
       DB.mentorados.push({
         id:uid(),nome:lead2.nome,
         tel:normalizeTel(lead2.contacto||''),
@@ -4045,11 +4033,9 @@ function saveVendaRapida(){
     }
   }
   criarVenda(grupoId,cliente,produto,dataInicio);
-  var viraCliente=false;
-  if(leadId && !vrEhMentoria(produto)){ var lead3=DB.leads.find(function(l){return l.id===leadId;}); if(lead3){ haClientes.registar(lead3,produto,valor); viraCliente=true; } }
+  if(_mb && !novoMentorado) _mb.produto=produto;
   save();cm('venda-rapida');renderAll();
-  if(viraCliente){ toast('🎉 '+cliente+' entrou no funil · acompanhe-a em Clientes'); }
-  else if(novoMentorado){
+  if(novoMentorado){
     toast('🎉 Pagamento registado · '+cliente+' é agora mentorado!');
     setTimeout(function(){
       var el=document.querySelector('.ni[onclick*="mentorados"]');
@@ -7131,148 +7117,129 @@ window.haPerda=(function(){
 })();
 </script>
 
-<!-- ═══ BLOCO 15 — Clientes do funil (acompanhamento até ao próximo nível) ═══ -->
-<style>body.area-geral .ni[onclick*="'clientes'"]{display:none!important}
-.cl-lv{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:12px;flex-wrap:wrap}
-.cl-lv span{padding:4px 10px;border-radius:20px;background:#F3F4F6;font-weight:600}
-.cl-lv span.at{background:#0B6E4F;color:#fff}.cl-lv span.nx{background:#B7791F18;color:#B7791F;border:1px dashed #B7791F}
-.cl-lv i{color:#9CA3AF;font-style:normal}
-.cl-sel{padding:6px 8px;border:1px solid #D1D5DB;border-radius:8px;font:500 11.5px Inter,sans-serif;max-width:200px}</style>
+<!-- ═══ BLOCO 16 — Programa de cada mentorado (só avança depois de terminar) ═══ -->
+<style>
+.pg-lin{margin-top:12px;padding:10px 12px;background:#F6F7F9;border-radius:9px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer;font-size:12px}
+.pg-lin:hover{background:#EEF0F3}
+.pg-lin .pg-sp{flex:1}
+.pg-chip{padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:600}
+.pg-chip.curso{background:#B7791F18;color:#B7791F}.pg-chip.ok{background:#0B6E4F18;color:#0B6E4F}
+.pg-prog{border:1px solid var(--g6,#E5E7EB);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.pg-prog h4{font-size:13px;margin-bottom:2px}
+.pg-sub{font-size:11.5px;color:var(--g4,#888);margin-bottom:8px}
+.pg-next{background:#0B6E4F0D;border:1px solid #0B6E4F44;border-radius:10px;padding:12px 14px;margin-top:4px}
+.pg-next.lock{background:#F3F4F6;border-color:#E5E7EB;color:#6B7280}
+</style>
+<div class="mo" id="modal-programa"><div class="mbox" style="max-width:560px">
+  <div class="mh"><div><div class="mt" id="pg-m-nome">Programa</div><div style="font-size:11px;color:var(--g4)">Programa em curso e histórico</div></div><span class="mx" onclick="haProg.fechar()">✕</span></div>
+  <div id="pg-m-corpo" style="max-height:70vh;overflow-y:auto"></div>
+</div></div>
 <script>
-window.haClientes=(function(){
+window.haProg=(function(){
+  var atual=null;
   function prod(n){return DB.produtos.find(function(p){return p.nome===n;});}
-  function nomeP(p){return p?(p.nomeC||p.nome):'';}
-  function proximoAuto(nome){
-    var p=prod(nome), v=p?parseFloat(p.valor)||0:0;
-    var maiores=DB.produtos.filter(function(x){return (parseFloat(x.valor)||0)>v;}).sort(function(a,b){return a.valor-b.valor;});
-    return maiores.length?maiores[0].nome:'';
-  }
-  function addDias(n){var d=new Date(todayISO()+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
-  function log(l,t){(l.interacoes=l.interacoes||[]).push({id:Date.now(),tipo:'Funil',nota:t,data:new Date().toISOString()});}
-  function lead(id){return DB.leads.find(function(x){return x.id===id;});}
-  function primeiro(n){return String(n||'').trim().split(/\s+/)[0];}
-  function canal(l,txt){
-    var t=normalizeTel(l.tel||l.contacto||'');
-    if(t&&t.length>=6) return {k:'wa',url:'https://wa.me/'+t+'?text='+encodeURIComponent(txt)};
-    var h=String(l.insta||'').trim().replace(/^@/,'');
-    if(h&&/^[\w.]+$/.test(h)) return {k:'ig',url:'https://instagram.com/'+h};
+  function nomeP(n){var p=prod(n);return p?(p.nomeC||p.nome):n;}
+  function addDiasA(d,n){var x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);}
+  function fimDe(v){
+    var p=prod(v.produto)||{}, c=v.data||todayISO();
+    if(p.dataFim&&p.dataFim>=c) return p.dataFim;
+    if(p.duracaoDias) return addDiasA(c,p.duracaoDias);
+    if(p.meses) return addDiasA(c,p.meses*30);
     return null;
   }
-  function mensagem(l){
-    if(!concluido(l)) return 'Olá '+primeiro(l.nome)+'! Está tudo bem com o '+nomeP(prod(l.cliente.produto))+'? Se tiver alguma dúvida até '+fmtDate(fim(l))+', diga-me.';
-    var c=l.cliente, atual=prod(c.produto), nx=prod(c.proximo);
-    var n=primeiro(l.nome);
-    if(!nx) return 'Olá '+n+'! Como está a correr depois do '+nomeP(atual)+'? Diga-me o que já conseguiu aplicar e onde sente mais dificuldade.';
-    return 'Olá '+n+'! Como correu o '+nomeP(atual)+'? Diga-me o que já aplicou e o que ficou por resolver.\n'+
-      'Pelo que me conta, o passo seguinte natural é o '+nomeP(nx)+'. Quer que lhe explique em 5 minutos como funciona?'+(nx.link?'\nDetalhes: '+nx.link:'');
+  function concluida(v){
+    if(v.estado==='terminada') return true;
+    var real=v.itens.some(function(it){return !it.mensal&&it.u!=='acesso';});
+    if(real&&v.estado==='concluida') return true;
+    var f=fimDe(v); if(f) return todayISO()>f;
+    return false;
   }
-  // chamado ao registar o pagamento de um produto que não é mentoria
-  function calcFim(nome,compra){
-    var p=prod(nome)||{};
-    if(p.dataFim&&p.dataFim>=compra) return p.dataFim;
-    if(p.duracaoDias) return addDiasA(compra,p.duracaoDias);
-    if(p.meses) return addDiasA(compra,p.meses*30);
-    return compra;
+  function programas(m){return vendasDeMentorado(m).slice().reverse();} // mais recente primeiro
+  function ultimo(m){return programas(m)[0]||null;}
+  function proximoAuto(nome){
+    var p=prod(nome), v=p?parseFloat(p.valor)||0:0;
+    var mais=DB.produtos.filter(function(x){return (parseFloat(x.valor)||0)>v;}).sort(function(a,b){return a.valor-b.valor;});
+    return mais.length?mais[0].nome:'';
   }
-  function addDiasA(d,n){var x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);}
-  function fim(l){return l.cliente.fim||calcFim(l.cliente.produto,l.cliente.desde);}
-  function concluido(l){return todayISO()>fim(l);}
-  function registar(l,produto,valor){
-    var c=l.cliente;
-    if(!c){ l.cliente=c={desde:todayISO(),historico:[]}; }
-    c.produto=produto; c.valor=valor;
-    c.historico.push({produto:produto,data:todayISO(),valor:valor});
-    c.proximo=proximoAuto(produto);
-    c.nivel=c.historico.length;
-    c.fim=calcFim(produto,todayISO());
-    l.etapa='fechado'; l.proxData=c.fim>todayISO()?addDiasA(c.fim,1):addDias(3); l.proxTipo='Acompanhamento';
-    log(l,'Cliente do funil: '+produto);
+  function sessoes(v){
+    var i=v.itens.findIndex(function(it){return it.u==='encontros'&&!it.mensal;});
+    return i<0?null:{f:itemFeito(v,i),q:v.itens[i].q};
   }
-  function lista(){return DB.leads.filter(function(l){return l.cliente;});}
-  function promover(id){
-    var l=lead(id); if(!l) return;
-    if(!DB.mentorados.find(function(m){return m.nome===l.nome;})){
-      var tel=normalizeTel(l.contacto||'');
-      DB.mentorados.push({id:uid(),nome:l.nome,tel:tel,contacto:tel,produto:l.cliente.proximo||l.cliente.produto,nicho:l.nicho||'',score:'B',semana:0,estado:'Ativo',tarefas:[],sessoes:[],
-        notas:'Subiu do funil em '+todayISO()+' · começou em '+(l.cliente.historico[0]||{}).produto,origemLeadId:l.id});
-    }
-    log(l,'Passou a mentorada'); l.cliente.mentorado=true; save(); renderAll(); toast('🎉 '+l.nome+' é agora mentorada');
+  function chip(v){
+    if(concluida(v)) return '<span class="pg-chip ok">✓ Concluído</span>';
+    var f=fimDe(v); return '<span class="pg-chip curso">⏳ Em curso'+(f?' até '+fmtDate(f):'')+'</span>';
   }
-  function card(l){
-    var c=l.cliente, hoje=todayISO(), due=l.proxData&&l.proxData<=hoje, curso=!concluido(l);
-    var opts='<option value="">— sem próximo nível —</option>'+DB.produtos.filter(function(x){return x.nome!==c.produto;}).map(function(x){
-      return '<option value="'+esc(x.nome)+'"'+(x.nome===c.proximo?' selected':'')+'>'+esc(nomeP(x))+' · €'+x.valor+'</option>';}).join('');
-    var hist=c.historico.map(function(h,i){return '<span'+(i===c.historico.length-1?' class="at"':'')+'>'+esc(nomeP(prod(h.produto))||h.produto)+'</span>';}).join('<i>→</i>');
-    var nx=prod(c.proximo);
-    var txt=mensagem(l), ch=canal(l,txt);
-    return '<div class="rc-card'+(due?' due':' ok')+'" style="border-left-color:'+(due?'#B7791F':'#0B6E4F')+'">'+
-      '<div class="rc-top"><div><div class="rc-name" onclick="editLead('+l.id+')">'+esc(l.nome)+'</div>'+
-      '<div class="rc-sub">Cliente desde '+fmtDate(c.desde)+' · comprou '+esc(nomeP(prod(c.produto))||c.produto)+(curso?' · <b style="color:#B7791F">⏳ em curso até '+fmtDate(fim(l))+'</b>':' · <b style="color:#0B6E4F">concluído</b>')+'</div></div>'+
-      '<div class="rc-sub" style="text-align:right">'+(due?'<b style="color:#B7791F">Contactar hoje</b>':'Próximo contacto: '+fmtDate(l.proxData))+'</div></div>'+
-      '<div class="cl-lv">'+hist+(nx?'<i>→</i><span class="nx">'+esc(nomeP(nx))+' · €'+nx.valor+'</span>':'')+'</div>'+
-      '<div class="rc-msg">'+esc(txt)+'</div>'+
-      '<div class="rc-acts">'+
-        (ch?'<button class="rc-b wa" onclick="haClientes.enviar('+l.id+')">'+(ch.k==='wa'?'💬 Abrir WhatsApp e marcar contactado':'📸 Copiar mensagem, abrir Instagram e marcar contactado')+'</button>':'<button class="rc-b" onclick="editLead('+l.id+')">Adicionar telemóvel ou Instagram</button>')+
-        '<button class="rc-b ok" onclick="haClientes.contactado('+l.id+')">✓ Já contactei</button>'+
-        '<button class="rc-b ok" onclick="haClientes.comprou('+l.id+')" '+(nx&&!curso?'':'disabled')+(curso?' title="Só depois de terminar o nível atual"':'')+'>🛒 Comprou o próximo nível</button>'+
-        '<button class="rc-b" '+(curso?'disabled ':'')+'onclick="if(confirm(\'Passar '+esc(primeiro(l.nome))+' a mentorada?\'))haClientes.promover('+l.id+')">🎓 Passar a mentorada</button>'+
-        '<select class="cl-sel" onchange="haClientes.proximo('+l.id+',this.value)" title="Próximo nível">'+opts+'</select>'+
-      '</div></div>';
+  function linha(m){
+    var v=ultimo(m); if(!v) return '';
+    var s=sessoes(v), c=concluida(v);
+    return '<div class="pg-lin" onclick="haProg.abrir('+m.id+')" title="Abrir programa">'+
+      '<span>🎯 <b>'+esc(nomeP(v.produto))+'</b></span>'+chip(v)+
+      (s?'<span style="color:var(--g3)">Sessões <b>'+s.f+'/'+s.q+'</b></span>':'')+
+      '<span class="pg-sp"></span>'+
+      (c?'<span style="color:#0B6E4F;font-weight:600">⬆ Próximo nível disponível</span>':'<span style="color:#9CA3AF">🔒 Próximo nível depois de terminar</span>')+'</div>';
   }
-  // recolhe quem já fechou um produto de entrada antes desta regra (ficou fechada ou foi criada como mentorada)
-  var _adotarAgendado=false;
-  function agendarAdotar(){
-    if(_adotarAgendado) return; _adotarAgendado=true;
-    setTimeout(function(){ _adotarAgendado=false; try{ if(adotar()){ save(); renderAll(); } }catch(e){console.error('Adotar:',e);} },50);
-  }
-  function adotar(){
-    var mudou=false;
-    DB.mentorados.slice().forEach(function(m){
-      if(!m.origemLeadId||vrEhMentoria(m.produto)) return;
-      if((m.tarefas&&m.tarefas.length)||(m.sessoes&&m.sessoes.length)||!/^Convertido do pipeline/.test(m.notas||'')) return;
-      var l=lead(m.origemLeadId); if(!l) return;
-      DB.mentorados=DB.mentorados.filter(function(x){return x!==m;});
-      (DB.reunioes||[]).forEach(function(r){ if(r.personType==='mentorado'&&r.personId===m.id){ r.personType='lead'; r.personId=l.id; } });
-      mudou=true;
+  function corpo(m){
+    var ps=programas(m), v=ps[0], h='';
+    ps.forEach(function(x,i){
+      var f=fimDe(x), s=sessoes(x);
+      h+='<div class="pg-prog"><h4>'+esc(nomeP(x.produto))+' '+chip(x)+'</h4>'+
+        '<div class="pg-sub">Comprado a '+fmtDate(x.data)+(f?' · termina a '+fmtDate(f):'')+(s?' · '+s.f+' de '+s.q+' sessões':'')+'</div>'+
+        entregaBarras(x,false)+
+        (x.estado!=='terminada'&&!concluida(x)?'<button class="btn bs bsm" style="margin-top:6px" onclick="haProg.terminar('+x.id+')">✓ Marcar programa concluído</button>':'')+'</div>';
     });
+    if(!v) return '<div class="empty">Ainda sem programa registado.</div>';
+    if(concluida(v)){
+      var auto=proximoAuto(v.produto);
+      var op=DB.produtos.filter(function(p){return p.nome!==v.produto;}).map(function(p){return '<option value="'+esc(p.nome)+'"'+(p.nome===auto?' selected':'')+'>'+esc(p.nomeC||p.nome)+' · €'+p.valor+'</option>';}).join('');
+      h+='<div class="pg-next"><div style="font-weight:600;font-size:13px;margin-bottom:6px">⬆ Próximo nível</div>'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap"><select class="fi" id="pg-prox" style="flex:1;min-width:200px">'+op+'</select>'+
+        '<button class="btn bp" onclick="haProg.subir('+m.id+')">Registar compra</button></div></div>';
+    } else {
+      var f=fimDe(v);
+      h+='<div class="pg-next lock">🔒 O próximo nível abre quando terminar <b>'+esc(nomeP(v.produto))+'</b>'+(f?' ('+fmtDate(f)+')':'')+'.</div>';
+    }
+    return h;
+  }
+  function pinta(){ var m=DB.mentorados.find(function(x){return x.id===atual;}); if(!m) return; document.getElementById('pg-m-nome').textContent=m.nome; document.getElementById('pg-m-corpo').innerHTML=corpo(m); }
+  // mentorados criados pelo "funil" nesta sessão de testes voltam a Mentorados
+  function migrar(){
+    var mudou=false;
     DB.leads.forEach(function(l){
-      if(l.cliente||l.etapa!=='fechado'||vrEhMentoria(l.produto)) return;
+      if(!l.cliente||l.cliente.migrado) return;
+      l.cliente.migrado=true; mudou=true;
       if(DB.mentorados.some(function(m){return m.nome===l.nome;})) return;
-      var pg=(DB.pagamentos||[]).filter(function(x){return x.cliente===l.nome&&x.produto===l.produto;}).pop();
-      registar(l,l.produto,pg?parseFloat(pg.valorTotal||pg.valor)||0:(prod(l.produto)||{}).valor||0);
-      mudou=true;
+      var tel=normalizeTel(l.contacto||'');
+      DB.mentorados.push({id:uid(),nome:l.nome,tel:tel,contacto:tel,produto:l.cliente.produto||l.produto||'',nicho:l.nicho||'',score:'B',semana:0,estado:'Ativo',tarefas:[],sessoes:[],
+        notas:'Convertido do pipeline em '+(l.cliente.desde||todayISO())+' · Origem: '+(l.origem||'—'),origemLeadId:l.id});
     });
     return mudou;
   }
-  function render(){
-    var box=document.getElementById('cl-list'); if(!box) return;
-    agendarAdotar();
-    var ls=lista().filter(function(l){return !l.cliente.mentorado;}), hoje=todayISO();
-    var hojeN=ls.filter(function(l){return l.proxData&&l.proxData<=hoje;}).length;
-    var subiram=lista().filter(function(l){return l.cliente.historico.length>1||l.cliente.mentorado;}).length;
-    var pot=ls.reduce(function(t,l){var n=prod(l.cliente.proximo);return t+(n?parseFloat(n.valor)||0:0);},0);
-    document.getElementById('cl-k1').textContent=ls.length; document.getElementById('cl-k2').textContent=hojeN;
-    document.getElementById('cl-k3').textContent=subiram; document.getElementById('cl-k4').textContent='€'+pot.toFixed(0);
-    var nb=document.getElementById('nb-clientes'); if(nb){nb.textContent=hojeN;nb.style.display=hojeN?'':'none';}
-    ls.sort(function(a,b){return (a.proxData||'9')<(b.proxData||'9')?-1:1;});
-    box.innerHTML=ls.length?ls.map(card).join(''):'<div class="rc-empty">Ainda não há clientes no funil. Quando fechar um lead num produto de entrada (ex.: workshop), ele aparece aqui.</div>';
-  }
+  var _ag=false;
+  function agendar(){ if(_ag) return; _ag=true; setTimeout(function(){_ag=false; try{ if(migrar()){save();renderAll();} }catch(e){console.error('Programa:',e);} },60); }
   return {
-    render:render, registar:registar, promover:promover, concluido:concluido, fim:fim,
-    contactado:function(id){var l=lead(id);if(!l)return;log(l,'Acompanhamento feito');var f=fim(l);l.proxData=(f>=todayISO())?addDiasA(f,1):addDias(7);l.proxTipo='Acompanhamento';save();renderAll();toast('✓ Próximo contacto a '+fmtDate(l.proxData));},
-    enviar:function(id){var l=lead(id);if(!l)return;var t=mensagem(l),c=canal(l,t);if(!c)return;
-      if(c.k==='ig'){try{navigator.clipboard.writeText(t);}catch(e){} toast('Mensagem copiada — cole na conversa do Instagram');}
-      window.open(c.url,'_blank'); haClientes.contactado(id);},
-    proximo:function(id,v){var l=lead(id);if(!l)return;l.cliente.proximo=v;save();renderAll();},
-    comprou:function(id){var l=lead(id);if(!l||!l.cliente.proximo)return;l.produto=l.cliente.proximo;save();openVendaRapida(id);}
+    linha:linha, concluida:concluida, ultimo:ultimo, fim:fimDe, agendar:agendar,
+    abrir:function(id){atual=id;pinta();document.getElementById('modal-programa').classList.add('open');},
+    fechar:function(){document.getElementById('modal-programa').classList.remove('open');},
+    terminar:function(vid){var v=(DB.vendas||[]).find(function(x){return x.id===vid;});if(!v)return;v.estado='terminada';save();renderAll();pinta();toast('✓ Programa concluído — próximo nível desbloqueado');},
+    subir:function(id){
+      var m=DB.mentorados.find(function(x){return x.id===id;}); if(!m) return;
+      var nome=document.getElementById('pg-prox').value;
+      haProg.fechar();
+      document.getElementById('vr-leadid').value='';
+      document.getElementById('vr-cliente').value=m.nome;
+      document.getElementById('vr-sub').textContent=m.nome+' — próximo nível';
+      document.getElementById('vr-data').value=todayISO();
+      var ps=document.getElementById('vr-parcelas'); ps.innerHTML=Array.from({length:12},function(_,i){return '<option value="'+(i+1)+'">'+(i+1)+'x'+(i===0?' (à vista)':'')+'</option>';}).join('');
+      var sel=document.getElementById('vr-produto'); sel.innerHTML=DB.produtos.map(function(p){return '<option value="'+esc(p.nome)+'">'+esc(p.nome)+'</option>';}).join(''); sel.value=nome;
+      vrAutoValor(); document.getElementById('vr-info').style.display='none';
+      document.getElementById('vr-modal-desc').textContent='Preenche como vai ser pago. Ao guardar, '+m.nome+' passa para este programa.';
+      document.getElementById('modal-venda-rapida').classList.add('open');
+    }
   };
 })();
-(function(){
-  if(typeof titles!=='undefined') titles.clientes='Clientes do funil';
-  var r=haRecup.render;
-  haRecup.render=function(){ r.apply(this,arguments); try{haClientes.render();}catch(e){console.error('Clientes:',e);} };
-})();
+(function(){ var r=haRecup.render; haRecup.render=function(){ r.apply(this,arguments); haProg.agendar(); }; })();
 </script>
+
 
 </body>
 </html>
