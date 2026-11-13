@@ -805,10 +805,11 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
   <div class="fr fg">
     <div><label class="fl">Nome</label><input class="fi" id="ld-nome"></div>
     <div>
-      <label class="fl">Telemóvel <span style="color:var(--re)">*</span> <span style="font-size:9.5px;color:var(--g4);font-weight:400">identificador único</span></label>
+      <label class="fl">Telemóvel <span style="font-size:9.5px;color:var(--g4);font-weight:400">ou use o Instagram ao lado</span></label>
       <input class="fi" id="ld-contacto" type="tel" placeholder="351912345678" oninput="ldFormatTel(this)" style="font-family:monospace">
     </div>
   </div>
+  <div class="fg"><label class="fl">Instagram ou outro contacto <span style="font-size:9.5px;color:var(--g4);font-weight:400">para quem não tem telemóvel</span></label><input class="fi" id="ld-insta" placeholder="@utilizador"></div>
   <div class="fr fg">
     <div><label class="fl">Origem</label><select class="fi" id="ld-origem"><option>Instagram</option><option>TikTok</option><option>YouTube</option><option>Facebook</option><option>Google Ads</option><option>Indicação</option><option>Evento</option><option>Curso €47</option><option>Outro</option></select></div>
     <div><label class="fl">Produto de interesse <span style="font-size:9.5px;color:var(--g4)">objetivo: Mentoria €997</span></label><select class="fi" id="ld-produto"></select></div>
@@ -1347,7 +1348,7 @@ function toggleMotivo(){
 function resetLeadModal(){
   document.getElementById('ld-id').value='';
   document.getElementById('ld-etapaAntiga').value='';
-  ['ld-nome','ld-contacto','ld-notas','ld-proxdata'].forEach(id=>document.getElementById(id).value='');
+  ['ld-nome','ld-contacto','ld-insta','ld-notas','ld-proxdata'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('ld-etapa').value='novo';
   document.getElementById('lead-title').textContent='🎯 Novo Lead';
   document.getElementById('ld-submit').textContent='Adicionar';
@@ -1361,6 +1362,7 @@ function editLead(id){
   document.getElementById('ld-etapaAntiga').value=l.etapa;
   document.getElementById('ld-nome').value=l.nome;
   document.getElementById('ld-contacto').value=l.contacto||'';
+  document.getElementById('ld-insta').value=l.insta||'';
   document.getElementById('ld-origem').value=l.origem;
   document.getElementById('ld-produto').value=l.produto;
   document.getElementById('ld-etapa').value=l.etapa;
@@ -1374,19 +1376,31 @@ function editLead(id){
   document.getElementById('ld-delete').style.display='inline-flex';
 }
 function saveLead(){
+  var _id=document.getElementById('ld-id').value, _ant=document.getElementById('ld-etapaAntiga').value;
+  if(_id && document.getElementById('ld-etapa').value==='perdido' && _ant && _ant!=='perdido' && !window._perdaOk){
+    document.getElementById('ld-etapa').value=_ant; // grava o resto e pergunta o motivo no popup
+    saveLead._abrirPerda=parseInt(_id);
+  }
+  var r=saveLead2();
+  var alvo=saveLead._abrirPerda; saveLead._abrirPerda=null;
+  if(alvo && !document.getElementById('modal-lead').classList.contains('open')) mudarEtapa(alvo,'perdido');
+  return r;
+}
+function saveLead2(){
   const id=document.getElementById('ld-id').value;
   const etapaAntiga=document.getElementById('ld-etapaAntiga').value;
   const nome=document.getElementById('ld-nome').value.trim();
   const etapa=document.getElementById('ld-etapa').value;
   const contacto=normalizeTel(document.getElementById('ld-contacto').value);
   if(!nome){toast('Insere o nome','#C0392B');return;}
-  if(!contacto||contacto.length<6){toast('⚠ Telemóvel obrigatório — é o identificador único','#C0392B');return;}
-  var dupTel=checkDupTel(contacto, id?parseInt(id):null, id?'lead':null);
+  const insta=document.getElementById('ld-insta').value.trim();
+  if((!contacto||contacto.length<6)&&!insta){toast('⚠ Indique o telemóvel ou o Instagram do lead','#C0392B');return;}
+  var dupTel=(contacto&&contacto.length>=6)?checkDupTel(contacto, id?parseInt(id):null, id?'lead':null):null;
   if(dupTel){toast('⚠ Número já usado por '+dupTel.nome+' ('+dupTel.tipo+')','#C0392B');return;}
   if(id && etapa==='fechado' && !['closer','followup','fechado'].includes(etapaAntiga)){
     toast('⚠ Só pode marcar como Fechado a partir de Closer ou Follow Up','#C0392B'); return;
   }
-  const data={nome,contacto:contacto,origem:document.getElementById('ld-origem').value,
+  const data={nome,contacto:contacto,insta:insta,origem:document.getElementById('ld-origem').value,
     produto:document.getElementById('ld-produto').value,etapa,
     proxData:document.getElementById('ld-proxdata').value,proxTipo:document.getElementById('ld-proxtipo').value,
     motivo:document.getElementById('ld-motivo').value,notas:document.getElementById('ld-notas').value};
@@ -6756,8 +6770,14 @@ window.haRecup=(function(){
     return 'Olá '+n+', não quero ser insistente, por isso este é o meu último contacto. A porta fica sempre aberta: quando fizer sentido, é só dizer. Desejo-lhe muito sucesso!';
   }
   function waLink(l,txt){
-    var t=normalizeTel(l.tel||l.contacto||''); if(!t) return '';
+    var t=normalizeTel(l.tel||l.contacto||''); if(!t||t.length<6) return '';
     return 'https://wa.me/'+t+'?text='+encodeURIComponent(txt);
+  }
+  function igLink(l){
+    var h=String(l.insta||'').trim(); if(!h) return '';
+    if(/^https?:\/\//i.test(h)) return h;
+    if(/^[\w.]+$/.test(h.replace(/^@/,''))) return 'https://instagram.com/'+h.replace(/^@/,'');
+    return '';
   }
   function lead(id){return DB.leads.find(function(x){return x.id===id;});}
   function log(l,nota){
@@ -6792,7 +6812,7 @@ window.haRecup=(function(){
       corpo='<div class="rc-steps">'+steps(l)+'</div>'+
         '<div class="rc-msg" id="rcm-'+l.id+'">'+esc(txt)+'</div>'+
         '<div class="rc-acts">'+
-        (wa?'<button class="rc-b wa" onclick="haRecup.enviar('+l.id+')">💬 Abrir WhatsApp e marcar enviado</button>':'<button class="rc-b" disabled title="Sem telefone">Sem telefone</button>')+
+        (wa?'<button class="rc-b wa" onclick="haRecup.enviar('+l.id+')">💬 Abrir WhatsApp e marcar enviado</button>':igLink(l)?'<button class="rc-b wa" onclick="haRecup.enviar('+l.id+')">📸 Copiar mensagem, abrir Instagram e marcar enviado</button>':'<button class="rc-b" onclick="editLead('+l.id+')">Adicionar telemóvel ou Instagram</button>')+
         '<button class="rc-b" onclick="haRecup.copiar('+l.id+')">Copiar</button>'+
         '<button class="rc-b ok" onclick="haRecup.marcar('+l.id+')">✓ Marcar enviado</button>'+
         '<button class="rc-b ok" onclick="haRecup.voltar('+l.id+')">↩ Voltou à conversa</button>'+
@@ -6867,8 +6887,9 @@ window.haRecup=(function(){
       guardar(r.passo>=PASSOS.length?'Sequência concluída — pode arquivar':'Enviado ✓ próximo em '+GAPS[r.passo]+' dias');
     },
     enviar:function(id){
-      var l=lead(id); if(!l) return; var w=waLink(l,mensagem(l,l.recup.passo));
+      var l=lead(id); if(!l) return; var txt=mensagem(l,l.recup.passo), w=waLink(l,txt);
       if(w) window.open(w,'_blank');
+      else if(igLink(l)){ try{navigator.clipboard.writeText(txt);}catch(e){} window.open(igLink(l),'_blank'); toast('Mensagem copiada — cole na conversa do Instagram'); }
       haRecup.marcar(id);
     },
     voltar:function(id){
