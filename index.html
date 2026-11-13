@@ -1106,8 +1106,8 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div><label class="fl">ou dura (dias) <span style="font-size:9.5px;color:var(--g4);font-weight:400">a contar da compra</span></label><input type="number" min="0" class="fi" id="pd-durdias" placeholder="Ex: 30"></div>
   </div>
   <div style="font-size:11px;color:var(--g4);margin:-6px 0 12px">A pessoa só avança para o nível seguinte depois de terminar este.</div>
-  <div class="fg"><label class="fl">Fases do programa <span style="font-size:9.5px;color:var(--g4);font-weight:400">uma linha por fase: data ou +dias | nome | o que acontece | nº encontros | como acontece</span></label>
-    <textarea class="fi" id="pd-cron" rows="5" style="font-size:12px;font-family:monospace" placeholder="23/11/2026 | Workshop ao vivo | Precificação inteligente, 10h às 13h | 1 | Online, ao vivo no Zoom&#10;+1 | Replay e material | Enviado no grupo de WhatsApp | 0 | WhatsApp&#10;+7 | Sessão de dúvidas | 30 min para tirar dúvidas | 1 | Online, em grupo"></textarea></div>
+  <div class="fg"><label class="fl">Fases do programa <span style="font-size:9.5px;color:var(--g4);font-weight:400">preenche os quadros, uma caixa por fase</span></label>
+    <textarea class="fi" id="pd-cron" rows="5" style="display:none" placeholder="23/11/2026 | Workshop ao vivo | Precificação inteligente, 10h às 13h | 1 | Online, ao vivo no Zoom&#10;+1 | Replay e material | Enviado no grupo de WhatsApp | 0 | WhatsApp&#10;+7 | Sessão de dúvidas | 30 min para tirar dúvidas | 1 | Online, em grupo"></textarea></div>
   <div class="fr fg">
     <div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pd-valor-input" placeholder="0.00" oninput="pdCalcParcela();pdCalcPreco()"></div>
     <div><label class="fl">Tipo de cobrança</label>
@@ -2713,6 +2713,7 @@ function entregaTexto(p){
 function novoProduto(){
   document.getElementById('pd-id').value='';
   ['pd-nome','pd-nomec','pd-link','pd-datafim','pd-durdias','pd-cron','pd-desc','pd-valor-input','pd-parcelas','pd-horas','pd-horasmes','pd-meses'].forEach(function(id){document.getElementById(id).value='';});
+  haProg.quadros('pd-cron');
   document.getElementById('pd-digital').checked=false;
   pdSetEntregaveis([]);
   document.getElementById('pd-tipo').value='unico'; pdToggleTipo();
@@ -2730,6 +2731,7 @@ function editProduto(id){
   document.getElementById('pd-datafim').value=p.dataFim||'';
   document.getElementById('pd-durdias').value=p.duracaoDias||'';
   document.getElementById('pd-cron').value=haProg.serializar(p.cronograma||[]);
+  haProg.quadros('pd-cron');
   document.getElementById('pd-valor-input').value=p.valor;
   document.getElementById('pd-tipo').value=p.tipo||'unico'; pdToggleTipo();
   document.getElementById('pd-parcelas').value=p.parcelas||'';
@@ -7280,8 +7282,36 @@ window.haProg=(function(){
         '<div class="pg-sb"><div><span style="color:var(--g4);font-size:11px">Fase '+(i+1)+'</span> <b>'+esc(x.t)+'</b> '+tag+'</div><div class="pg-sub" style="margin:1px 0 0">'+fmtDate(x.data)+(x.d?' · '+esc(x.d):'')+'</div>'+((x.enc||x.fmt)?'<div class="pg-sub" style="margin:1px 0 0">'+(x.enc?'<b>'+x.enc+' encontro'+(x.enc>1?'s':'')+'</b>':'')+(x.enc&&x.fmt?' · ':'')+(x.fmt?esc(x.fmt):'')+'</div>':'')+'</div></div>';
     }).join('')+'<div class="pg-st"><div class="pg-dot" style="border-style:dashed;cursor:default"></div><div class="pg-sb"><div><span style="color:var(--g4);font-size:11px">Próximo passo</span> <b>'+(function(){var nx=proximoAuto(v.produto);return nx?esc(nomeP(nx))+' · €'+(prod(nx)||{}).valor:'Escolher próximo nível';})()+'</b> '+(concluida(v)?'<span class="pg-chip ok">disponível</span>':'<span class="pg-chip" style="background:#F3F4F6;color:#6B7280">🔒 depois da última fase</span>')+'</div></div></div></div>'+editor(v,cr);
   }
+  function quadros(taId){
+    var ta=document.getElementById(taId); if(!ta) return;
+    var old=document.getElementById(taId+'-q'); if(old) old.remove();
+    var box=document.createElement('div'); box.id=taId+'-q'; ta.parentNode.insertBefore(box,ta.nextSibling);
+    var rows=parse(ta.value).map(function(x){return {q:x.data?x.data.split('-').reverse().join('/'):(x.dia?'+'+x.dia:''),t:x.t||'',d:x.d||'',e:x.enc||'',f:x.fmt||''};});
+    function sync(){ ta.value=rows.filter(function(r){return r.t.trim();}).map(function(r){var c=function(z){return String(z==null?'':z).replace(/\|/g,'/').trim();};return c(r.q||'+0')+' | '+c(r.t)+' | '+c(r.d)+' | '+c(r.e)+' | '+c(r.f);}).join('\n'); }
+    function draw(){
+      var inp='style="width:100%;font-size:12px;box-sizing:border-box"';
+      box.innerHTML=rows.map(function(r,i){
+        return '<div style="border:1px solid var(--g1,#E5E7EB);border-radius:10px;padding:9px;margin:0 0 8px;background:#FAFAFA">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:11.5px">Fase '+(i+1)+'</b><button type="button" data-x="'+i+'" style="border:0;background:none;color:#C0392B;cursor:pointer;font-size:12px">✕ remover</button></div>'+
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'+
+          '<label style="font-size:10.5px;color:var(--g4)">Nome da fase<input class="fi" '+inp+' data-k="t" data-i="'+i+'" value="'+esc(r.t)+'" placeholder="Workshop ao vivo"></label>'+
+          '<label style="font-size:10.5px;color:var(--g4)">Data (23/11/2026) ou +dias depois<input class="fi" '+inp+' data-k="q" data-i="'+i+'" value="'+esc(r.q)+'" placeholder="23/11/2026 ou +7"></label>'+
+          '<label style="font-size:10.5px;color:var(--g4)">Quantos encontros<input class="fi" '+inp+' type="number" min="0" data-k="e" data-i="'+i+'" value="'+esc(r.e)+'" placeholder="1"></label>'+
+          '<label style="font-size:10.5px;color:var(--g4)">Como acontece<input class="fi" '+inp+' data-k="f" data-i="'+i+'" value="'+esc(r.f)+'" placeholder="Online, ao vivo no Zoom"></label>'+
+          '</div><label style="font-size:10.5px;color:var(--g4);display:block;margin-top:6px">O que acontece<input class="fi" '+inp+' data-k="d" data-i="'+i+'" value="'+esc(r.d)+'" placeholder="Precificação inteligente, 10h às 13h"></label></div>';
+      }).join('')+'<button type="button" class="btn bs bsm" data-add="1">+ Adicionar fase</button>';
+    }
+    box.addEventListener('input',function(e){var k=e.target.getAttribute('data-k'); if(!k) return; rows[+e.target.getAttribute('data-i')][k]=e.target.value; sync();});
+    box.addEventListener('click',function(e){
+      var x=e.target.getAttribute('data-x'), a=e.target.getAttribute('data-add');
+      if(x!==null){rows.splice(+x,1); sync(); draw();}
+      else if(a){rows.push({q:rows.length?'+7':'',t:'',d:'',e:'',f:''}); draw();}
+    });
+    if(!rows.length) rows.push({q:'',t:'',d:'',e:'',f:''});
+    draw();
+  }
   function editor(v,cr){
-    return '<details style="margin:6px 0"><summary style="font-size:11px;color:var(--g3);cursor:pointer">✏️ Editar fases</summary><textarea class="fi" id="pg-cr-'+v.id+'" rows="4" style="font-size:12px;font-family:monospace;margin-top:6px">'+esc(serializar(cr.map(function(x){return {t:x.t,d:x.d,enc:x.enc,fmt:x.fmt,data:x.data};})))+'</textarea>'+
+    return '<details style="margin:6px 0" ontoggle="if(this.open)haProg.quadros(\'pg-cr-'+v.id+'\')"><summary style="font-size:11px;color:var(--g3);cursor:pointer">✏️ Editar fases</summary><textarea class="fi" id="pg-cr-'+v.id+'" rows="4" style="display:none">'+esc(serializar(cr.map(function(x){return {t:x.t,d:x.d,enc:x.enc,fmt:x.fmt,data:x.data};})))+'</textarea>'+
       '<button class="btn bs bsm" style="margin-top:4px" onclick="haProg.guardarCron('+v.id+')">Guardar fases</button></details>';
   }
   function corpo(m){
@@ -7324,7 +7354,7 @@ window.haProg=(function(){
   var _ag=false;
   function agendar(){ if(_ag) return; _ag=true; setTimeout(function(){_ag=false; try{ if(migrar()){save();renderAll();} }catch(e){console.error('Programa:',e);} },60); }
   return {
-    temCron:function(m){var v=ultimo(m);return !!v&&cronOf(v).length>0;}, ehMentoria:ehMentoria, grelha:grelha, registarPag:registarPag, fimProduto:fimProduto, linha:linha, concluida:concluida, ultimo:ultimo, fim:fimDe, agendar:agendar,
+    temCron:function(m){var v=ultimo(m);return !!v&&cronOf(v).length>0;}, quadros:quadros, ehMentoria:ehMentoria, grelha:grelha, registarPag:registarPag, fimProduto:fimProduto, linha:linha, concluida:concluida, ultimo:ultimo, fim:fimDe, agendar:agendar,
     abrir:function(id){atual=id;pinta();document.getElementById('modal-programa').classList.add('open');},
     fechar:function(){document.getElementById('modal-programa').classList.remove('open');},
     parse:parse, serializar:serializar, materializar:materializar,
