@@ -8224,5 +8224,95 @@ window.haFinR=(function(){
   };
 })();
 </script>
+
+<!-- BLOCO 30 · Visão Geral no formato executivo (saudação, indicadores, movimentos, tarefas, campanhas) -->
+<style>
+.hm{margin-bottom:18px}
+.hm-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.hm-top .d{font-size:11.5px;color:var(--g4)}.hm-top h2{margin:2px 0 4px;font-size:22px;font-weight:700}.hm-top .f{font-size:12.5px;color:var(--g3);font-style:italic}
+.hm-sync{font-size:11.5px;color:var(--g4);display:flex;align-items:center;gap:6px}.hm-sync i{width:7px;height:7px;border-radius:50%;background:#0B6E4F;display:inline-block}
+.hm-k{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.hm-t{background:#fff;border:1px solid var(--g6);border-radius:12px;padding:13px 15px;cursor:pointer}
+.hm-t .l{font-size:11px;color:var(--g4);margin-bottom:6px}.hm-t .v{font-size:24px;font-weight:700;line-height:1.1}.hm-t .s{font-size:11px;color:var(--g4);margin-top:5px}
+.hm-g{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;margin-bottom:12px}
+.hm-c{background:#fff;border:1px solid var(--g6);border-radius:12px;padding:14px 16px}
+.hm-c h3{margin:0;font-size:14px;font-weight:700}.hm-ch{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.hm-ch a{font-size:11.5px;color:var(--g);cursor:pointer;font-weight:600}
+.hm-r{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--g6)}
+.hm-r:first-of-type{border-top:0}.hm-r .n{flex:1;min-width:0;cursor:pointer}.hm-r .n b{font-size:12.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hm-r .n span{font-size:11px;color:var(--g4)}
+.hm-r .m{font-size:13px;font-weight:700}
+.hm-e{font-size:12px;color:var(--g4);padding:12px 0}
+@media(max-width:900px){.hm-k{grid-template-columns:repeat(2,1fr)}.hm-g{grid-template-columns:1fr}}
+</style>
+<script>
+window.haHome=(function(){
+  var FR=['Uma mensagem enviada a tempo vale mais do que dez lembretes atrasados.','Quem faz follow-up vende mais do que quem espera.','Cada conversa de hoje é a venda de amanhã.','Rapidez na resposta é metade da venda.','Organização hoje, tranquilidade ao fim do dia.','Clientes bem acompanhados voltam e recomendam.','Um passo de cada vez, todos os dias.'];
+  function go(p){ nav(p,document.querySelector(".ni[onclick*=\"'"+p+"'\"]")); }
+  function eur(n){ return (n<0?'−':'')+Math.abs(Math.round(n)).toLocaleString('pt-PT')+' €'; }
+  function tel(l){ var n=normalizeTel(l.tel||l.contacto||''); return n&&n.length>=6?n:''; }
+  function wa(l,t){ var n=tel(l); return n?'<a class="btn bs bsm" target="_blank" href="https://wa.me/'+n+(t?'?text='+encodeURIComponent(t):'')+'">WhatsApp</a>':''; }
+  function addD(d,n){ var x=new Date(d+'T12:00:00'); x.setDate(x.getDate()+n); return isoLocal(x); }
+  function render(){
+    var P=document.getElementById('p-overview'); if(!P) return;
+    var box=document.getElementById('ov-home'); 
+    if(!box){ box=document.createElement('div'); box.id='ov-home'; box.className='hm'; P.insertBefore(box,P.firstChild);
+      var old=document.createElement('details'); old.id='ov-antigo'; old.innerHTML='<summary style="cursor:pointer;font-size:12.5px;font-weight:600;color:var(--g4);padding:6px 0">Mais detalhes · funil, gráficos e alertas</summary>';
+      [].slice.call(P.children).forEach(function(c){ if(c!==box&&c!==old) old.appendChild(c); }); P.appendChild(old); }
+    var ov=document.getElementById('ov-vendas'); if(ov) ov.style.display='none';
+    var hoje=todayISO(), mes=hoje.slice(0,7), now=new Date(), h=now.getHours();
+    var L=DB.leads||[], ativos=L.filter(function(l){return !['fechado','perdido'].includes(l.etapa);});
+    var novos=L.filter(function(l){return l.etapa==='novo';});
+    var follow=ativos.filter(function(l){return l.proxData&&l.proxData<=hoje;}).sort(function(a,b){return a.proxData.localeCompare(b.proxData);});
+    var atras=follow.filter(function(l){return l.proxData<hoje;}).length;
+    var GAPS=[0,3,7,14];
+    var recup=L.filter(function(l){ var r=l.recup; if(l.etapa!=='perdido'||!r||r.estado!=='ativa'||r.passo>=GAPS.length) return false; return addD(r.ultimo||r.desde,GAPS[r.passo])<=hoje; });
+    var calls=(DB.reunioes||[]).filter(function(r){return r.data===hoje&&(r.estado||'agendada')==='agendada';}).sort(function(a,b){return (a.hora||'').localeCompare(b.hora||'');});
+    var rec=(DB.pagamentos||[]).filter(function(p){return p.estado==='Pago'&&(p.data||'').slice(0,7)===mes;}).reduce(function(s,p){return s+(+p.valor||0);},0);
+    var desp=(DB.despesas||[]).filter(function(d){return (d.data||'').slice(0,7)===mes;}).reduce(function(s,d){return s+(+d.valor||0);},0);
+    var pipe=ativos.reduce(function(s,l){return s+(+l.valor||0);},0);
+    var tar=(DB.tarefas||[]).filter(function(t){return !t.done;});
+    var prog=(DB.mentorados||[]).filter(function(m){return !m.estado||m.estado==='Ativo';});
+    var pv=[]; try{ haPV.ativos().forEach(function(m){ var i=haPV.atual(m); if(i<haPV.PASSOS.length&&haPV.data(m,i)<=hoje) pv.push({m:m,i:i}); }); }catch(e){}
+    var tile=function(l,v,s,pg,c){ return '<div class="hm-t" onclick="haHome.go(\''+pg+'\')"><div class="l">'+l+'</div><div class="v"'+(c?' style="color:'+c+'"':'')+'>'+v+'</div><div class="s">'+s+'</div></div>'; };
+    var prox=calls[0];
+    var k='<div class="hm-k">'+
+      tile('Calls hoje',calls.length,prox?'próxima: '+esc(prox.hora||'')+' · '+esc(prox.who||''):'sem calls marcadas','agenda')+
+      tile('Leads por contactar',novos.length,'novos no pipeline','pipeline',novos.length?'#B7791F':'')+
+      tile('Follow-ups hoje',follow.length,atras?atras+' atrasado'+(atras>1?'s':''):'em dia','pipeline',follow.length?'#B7791F':'')+
+      tile('A recuperar hoje',recup.length,'passos de recuperação','recuperar')+
+      tile('Saldo do mês',eur(rec-desp),eur(rec)+' receita · '+eur(desp)+' despesa','financeiro',rec-desp<0?'#C0392B':'')+
+      tile('Pipeline em aberto',eur(pipe),ativos.length+' leads ativos','pipeline')+
+      tile('Em acompanhamento',prog.length,pv.length?pv.length+' mensagem'+(pv.length>1?'s':'')+' de pós-venda hoje':'pessoas nos programas','entregas')+
+      tile('Tarefas pendentes',tar.length,'por concluir','equipa')+'</div>';
+    // fazer hoje
+    var q=[];
+    follow.slice(0,5).forEach(function(l){ q.push({n:l.nome,s:(l.proxTipo||'Follow-up')+' · '+(l.proxData<hoje?'atrasado desde ':'')+fmtDate(l.proxData),tg:l.proxData<hoje?'tr':'ty',tt:l.proxData<hoje?'atrasado':'hoje',a:wa(l,'Olá '+String(l.nome).split(' ')[0]+'! '),id:l.id}); });
+    novos.slice(0,4).forEach(function(l){ q.push({n:l.nome,s:'Contactar · '+(l.origem||'novo lead'),tg:'tgr',tt:'novo',a:wa(l,'Olá '+String(l.nome).split(' ')[0]+'! Obrigado pelo interesse.'),id:l.id}); });
+    recup.slice(0,3).forEach(function(l){ q.push({n:l.nome,s:'Recuperar · passo '+((l.recup.passo||0)+1)+'/4',tg:'to',tt:'recuperar',a:'<button class="btn bs bsm" onclick="haRecup.ir()">Abrir Recuperar</button>',id:l.id}); });
+    pv.slice(0,3).forEach(function(x){ q.push({n:x.m.nome,s:'Pós-venda · '+haPV.PASSOS[x.i].t,tg:'tg',tt:'pós-venda',a:'<button class="btn bs bsm" onclick="haPV.enviar('+x.m.id+')">Enviar</button>',pg:'entregas'}); });
+    var fz='<div class="hm-c"><div class="hm-ch"><h3>Fazer hoje</h3><a onclick="haHome.go(\'pipeline\')">Ver pipeline</a></div>'+
+      (q.length?q.map(function(x){ return '<div class="hm-r"><div class="n" onclick="'+(x.id?'editLead('+x.id+')':'haHome.go(\''+x.pg+'\')')+'"><b>'+esc(x.n)+' <span class="tag '+x.tg+'" style="font-size:9.5px">'+x.tt+'</span></b><span>'+esc(x.s)+'</span></div>'+x.a+(x.id?'<button class="btn bsm" onclick="editLead('+x.id+')">Abrir</button>':'')+'</div>'; }).join(''):'<div class="hm-e">Tudo em dia. Sem contactos pendentes para hoje. 🎉</div>')+'</div>';
+    // movimentos
+    var mv=(DB.pagamentos||[]).filter(function(p){return p.estado==='Pago';}).map(function(p){return {d:p.data||'',t:(p.cliente||'')+' — '+(p.produto||''),c:'Receita',v:+p.valor||0};})
+      .concat((DB.despesas||[]).map(function(d){return {d:d.data||'',t:d.desc||'',c:d.categoria||'Saída',v:-(+d.valor||0)};})).sort(function(a,b){return b.d.localeCompare(a.d);}).slice(0,5);
+    var mvH='<div class="hm-c"><div class="hm-ch"><h3>Movimentos recentes</h3><a onclick="haHome.go(\'financeiro\')">Ver financeiro</a></div>'+(mv.length?mv.map(function(m){return '<div class="hm-r"><div class="n"><b>'+esc(m.t)+'</b><span>'+esc(m.c)+' · '+fmtDate(m.d)+'</span></div><div class="m" style="color:'+(m.v<0?'#C0392B':'#0B6E4F')+'">'+(m.v<0?'−':'+')+Math.abs(Math.round(m.v))+' €</div></div>';}).join(''):'<div class="hm-e">Sem movimentos.</div>')+'</div>';
+    // tarefas
+    var tp=tar.slice().sort(function(a,b){return (a.prazo||'9').localeCompare(b.prazo||'9');}).slice(0,5);
+    var tH='<div class="hm-c"><div class="hm-ch"><h3>Próximas tarefas</h3><a onclick="haHome.go(\'equipa\')">Ver tudo</a></div>'+(tp.length?tp.map(function(t){return '<div class="hm-r"><div class="n"><b>'+esc(t.nome)+'</b><span>'+esc(t.resp||'—')+(t.prazo?' · '+fmtDate(t.prazo):'')+'</span></div></div>';}).join(''):'<div class="hm-e">Sem tarefas pendentes.</div>')+'</div>';
+    // campanhas
+    var cp=(DB.mktPlanos||[]).filter(function(c){return !c.fim||c.fim>=hoje;}).slice(0,4);
+    var cH='<div class="hm-c"><div class="hm-ch"><h3>Campanhas ativas</h3><a onclick="haHome.go(\'marketing\')">Ver marketing</a></div>'+(cp.length?cp.map(function(c){return '<div class="hm-r"><div class="n"><b>'+esc(c.nome)+'</b><span>'+esc(c.canal||'')+(c.fim?' · até '+fmtDate(c.fim):'')+'</span></div><div class="m">'+(c.gasto!==''&&c.gasto!=null?Math.round(c.gasto)+' €':'—')+'</div></div>';}).join(''):'<div class="hm-e">Sem campanhas ativas.</div>')+'</div>';
+    // pipeline compacto
+    var et=ETAPAS.filter(function(e){return !['fechado','perdido'].includes(e.id);});
+    var pl='<div class="hm-c" style="margin-bottom:12px"><div class="hm-ch"><h3>Pipeline · onde estão os leads</h3><a onclick="haHome.go(\'pipeline\')">Abrir pipeline</a></div><div style="display:flex;gap:8px;flex-wrap:wrap">'+et.map(function(e){ var ls=ativos.filter(function(l){return l.etapa===e.id;}), v=ls.reduce(function(s,l){return s+(+l.valor||0);},0); return '<div style="flex:1;min-width:110px;border-left:3px solid '+e.hex+';padding:2px 10px"><div style="font-size:20px;font-weight:700">'+ls.length+'</div><div style="font-size:11px;color:var(--g4)">'+e.l+(v?' · '+Math.round(v)+' €':'')+'</div></div>'; }).join('')+'</div></div>';
+    var sal=h<12?'Bom dia':h<20?'Boa tarde':'Boa noite';
+    var nomeArea=(typeof HA_AREA!=='undefined'&&HA_AREA==='solutions')?'Hub Solutions':(typeof HA_AREA!=='undefined'&&HA_AREA==='mentorias')?'Hub Mentorias':'Hub Advance';
+    box.innerHTML='<div class="hm-top"><div><div class="d">'+now.toLocaleDateString('pt-PT',{day:'numeric',month:'long',year:'numeric'})+'</div><h2>'+sal+', equipa '+nomeArea+' ✨</h2><div class="f">'+FR[now.getDate()%FR.length]+'</div></div><div class="hm-sync"><i></i>'+(navigator.onLine?'Online — sincronizado':'Offline — guardado neste dispositivo')+'</div></div>'+k+
+      '<div class="hm-g"><div>'+fz+'</div><div>'+mvH+'</div></div>'+pl+'<div class="hm-g" style="grid-template-columns:repeat(2,minmax(0,1fr))">'+tH+cH+'</div>';
+  }
+  var _r=window.renderOverview; window.renderOverview=function(){ var r=_r.apply(this,arguments); try{render();}catch(e){console.error('Visão Geral:',e);} return r; };
+  return {render:render,go:go};
+})();
+</script>
 </body>
 </html>
