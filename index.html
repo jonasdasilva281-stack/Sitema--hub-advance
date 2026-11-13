@@ -1100,6 +1100,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div id="pd-calc" style="font-size:11.5px;color:var(--g3);margin-top:8px;line-height:1.6"></div>
   </div>
   <div class="fg"><label class="fl">Nome curto</label><input class="fi" id="pd-nomec"></div>
+  <div class="fg"><label class="fl">Link do produto <span style="font-size:9.5px;color:var(--g4);font-weight:400">página de venda, checkout ou Hotmart</span></label><input class="fi" id="pd-link" type="url" placeholder="https://"></div>
   <div class="fr fg">
     <div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pd-valor-input" placeholder="0.00" oninput="pdCalcParcela();pdCalcPreco()"></div>
     <div><label class="fl">Tipo de cobrança</label>
@@ -2703,7 +2704,7 @@ function entregaTexto(p){
 }
 function novoProduto(){
   document.getElementById('pd-id').value='';
-  ['pd-nome','pd-nomec','pd-desc','pd-valor-input','pd-parcelas','pd-horas','pd-horasmes','pd-meses'].forEach(function(id){document.getElementById(id).value='';});
+  ['pd-nome','pd-nomec','pd-link','pd-desc','pd-valor-input','pd-parcelas','pd-horas','pd-horasmes','pd-meses'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('pd-digital').checked=false;
   pdSetEntregaveis([]);
   document.getElementById('pd-tipo').value='unico'; pdToggleTipo();
@@ -2717,6 +2718,7 @@ function editProduto(id){
   document.getElementById('pd-id').value=p.id;
   document.getElementById('pd-nome').value=p.nome;
   document.getElementById('pd-nomec').value=p.nomeC||'';
+  document.getElementById('pd-link').value=p.link||'';
   document.getElementById('pd-valor-input').value=p.valor;
   document.getElementById('pd-tipo').value=p.tipo||'unico'; pdToggleTipo();
   document.getElementById('pd-parcelas').value=p.parcelas||'';
@@ -2742,6 +2744,7 @@ function saveProduto(){
   var ate=duracao==='custom'?document.getElementById('pd-ate').value:null;
   var obj={nome:nome,nomeC:document.getElementById('pd-nomec').value||nome,valor:valor,tipo:tipo,parcelas:parcelas,duracao:duracao,ate:ate,
     desc:document.getElementById('pd-desc').value,
+    link:(function(v){v=(v||'').trim();return v&&!/^https?:\/\//i.test(v)?'https://'+v:v;})(document.getElementById('pd-link').value),
     horas:parseFloat(document.getElementById('pd-horas').value)||null,
     horasMes:parseFloat(document.getElementById('pd-horasmes').value)||null,
     meses:parseInt(document.getElementById('pd-meses').value)||null,
@@ -2795,6 +2798,7 @@ function renderProdutos(){
       +'<div style="font-size:24px;font-weight:700;color:var(--g);margin:8px 0 4px">'+precoStr+'</div>'
       +(duracaoStr?'<div style="font-size:10.5px;color:var(--g4);margin-bottom:4px">'+duracaoStr+'</div>':'')
       +(p.desc?'<div style="font-size:11px;color:var(--g4);margin-bottom:8px">'+esc(p.desc)+'</div>':'')
+      +(p.link?'<div style="font-size:11px;margin-bottom:8px"><a href="'+esc(p.link)+'" target="_blank" rel="noopener" style="color:var(--bl);text-decoration:none;font-weight:500">🔗 Abrir link do produto</a> <span style="cursor:pointer;color:var(--g4)" onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+esc(p.link)+'\');toast(\'Link copiado\')" title="Copiar link">⧉</span></div>':'')
       +'<div style="font-size:10.5px;color:var(--g3);margin-bottom:4px">📦 Entrega: '+entregaTexto(p)+'</div>'
       +((p.horas||p.horasMes)?'<div style="font-size:10.5px;color:var(--g3);margin-bottom:8px">⏱ '+(p.horas?p.horas+'h para entregar':'')+(p.horas&&p.horasMes?' · ':'')+(p.horasMes?p.horasMes+'h/mês':'')
         +((p.digital&&p.horas)?' · paga-se com <b style="color:var(--g)">'+Math.ceil(p.horas*PRECO_REGRA.min/p.valor)+' vendas</b>':'')
@@ -6765,7 +6769,8 @@ window.haRecup=(function(){
         'Não viu valor na oferta':'Reformulei a proposta para ficar mais clara no resultado que obtém.',
         'Não tinha autoridade de decisão':'Se for útil, preparo um resumo para partilhar com quem decide.'
       }[m]||'Reformulei a proposta para se ajustar melhor ao que precisa agora.';
-      return 'Olá '+n+'! '+adapt+' Quer que lhe explique em 5 minutos?';
+      var pr=DB.produtos.find(function(x){return x.nome===l.produto;});
+      return 'Olá '+n+'! '+adapt+' Quer que lhe explique em 5 minutos?'+(pr&&pr.link?'\nAqui fica o link: '+pr.link:'');
     }
     return 'Olá '+n+', não quero ser insistente, por isso este é o meu último contacto. A porta fica sempre aberta: quando fizer sentido, é só dizer. Desejo-lhe muito sucesso!';
   }
