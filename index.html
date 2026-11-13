@@ -7196,6 +7196,11 @@ window.haClientes=(function(){
       '</div></div>';
   }
   // recolhe quem já fechou um produto de entrada antes desta regra (ficou fechada ou foi criada como mentorada)
+  var _adotarAgendado=false;
+  function agendarAdotar(){
+    if(_adotarAgendado) return; _adotarAgendado=true;
+    setTimeout(function(){ _adotarAgendado=false; try{ if(adotar()){ save(); renderAll(); } }catch(e){console.error('Adotar:',e);} },50);
+  }
   function adotar(){
     var mudou=false;
     DB.mentorados.slice().forEach(function(m){
@@ -7213,11 +7218,11 @@ window.haClientes=(function(){
       registar(l,l.produto,pg?parseFloat(pg.valorTotal||pg.valor)||0:(prod(l.produto)||{}).valor||0);
       mudou=true;
     });
-    if(mudou) save();
+    return mudou;
   }
   function render(){
     var box=document.getElementById('cl-list'); if(!box) return;
-    adotar();
+    agendarAdotar();
     var ls=lista().filter(function(l){return !l.cliente.mentorado;}), hoje=todayISO();
     var hojeN=ls.filter(function(l){return l.proxData&&l.proxData<=hoje;}).length;
     var subiram=lista().filter(function(l){return l.cliente.historico.length>1||l.cliente.mentorado;}).length;
