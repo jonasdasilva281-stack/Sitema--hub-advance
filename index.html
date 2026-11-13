@@ -7388,5 +7388,59 @@ window.haProg=(function(){
 </script>
 
 
+
+<!-- BLOCO 17 · Programas ativos + relatório de desenvolvimento -->
+<script>
+(function(){
+  var _rm=window.renderMentorados;
+  function ativo(m){ return ['Concluído','Inativo','Stand by'].indexOf(m.estado)<0; }
+  function prodDe(n){ return (DB.produtos||[]).find(function(p){return p.nome===n;}); }
+  function progresso(m){
+    var v=null; try{ v=haProg.ultimo(m); }catch(e){}
+    if(v && v.cron && v.cron.length){ var f=v.cron.filter(function(x){return x.feito;}).length; return {p:Math.round(f/v.cron.length*100),t:f+'/'+v.cron.length+' fases'}; }
+    if(v){ var its=(v.itens||[]).filter(function(it){return it.u!=='acesso'&&!it.mensal&&it.q;});
+      if(its.length){ var tot=0,fe=0; its.forEach(function(it){ var i=v.itens.indexOf(it); tot+=it.q; fe+=Math.min(it.q,itemFeito(v,i)); }); return {p:Math.round(fe/tot*100),t:Math.round(fe*10)/10+'/'+tot+' entregas'}; } }
+    if(haProg.ehMentoria(m) && !/^Comunidade/.test(m.produto||'')){ var sem=m.semana||0; return {p:Math.round(Math.min(sem,12)/12*100),t:'semana '+sem+'/12'}; }
+    return {p:null,t:'—'};
+  }
+  function situacao(m){
+    var hoje=todayISO(), mot=[];
+    var v=null; try{ v=haProg.ultimo(m); }catch(e){}
+    if(v&&v.cron&&v.cron.some(function(x){return !x.feito&&x.data<hoje;})) mot.push('fase atrasada');
+    var mentoria=haProg.ehMentoria(m)&&!/^Comunidade/.test(m.produto||'');
+    if(mentoria){
+      var u=ultimaSessao(m), d=u?diasDesde(u.data):null;
+      if(d!=null&&d>30) mot.push('sem sessão há '+d+' dias');
+      if(!proxSessao(m)) mot.push('sem sessão marcada');
+    }
+    if(m.estado==='Urgente'||m.estado==='Atenção') mot.push(m.estado.toLowerCase());
+    return mot;
+  }
+  function render(){
+    var el=document.getElementById('prog-resumo');
+    if(!el){ var l=document.getElementById('mentorados-list'); if(!l) return; el=document.createElement('div'); el.id='prog-resumo'; l.parentNode.insertBefore(el,l); }
+    var at=(DB.mentorados||[]).filter(ativo);
+    if(!at.length){ el.innerHTML=''; return; }
+    var grupos={}; at.forEach(function(m){ var k=m.produto||'Sem programa'; (grupos[k]=grupos[k]||[]).push(m); });
+    var nomes=Object.keys(grupos).sort(function(a,b){return grupos[b].length-grupos[a].length;});
+    var infos=at.map(function(m){return {m:m,pg:progresso(m),sit:situacao(m)};});
+    var aten=infos.filter(function(x){return x.sit.length;}).length;
+    var kpi=function(n,l,c){return '<div style="flex:1;min-width:120px;background:#fff;border:1px solid var(--g6);border-radius:10px;padding:10px 12px"><div style="font-size:20px;font-weight:600;color:'+(c||'var(--g1,#111)')+'">'+n+'</div><div style="font-size:10.5px;color:var(--g4)">'+l+'</div></div>';};
+    var h='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+kpi(nomes.length,'programas ativos')+kpi(at.length,'pessoas dentro')+kpi(at.length-aten,'em dia','var(--g)')+kpi(aten,'precisam de atenção',aten?'#B7791F':'var(--g4)')+'</div>';
+    h+='<div class="mt-lbl" style="margin:4px 0 6px">Programas ativos e quem está dentro</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin-bottom:14px">'+
+      nomes.map(function(n){ var p=prodDe(n), ms=grupos[n];
+        return '<div class="card" style="padding:11px 12px"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px"><b style="font-size:12.5px">'+esc(p&&p.nomeC||n)+'</b><span style="font-size:11px;color:var(--g4)">'+ms.length+' '+(ms.length>1?'membros':'membro')+'</span></div>'+
+          '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">'+ms.map(function(m){return '<span class="tag tg" style="font-size:10px;cursor:pointer" onclick="haProg.abrir('+m.id+')">'+esc(m.nome)+'</span>';}).join('')+'</div></div>'; }).join('')+'</div>';
+    h+='<div class="mt-lbl" style="margin:4px 0 6px">Como estamos · desenvolvimento de cada aluno</div><div class="card" style="padding:0;overflow-x:auto;margin-bottom:16px"><table style="width:100%;border-collapse:collapse;font-size:11.5px"><thead><tr style="text-align:left;color:var(--g4);font-size:10.5px"><th style="padding:9px 12px">Aluno</th><th>Programa</th><th style="min-width:130px">Progresso</th><th>Última sessão</th><th>Próxima</th><th>Tarefas</th><th>Situação</th></tr></thead><tbody>'+
+      infos.sort(function(a,b){return b.sit.length-a.sit.length;}).map(function(x){ var m=x.m, u=ultimaSessao(m), pr=proxSessao(m), pend=(m.tarefas||[]).filter(function(t){return !t.done;}).length, d=u?diasDesde(u.data):null;
+        return '<tr style="border-top:1px solid var(--g6);cursor:pointer" onclick="haProg.abrir('+m.id+')"><td style="padding:9px 12px;font-weight:600">'+esc(m.nome)+'</td><td>'+esc((prodDe(m.produto)||{}).nomeC||m.produto||'—')+'</td>'+
+          '<td>'+(x.pg.p==null?'<span style="color:var(--g4)">—</span>':'<div class="sbw" style="width:90px;display:inline-block;vertical-align:middle"><div class="sbb" style="width:'+x.pg.p+'%;background:var(--g)"></div></div> <span style="color:var(--g4)">'+x.pg.p+'% · '+x.pg.t+'</span>')+'</td>'+
+          '<td>'+(u?fmtDate(u.data)+' <span style="color:var(--g4)">('+(d===0?'hoje':'há '+d+'d')+')</span>':'—')+'</td><td>'+(pr?fmtDate(pr.data):'—')+'</td><td>'+(pend?pend+' por fazer':'—')+'</td>'+
+          '<td>'+(x.sit.length?'<span class="tag ty" style="font-size:9.5px">'+esc(x.sit.join(' · '))+'</span>':'<span class="tag tg" style="font-size:9.5px">em dia</span>')+'</td></tr>'; }).join('')+'</tbody></table></div>';
+    el.innerHTML=h;
+  }
+  window.renderMentorados=function(){ var r=_rm.apply(this,arguments); try{ render(); }catch(e){ console.error(e); } return r; };
+})();
+</script>
 </body>
 </html>
