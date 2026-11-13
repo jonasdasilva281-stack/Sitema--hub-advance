@@ -6232,11 +6232,11 @@ try{
   if(content&&!document.getElementById('p-funil')){
     var p=document.createElement('div'); p.className='panel'; p.id='p-funil'; content.appendChild(p);
   }
-  var pipeNi=document.querySelector('.sb-nav .ni[onclick*="\'pipeline\'"]');
+  var pipeNi=document.querySelector('.sb-nav .ni[onclick*="\'recuperar\'"]')||document.querySelector('.sb-nav .ni[onclick*="\'pipeline\'"]');
   if(pipeNi&&!document.querySelector('.ni-funil')){
     var ni=document.createElement('div'); ni.className='ni ni-funil';
     ni.setAttribute('onclick',"nav('funil',this)");
-    ni.innerHTML='<span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg></span><span class="ni-label">Funil &amp; Metas</span>';
+    ni.innerHTML='<span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg></span><span class="ni-label">Funil</span>';
     pipeNi.parentNode.insertBefore(ni,pipeNi.nextSibling);
   }
   if(typeof titles==='object') titles.funil='Funil & Metas do mês';
@@ -6507,11 +6507,11 @@ try{
   if(content&&!document.getElementById('p-funilsol')){
     var p=document.createElement('div'); p.className='panel'; p.id='p-funilsol'; content.appendChild(p);
   }
-  var after=document.querySelector('.sb-nav .ni-funil')||document.querySelector('.sb-nav .ni[onclick*="\'pipeline\'"]');
+  var after=document.querySelector('.sb-nav .ni-funil')||document.querySelector('.sb-nav .ni[onclick*="\'recuperar\'"]')||document.querySelector('.sb-nav .ni[onclick*="\'pipeline\'"]');
   if(after&&!document.querySelector('.ni-funilsol')){
     var ni=document.createElement('div'); ni.className='ni ni-funilsol';
     ni.setAttribute('onclick',"nav('funilsol',this)");
-    ni.innerHTML='<span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg></span><span class="ni-label">Funil &amp; Metas</span>';
+    ni.innerHTML='<span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg></span><span class="ni-label">Funil</span>';
     after.parentNode.insertBefore(ni,after.nextSibling);
   }
   if(typeof titles==='object') titles.funilsol='Funil & Metas · Hub Solutions';
