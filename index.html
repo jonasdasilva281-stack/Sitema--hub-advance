@@ -6909,6 +6909,7 @@ window.haRecup=(function(){
   return {
     ir:function(){ var el=document.querySelector('.ni[onclick*="\'recuperar\'"]'); nav('recuperar',el); },
     render:render,
+    _i:{init:init,proxima:proxima,mensagem:mensagem,lista:lista,recuperados:recuperados,PASSOS:PASSOS,GAPS:GAPS,diasDesde:diasDesde},
     filtrar:function(f){filtro=f;render();},
     copiar:function(id){
       var l=lead(id); if(!l) return; var t=mensagem(l,l.recup.passo);
@@ -7969,6 +7970,90 @@ window.haVendas=(function(){
   var _ro=window.renderOverview;
   window.renderOverview=function(){ var r=_ro.apply(this,arguments); try{ render(); }catch(e){ console.error('Painel de vendas:',e); } return r; };
   return {render:render};
+})();
+</script>
+
+<!-- BLOCO 26 · Recuperar em quadro (pipeline) + Guia por etapa no Pipeline -->
+<style>
+.rq{display:flex;gap:10px;overflow-x:auto;padding-bottom:12px;align-items:flex-start;margin-bottom:14px}
+.rq-c{flex:1 0 220px;max-width:280px;background:#F7F7F5;border-radius:12px;padding:10px}
+.rq-h{border-top:3px solid var(--hx,#999);padding-top:8px;margin-bottom:8px}
+.rq-h b{font-size:12.5px;display:block}.rq-h span{font-size:10.5px;color:var(--g4)}
+.rq-m{font-size:11px;color:#444;background:#fff;border:1px dashed var(--g6);border-radius:8px;padding:7px 9px;margin-bottom:8px;white-space:pre-wrap}
+.rq-k{background:#fff;border:1px solid var(--g6);border-radius:10px;padding:9px 10px;margin-bottom:7px;font-size:12px}
+.rq-k.due{border-color:#E8B84A;background:#FFFBEF}
+.rq-k b{cursor:pointer}.rq-k .s{font-size:10.5px;color:var(--g4);margin:2px 0 6px}
+.rq-k button{font:600 10.5px Inter,sans-serif;border:1px solid var(--g6);background:#fff;border-radius:6px;padding:4px 7px;cursor:pointer;margin-right:4px}
+.rq-k button.go{background:#0B6E4F;color:#fff;border-color:#0B6E4F}
+.rq-v{font-size:11px;color:var(--g4);text-align:center;padding:8px}
+.gp{display:flex;gap:10px;overflow-x:auto;padding:4px 0 10px}
+.gp-c{flex:1 0 230px;max-width:290px;background:#fff;border:1px solid var(--g6);border-top:3px solid var(--hx);border-radius:10px;padding:10px 12px;font-size:11.5px}
+.gp-c h5{margin:0 0 2px;font-size:12.5px}.gp-c .o{color:#555;margin-bottom:6px}
+.gp-c .pz{font-size:10.5px;color:var(--g4);margin-bottom:6px}
+.gp-c .ms{background:#F7F7F5;border-radius:8px;padding:7px 9px;margin-bottom:6px;white-space:pre-wrap}
+.gp-c .ms i{font-style:normal;font-weight:700;font-size:10px;color:var(--g4);display:block;margin-bottom:2px}
+.gp-c button{font:600 10.5px Inter,sans-serif;border:1px solid var(--g6);background:#fff;border-radius:6px;padding:3px 7px;cursor:pointer;margin-top:3px}
+.gp-c .nx{margin-top:6px;padding-top:6px;border-top:1px solid var(--g6);color:#0B6E4F;font-weight:600}
+</style>
+<script>
+(function(){
+  var R=haRecup._i, vista='quadro';
+  function lead(id){return DB.leads.find(function(x){return x.id===id;});}
+  function quadro(){
+    var P=document.getElementById('p-recuperar'); if(!P) return;
+    var grid=P.querySelector('.rc-grid'), tools=document.getElementById('rc-tools'); if(!grid||!tools) return;
+    var q=document.getElementById('rq-box');
+    if(!q){ q=document.createElement('div'); q.id='rq-box'; grid.parentNode.insertBefore(q,grid); }
+    var all=R.lista(); all.forEach(R.init);
+    var ativas=all.filter(function(l){return l.recup.estado!=='arquivada';});
+    var rec=R.recuperados(), hoje=todayISO();
+    var tg='<button class="rc-pill'+(vista==='quadro'?' on':'')+'" onclick="haRecQ.vista(\'quadro\')">Quadro</button><button class="rc-pill'+(vista==='lista'?' on':'')+'" onclick="haRecQ.vista(\'lista\')">Lista</button> ';
+    if(!document.getElementById('rq-tg')){ var t=document.createElement('div'); t.id='rq-tg'; t.style.cssText='margin-bottom:8px'; tools.parentNode.insertBefore(t,tools); }
+    document.getElementById('rq-tg').innerHTML=tg;
+    grid.style.display=vista==='lista'?'':'none'; tools.style.display=vista==='lista'?'':'none'; q.style.display=vista==='quadro'?'':'none';
+    if(vista!=='quadro') return;
+    var cores=['#5B4FCF','#C05621','#B7791F','#C0392B'];
+    var cols=R.PASSOS.map(function(ps,i){
+      var ls=ativas.filter(function(l){return l.recup.passo===i;});
+      var ex=ls[0]||{nome:'[nome]',produto:'',motivo:''};
+      var cards=ls.map(function(l){ var pr=R.proxima(l), due=pr&&pr<=hoje;
+        return '<div class="rq-k'+(due?' due':'')+'"><b onclick="editLead('+l.id+')">'+esc(l.nome)+'</b><div class="s">'+esc(l.produto||'—')+' · '+esc(l.motivo||'sem motivo')+'<br>'+(due?'<b style="color:#B7791F;cursor:default">Enviar hoje</b>':'Próximo: '+fmtDate(pr))+'</div>'+
+          '<button class="go" onclick="haRecup.enviar('+l.id+')">Enviar</button><button onclick="haRecup.voltar('+l.id+')">Voltou</button><button onclick="haRecup.arquivar('+l.id+')">Arquivar</button></div>'; }).join('');
+      return '<div class="rq-c" style="--hx:'+cores[i]+'"><div class="rq-h"><b>'+(i+1)+' · '+R.PASSOS[i].t+'</b><span>'+(R.GAPS[i]===0?'Dia 0 (logo)':'+'+R.GAPS[i]+' dias após o anterior')+' · '+ls.length+'</span></div>'+
+        '<div class="rq-m">'+esc(R.mensagem(ex,i))+'</div>'+(cards||'<div class="rq-v">Ninguém neste passo</div>')+'</div>';
+    });
+    var fim=ativas.filter(function(l){return l.recup.passo>=R.PASSOS.length;});
+    cols.push('<div class="rq-c" style="--hx:#777"><div class="rq-h"><b>Sem resposta</b><span>Sequência concluída · '+fim.length+'</span></div>'+(fim.map(function(l){return '<div class="rq-k"><b onclick="editLead('+l.id+')">'+esc(l.nome)+'</b><div class="s">'+esc(l.produto||'—')+'</div><button onclick="haRecup.voltar('+l.id+')">Voltou</button><button onclick="haRecup.arquivar('+l.id+')">Arquivar</button></div>';}).join('')||'<div class="rq-v">Ninguém</div>')+'</div>');
+    cols.push('<div class="rq-c" style="--hx:#0B6E4F"><div class="rq-h"><b>Recuperados</b><span>Voltaram ao pipeline · '+rec.length+'</span></div>'+(rec.map(function(l){return '<div class="rq-k"><b onclick="editLead('+l.id+')">'+esc(l.nome)+'</b><div class="s">'+esc(l.produto||'—')+'</div></div>';}).join('')||'<div class="rq-v">Ainda nenhum</div>')+'</div>');
+    q.innerHTML='<div class="rq">'+cols.join('')+'</div>';
+  }
+  window.haRecQ={vista:function(v){vista=v;quadro();},render:quadro};
+  var r=haRecup.render; haRecup.render=function(){ r.apply(this,arguments); try{quadro();}catch(e){console.error('Quadro recuperar:',e);} };
+  try{quadro();}catch(e){}
+})();
+
+window.haGuia=(function(){
+  var G=[
+   {id:'novo',o:'Responder depressa e perceber o que a pessoa procura.',pz:'No mesmo dia (ideal: menos de 1 hora)',m:[{d:'Dia 0',t:'Olá [nome]! Obrigado pelo interesse. Posso fazer-lhe duas perguntas rápidas para perceber como o posso ajudar?'}],nx:'Responder → passa para SDR'},
+   {id:'sdr',o:'Qualificar: objetivo, momento e orçamento. Marcar a call.',pz:'1 a 2 dias',m:[{d:'Dia 0',t:'Olá [nome], pelo que me contou, faz sentido falarmos 15 minutos. Tenho quinta às 15h ou sexta às 11h, qual prefere?'},{d:'+1 dia',t:'Olá [nome], só para confirmar se prefere quinta ou sexta para a nossa conversa. Basta dizer-me a hora.'}],nx:'Call marcada → passa para Closer'},
+   {id:'closer',o:'Fazer a call, apresentar a proposta e pedir a decisão.',pz:'Proposta no mesmo dia da call',m:[{d:'Após a call',t:'Olá [nome], foi um gosto falar consigo! Como combinado, aqui fica o resumo e o link para começar. Alguma dúvida?'}],nx:'Decidiu → Fechado · Pensar → Follow Up'},
+   {id:'followup',o:'Retomar quem pediu tempo, sem pressionar.',pz:'Dias 1, 3 e 7 após a proposta',m:[{d:'+1 dia',t:'Olá [nome], ficou alguma dúvida sobre a proposta? Se quiser, esclareço em 5 minutos.'},{d:'+3 dias',t:'Olá [nome], deixo-lhe o resultado de uma cliente com um ponto de partida parecido com o seu. Pode ajudar na decisão.'},{d:'+7 dias',t:'Olá [nome], não quero ser insistente. Faz sentido avançarmos ou prefere que volte a falar consigo mais tarde?'}],nx:'Sim → Fechado · Mais tarde → Stand By · Não → Perdido (vai para Recuperar)'},
+   {id:'standby',o:'Guardar quem pediu para falar mais tarde e retomar na data combinada.',pz:'Na data combinada',m:[{d:'Na data',t:'Olá [nome], combinámos falar nesta altura. Faz sentido retomarmos agora?'}],nx:'Retomar → Closer · Sem interesse → Perdido'}
+  ];
+  function render(){
+    var P=document.getElementById('p-pipeline'), K=document.getElementById('pipeline-kanban'); if(!P||!K) return;
+    var el=document.getElementById('pl-guia');
+    if(!el){ el=document.createElement('details'); el.id='pl-guia'; el.style.cssText='margin-bottom:14px'; el.innerHTML='<summary style="cursor:pointer;font-size:13px;font-weight:700;padding:6px 0">Guia por etapa · o que fazer, mensagem e prazo</summary><div class="gp" id="pl-guia-b"></div>'; K.parentNode.insertBefore(el,K); }
+    var hoje=todayISO(), L=DB.leads||[];
+    document.getElementById('pl-guia-b').innerHTML=G.map(function(g,gi){
+      var e=ETAPAS.find(function(x){return x.id===g.id;})||{l:g.id,hex:'#999'};
+      var ls=L.filter(function(l){return l.etapa===g.id;}), dueN=ls.filter(function(l){return l.proxData&&l.proxData<=hoje;}).length;
+      return '<div class="gp-c" style="--hx:'+e.hex+'"><h5>'+e.l+' <span style="font-weight:500;color:var(--g4)">· '+ls.length+(dueN?' · <b style="color:#B7791F">'+dueN+' p/ hoje</b>':'')+'</span></h5><div class="o">'+g.o+'</div><div class="pz">Prazo: '+g.pz+'</div>'+
+        g.m.map(function(m,mi){return '<div class="ms"><i>'+m.d+'</i>'+esc(m.t)+'<br><button onclick="haGuia.copiar('+gi+','+mi+')">Copiar</button></div>';}).join('')+'<div class="nx">→ '+g.nx+'</div></div>';
+    }).join('');
+  }
+  var _p=window.renderPipeline; window.renderPipeline=function(){ var r=_p.apply(this,arguments); try{render();}catch(e){console.error('Guia:',e);} return r; };
+  return {render:render,copiar:function(gi,mi){ var t=G[gi].m[mi].t; if(navigator.clipboard) navigator.clipboard.writeText(t).then(function(){toast('Mensagem copiada — troque [nome] pelo nome do lead');}); }};
 })();
 </script>
 </body>
