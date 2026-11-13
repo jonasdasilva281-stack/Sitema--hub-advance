@@ -2192,10 +2192,10 @@ function renderMentorados(){
           +'</div></div>'
         +'</div>'
         +'<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">'
-          +(m.estado==='Concluído'?'':'<button class="btn '+(aberta?'bp':'bs')+' bsm" onclick="concluirMentorado('+m.id+')">✅ Concluir sessão</button>'
+          +(m.estado==='Concluído'||!haProg.ehMentoria(m)?'':'<button class="btn '+(aberta?'bp':'bs')+' bsm" onclick="concluirMentorado('+m.id+')">✅ Concluir sessão</button>'
           +'<button class="btn bs bsm" onclick="openMarcar(\'mentorado\','+m.id+')">📅 Marcar</button>')
           +'<button class="btn bs bsm" onclick="openHistorico('+m.id+')">🕑 Histórico</button>'
-          +'<button class="btn bs bsm" onclick="openProcesso('+m.id+')" title="Fases do processo">Fases</button>'
+          +(haProg.ehMentoria(m)?'<button class="btn bs bsm" onclick="openProcesso('+m.id+')" title="Fases do processo">Fases</button>':'')
           +'<button class="btn bs bsm" onclick="editMentorado('+m.id+')">✏️</button>'
           +'<button class="btn bd bsm" onclick="deleteMentorado('+m.id+')">×</button>'
         +'</div>'
@@ -2204,7 +2204,7 @@ function renderMentorados(){
       +(aberta?'<div class="al" style="background:#FFFBEA;border:1px solid #FEF08A;color:#854D0E;margin:10px 0 0;font-size:11.5px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center;gap:8px">'
         +'<span>⚠ Sessão de '+fmtDH(aberta)+' por fechar</span><button class="btn bp bsm" onclick="openConcluir('+aberta.id+')">Concluir</button></div>':'')
       // Grelha
-      +'<div class="mt-grid" style="margin-top:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">'
+      +(!haProg.ehMentoria(m)?haProg.grelha(m,totalPago):'<div class="mt-grid" style="margin-top:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">'
         +'<div><div class="mt-lbl">Fase</div><div style="font-size:12px;font-weight:500">'+(fase?fase.e+' ':'')+'Semana '+sem+'</div>'
           +'<div style="font-size:11px;color:var(--g4)">'+(fase?fase.l:'Concluído')+'</div>'
           +'<div class="sbw" style="width:80px;margin-top:5px"><div class="sbb" style="width:'+Math.round(sem/12*100)+'%;background:var(--g)"></div></div></div>'
@@ -2220,7 +2220,7 @@ function renderMentorados(){
                :'<div style="font-size:12px;color:var(--g4)">—</div>')
         +'</div>'
         +'<div><div class="mt-lbl">Valor pago</div><div style="font-size:13px;font-weight:600;color:var(--g)">€'+totalPago.toFixed(0)+'</div></div>'
-      +'</div>'
+      +'</div>')
       +haProg.linha(m)
       // Entregas das compras
       +(function(){ var vs=vendasDeMentorado(m).filter(function(v){return v.estado!=='terminada'&&(v.itens.some(function(it){return it.u!=='acesso';})||v.itens.some(function(it){return it.mensal;}));});
@@ -7228,8 +7228,35 @@ window.haProg=(function(){
     if(concluida(v)) return '<span class="pg-chip ok">✓ Concluído</span>';
     var f=fimDe(v); return '<span class="pg-chip curso">⏳ Em curso'+(f?' até '+fmtDate(f):'')+'</span>';
   }
+  function ehMentoria(m){
+    var p=prod(m.produto);
+    if(!p||/^Comunidade/i.test(m.produto||'')) return true; // produto desconhecido ou comunidade: vista normal
+    return vrEhMentoria(m.produto);
+  }
+  function grelha(m,totalPago){
+    var v=ultimo(m), cr=v?cronOf(v):[], n=cr.find(function(x){return !x.feito;}), f=v?fimDe(v):null;
+    function bloco(l,h){return '<div><div class="mt-lbl">'+l+'</div>'+h+'</div>';}
+    return '<div class="mt-grid" style="margin-top:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">'+
+      bloco('Programa','<div style="font-size:12px;font-weight:500">'+esc(nomeP(m.produto))+'</div><div style="font-size:11px;color:var(--g4)">'+(v?(concluida(v)?'Concluído':'Em curso'):'Sem compra registada')+'</div>')+
+      bloco('Próximo passo',n&&!concluida(v)?'<div style="font-size:12px;font-weight:500">'+esc(n.t)+'</div><div style="font-size:11px;color:var(--g4)">'+fmtDate(n.data)+'</div>':'<div style="font-size:12px;color:var(--g4)">'+(v&&concluida(v)?'Escolher próximo nível':'—')+'</div>')+
+      bloco('Termina em','<div style="font-size:12px;font-weight:500">'+(f?fmtDate(f):'—')+'</div>')+
+      bloco('Valor pago','<div style="font-size:13px;font-weight:600;color:var(--g)">€'+totalPago.toFixed(0)+'</div>')+'</div>';
+  }
+  function registarPag(id){
+    var m=DB.mentorados.find(function(x){return x.id===id;}); if(!m) return;
+    document.getElementById('vr-leadid').value='';
+    document.getElementById('vr-cliente').value=m.nome;
+    document.getElementById('vr-sub').textContent=m.nome+' — '+(m.produto||'');
+    document.getElementById('vr-data').value=todayISO();
+    var ps=document.getElementById('vr-parcelas'); ps.innerHTML=Array.from({length:12},function(_,i){return '<option value="'+(i+1)+'">'+(i+1)+'x'+(i===0?' (à vista)':'')+'</option>';}).join('');
+    var sel=document.getElementById('vr-produto'); sel.innerHTML=DB.produtos.map(function(p){return '<option value="'+esc(p.nome)+'">'+esc(p.nome)+'</option>';}).join(''); if(m.produto) sel.value=m.produto;
+    vrAutoValor(); document.getElementById('vr-info').style.display='none';
+    document.getElementById('vr-modal-desc').textContent='Preenche como vai ser pago. Fica ligado ao programa de '+m.nome+'.';
+    document.getElementById('modal-venda-rapida').classList.add('open');
+  }
   function linha(m){
-    var v=ultimo(m); if(!v) return '';
+    var v=ultimo(m);
+    if(!v) return '<div class="pg-lin" onclick="haProg.registarPag('+m.id+')"><span>⚠ <b>'+esc(nomeP(m.produto)||'Programa')+'</b> sem pagamento registado</span><span class="pg-sp"></span><span style="color:#B7791F;font-weight:600">Registar pagamento e cronograma →</span></div>';
     var s=sessoes(v), c=concluida(v);
     return '<div class="pg-lin" onclick="haProg.abrir('+m.id+')" title="Abrir programa">'+
       '<span>🎯 <b>'+esc(nomeP(v.produto))+'</b></span>'+chip(v)+
@@ -7291,7 +7318,7 @@ window.haProg=(function(){
   var _ag=false;
   function agendar(){ if(_ag) return; _ag=true; setTimeout(function(){_ag=false; try{ if(migrar()){save();renderAll();} }catch(e){console.error('Programa:',e);} },60); }
   return {
-    fimProduto:fimProduto, linha:linha, concluida:concluida, ultimo:ultimo, fim:fimDe, agendar:agendar,
+    ehMentoria:ehMentoria, grelha:grelha, registarPag:registarPag, fimProduto:fimProduto, linha:linha, concluida:concluida, ultimo:ultimo, fim:fimDe, agendar:agendar,
     abrir:function(id){atual=id;pinta();document.getElementById('modal-programa').classList.add('open');},
     fechar:function(){document.getElementById('modal-programa').classList.remove('open');},
     parse:parse, serializar:serializar, materializar:materializar,
