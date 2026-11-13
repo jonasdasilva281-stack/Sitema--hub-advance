@@ -1106,6 +1106,8 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div><label class="fl">ou dura (dias) <span style="font-size:9.5px;color:var(--g4);font-weight:400">a contar da compra</span></label><input type="number" min="0" class="fi" id="pd-durdias" placeholder="Ex: 30"></div>
   </div>
   <div style="font-size:11px;color:var(--g4);margin:-6px 0 12px">A pessoa só avança para o nível seguinte depois de terminar este.</div>
+  <div class="fg"><label class="fl">Cronograma do programa <span style="font-size:9.5px;color:var(--g4);font-weight:400">uma linha por passo: data ou +dias | título | o que acontece</span></label>
+    <textarea class="fi" id="pd-cron" rows="5" style="font-size:12px;font-family:monospace" placeholder="23/11/2026 | Workshop ao vivo | Precificação inteligente, 10h às 13h&#10;+1 | Replay e material | Enviado no grupo de WhatsApp&#10;+7 | Sessão de dúvidas | 30 min para tirar dúvidas"></textarea></div>
   <div class="fr fg">
     <div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pd-valor-input" placeholder="0.00" oninput="pdCalcParcela();pdCalcPreco()"></div>
     <div><label class="fl">Tipo de cobrança</label>
@@ -2710,7 +2712,7 @@ function entregaTexto(p){
 }
 function novoProduto(){
   document.getElementById('pd-id').value='';
-  ['pd-nome','pd-nomec','pd-link','pd-datafim','pd-durdias','pd-desc','pd-valor-input','pd-parcelas','pd-horas','pd-horasmes','pd-meses'].forEach(function(id){document.getElementById(id).value='';});
+  ['pd-nome','pd-nomec','pd-link','pd-datafim','pd-durdias','pd-cron','pd-desc','pd-valor-input','pd-parcelas','pd-horas','pd-horasmes','pd-meses'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('pd-digital').checked=false;
   pdSetEntregaveis([]);
   document.getElementById('pd-tipo').value='unico'; pdToggleTipo();
@@ -2727,6 +2729,7 @@ function editProduto(id){
   document.getElementById('pd-link').value=p.link||'';
   document.getElementById('pd-datafim').value=p.dataFim||'';
   document.getElementById('pd-durdias').value=p.duracaoDias||'';
+  document.getElementById('pd-cron').value=haProg.serializar(p.cronograma||[]);
   document.getElementById('pd-valor-input').value=p.valor;
   document.getElementById('pd-tipo').value=p.tipo||'unico'; pdToggleTipo();
   document.getElementById('pd-parcelas').value=p.parcelas||'';
@@ -2755,6 +2758,7 @@ function saveProduto(){
     link:(function(v){v=(v||'').trim();return v&&!/^https?:\/\//i.test(v)?'https://'+v:v;})(document.getElementById('pd-link').value),
     dataFim:document.getElementById('pd-datafim').value||'',
     duracaoDias:parseInt(document.getElementById('pd-durdias').value)||null,
+    cronograma:haProg.parse(document.getElementById('pd-cron').value),
     horas:parseFloat(document.getElementById('pd-horas').value)||null,
     horasMes:parseFloat(document.getElementById('pd-horasmes').value)||null,
     meses:parseInt(document.getElementById('pd-meses').value)||null,
@@ -2808,6 +2812,7 @@ function renderProdutos(){
       +'<div style="font-size:24px;font-weight:700;color:var(--g);margin:8px 0 4px">'+precoStr+'</div>'
       +(duracaoStr?'<div style="font-size:10.5px;color:var(--g4);margin-bottom:4px">'+duracaoStr+'</div>':'')
       +(p.desc?'<div style="font-size:11px;color:var(--g4);margin-bottom:8px">'+esc(p.desc)+'</div>':'')
+      +((p.cronograma&&p.cronograma.length)?'<div style="font-size:10.5px;color:var(--g4);margin-bottom:4px">📋 '+p.cronograma.length+' passos no cronograma</div>':'')
       +((p.dataFim||p.duracaoDias)?'<div style="font-size:10.5px;color:var(--g4);margin-bottom:4px">⏳ '+(p.dataFim?'Termina a '+fmtDate(p.dataFim):'Dura '+p.duracaoDias+' dias')+'</div>':'')
       +(p.link?'<div style="font-size:11px;margin-bottom:8px"><a href="'+esc(p.link)+'" target="_blank" rel="noopener" style="color:var(--bl);text-decoration:none;font-weight:500">🔗 Abrir link do produto</a> <span style="cursor:pointer;color:var(--g4)" onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+esc(p.link)+'\');toast(\'Link copiado\')" title="Copiar link">⧉</span></div>':'')
       +'<div style="font-size:10.5px;color:var(--g3);margin-bottom:4px">📦 Entrega: '+entregaTexto(p)+'</div>'
@@ -4036,6 +4041,7 @@ function saveVendaRapida(){
   criarVenda(grupoId,cliente,produto,dataInicio);
   var _fimv=(document.getElementById('vr-fim')||{}).value||'';
   var _vv=(DB.vendas||[]).find(function(v){return v.grupoId===grupoId;});
+  if(_vv){ var _cr=haProg.materializar(produto,dataInicio); if(_cr.length) _vv.cron=_cr; }
   if(_vv&&_fimv){ _vv.fim=_fimv; var _pp=prodPorNome(produto); if(_pp&&!_pp.dataFim&&!_pp.duracaoDias) _pp.dataFim=_fimv; }
   if(_mb && !novoMentorado) _mb.produto=produto;
   save();cm('venda-rapida');renderAll();
@@ -7133,6 +7139,12 @@ window.haPerda=(function(){
 .pg-prog h4{font-size:13px;margin-bottom:2px}
 .pg-sub{font-size:11.5px;color:var(--g4,#888);margin-bottom:8px}
 .pg-next{background:#0B6E4F0D;border:1px solid #0B6E4F44;border-radius:10px;padding:12px 14px;margin-top:4px}
+.pg-tl{margin:8px 0 6px;border-left:2px solid #E5E7EB;padding-left:14px}
+.pg-st{display:flex;gap:10px;align-items:flex-start;margin-bottom:9px;position:relative;font-size:12.5px}
+.pg-dot{position:absolute;left:-23px;top:1px;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid #D1D5DB;font-size:9px;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.pg-st.done .pg-dot{background:#0B6E4F;border-color:#0B6E4F}
+.pg-st.now .pg-dot{border-color:#B7791F;box-shadow:0 0 0 3px #B7791F22}
+.pg-st.done .pg-sb{color:#6B7280}
 .pg-next.lock{background:#F3F4F6;border-color:#E5E7EB;color:#6B7280}
 </style>
 <div class="mo" id="modal-programa"><div class="mbox" style="max-width:560px">
@@ -7145,8 +7157,40 @@ window.haProg=(function(){
   function prod(n){return DB.produtos.find(function(p){return p.nome===n;});}
   function nomeP(n){var p=prod(n);return p?(p.nomeC||p.nome):n;}
   function addDiasA(d,n){var x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);}
+  /* ── cronograma ── */
+  function iso(d,m,a){ var y=a?(a<100?2000+a:a):new Date().getFullYear(); return y+'-'+('0'+m).slice(-2)+'-'+('0'+d).slice(-2); }
+  function parse(txt){
+    var out=[];
+    String(txt||'').split('\n').forEach(function(l){
+      l=l.trim(); if(!l) return;
+      var pt=l.split('|').map(function(x){return x.trim();});
+      if(pt.length<2) return;
+      var st={t:pt[1],d:pt.slice(2).join(' | ')}, q=pt[0], m;
+      if((m=q.match(/^\+\s*(\d+)/))) st.dia=parseInt(m[1],10);
+      else if((m=q.match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/))) st.data=iso(parseInt(m[1],10),parseInt(m[2],10),m[3]?parseInt(m[3],10):0);
+      else if((m=q.match(/(\d{4})-(\d{2})-(\d{2})/))) st.data=m[0];
+      else return;
+      if(st.t) out.push(st);
+    });
+    return out;
+  }
+  function serializar(arr){
+    return (arr||[]).map(function(st){
+      var q=st.data?(st.data.slice(8)+'/'+st.data.slice(5,7)+'/'+st.data.slice(0,4)):('+'+(st.dia||0));
+      return q+' | '+st.t+' | '+(st.d||'');
+    }).join('\n');
+  }
+  function materializar(nome,compra){
+    var p=prod(nome)||{}, ds=(p.cronograma||[]).filter(function(x){return x.data;}).map(function(x){return x.data;}).sort();
+    var ancora=ds.length?ds[0]:compra; // +dias conta a partir do 1.º passo com data (ex.: dia do workshop)
+    return (p.cronograma||[]).map(function(st){
+      return {t:st.t,d:st.d||'',data:st.data||addDiasA(ancora,st.dia||0),feito:false};
+    }).sort(function(a,b){return a.data<b.data?-1:a.data>b.data?1:0;});
+  }
+  function cronOf(v){ return v.cron||materializar(v.produto,v.data||todayISO()); }
   function fimProduto(nome,c){
     var p=prod(nome)||{};
+    var cr=materializar(nome,c); if(cr.length) return cr[cr.length-1].data;
     if(p.dataFim&&p.dataFim>=c) return p.dataFim;
     if(p.duracaoDias) return addDiasA(c,p.duracaoDias);
     if(p.meses) return addDiasA(c,p.meses*30);
@@ -7154,6 +7198,7 @@ window.haProg=(function(){
   }
   function fimDe(v){
     if(v.fim) return v.fim;
+    var cr0=cronOf(v); if(cr0.length) return cr0[cr0.length-1].data;
     var p=prod(v.produto)||{}, c=v.data||todayISO();
     if(p.dataFim&&p.dataFim>=c) return p.dataFim;
     if(p.duracaoDias) return addDiasA(c,p.duracaoDias);
@@ -7164,6 +7209,7 @@ window.haProg=(function(){
     if(v.estado==='terminada') return true;
     var real=v.itens.some(function(it){return !it.mensal&&it.u!=='acesso';});
     if(real&&v.estado==='concluida') return true;
+    var cr1=cronOf(v); if(cr1.length&&cr1.every(function(x){return x.feito;})) return true;
     var f=fimDe(v); if(f) return todayISO()>f;
     return false;
   }
@@ -7188,8 +7234,22 @@ window.haProg=(function(){
     return '<div class="pg-lin" onclick="haProg.abrir('+m.id+')" title="Abrir programa">'+
       '<span>🎯 <b>'+esc(nomeP(v.produto))+'</b></span>'+chip(v)+
       (s?'<span style="color:var(--g3)">Sessões <b>'+s.f+'/'+s.q+'</b></span>':'')+
+      (function(){var n=cronOf(v).find(function(x){return !x.feito;});return (!c&&n)?'<span style="color:var(--g3)">Próximo: <b>'+esc(n.t)+'</b> · '+fmtDate(n.data)+'</span>':'';})()+
       '<span class="pg-sp"></span>'+
       (c?'<span style="color:#0B6E4F;font-weight:600">⬆ Próximo nível disponível</span>':'<span style="color:#9CA3AF">🔒 Próximo nível depois de terminar</span>')+'</div>';
+  }
+  function timeline(v){
+    var cr=cronOf(v), hoje=todayISO(); if(!cr.length) return '<div class="pg-sub" style="margin:4px 0 8px">Sem cronograma. Preencha-o na ficha do produto ou edite-o abaixo.</div>'+editor(v,cr);
+    var prox=cr.findIndex(function(x){return !x.feito;});
+    return '<div class="pg-tl">'+cr.map(function(x,i){
+      var tag=x.feito?'<span class="pg-chip ok">feito</span>':(x.data<hoje?'<span class="pg-chip" style="background:#C0392B18;color:#C0392B">atrasado</span>':(x.data===hoje?'<span class="pg-chip curso">hoje</span>':''));
+      return '<div class="pg-st'+(x.feito?' done':i===prox?' now':'')+'"><div class="pg-dot" onclick="haProg.tick('+v.id+','+i+')" title="Marcar feito">'+(x.feito?'✓':'')+'</div>'+
+        '<div class="pg-sb"><div><b>'+esc(x.t)+'</b> '+tag+'</div><div class="pg-sub" style="margin:1px 0 0">'+fmtDate(x.data)+(x.d?' · '+esc(x.d):'')+'</div></div></div>';
+    }).join('')+'</div>'+editor(v,cr);
+  }
+  function editor(v,cr){
+    return '<details style="margin:6px 0"><summary style="font-size:11px;color:var(--g3);cursor:pointer">✏️ Editar cronograma</summary><textarea class="fi" id="pg-cr-'+v.id+'" rows="4" style="font-size:12px;font-family:monospace;margin-top:6px">'+esc(serializar(cr.map(function(x){return {t:x.t,d:x.d,data:x.data};})))+'</textarea>'+
+      '<button class="btn bs bsm" style="margin-top:4px" onclick="haProg.guardarCron('+v.id+')">Guardar cronograma</button></details>';
   }
   function corpo(m){
     var ps=programas(m), v=ps[0], h='';
@@ -7197,7 +7257,7 @@ window.haProg=(function(){
       var f=fimDe(x), s=sessoes(x);
       h+='<div class="pg-prog"><h4>'+esc(nomeP(x.produto))+' '+chip(x)+'</h4>'+
         '<div class="pg-sub">Comprado a '+fmtDate(x.data)+(f?' · termina a '+fmtDate(f):'')+(s?' · '+s.f+' de '+s.q+' sessões':'')+'</div>'+
-        entregaBarras(x,false)+
+        timeline(x)+entregaBarras(x,false)+
         '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:11.5px"><span style="color:var(--g3)">Termina em</span><input type="date" class="fi" style="width:150px;padding:5px 8px" id="pg-fim-'+x.id+'" value="'+(f||'')+'"><button class="btn bs bsm" onclick="haProg.guardarFim('+x.id+')">Guardar</button></div>'+
         (x.estado!=='terminada'&&!concluida(x)?'<button class="btn bs bsm" style="margin-top:6px" onclick="haProg.terminar('+x.id+')">✓ Marcar programa concluído</button>':'')+'</div>';
     });
@@ -7234,6 +7294,14 @@ window.haProg=(function(){
     fimProduto:fimProduto, linha:linha, concluida:concluida, ultimo:ultimo, fim:fimDe, agendar:agendar,
     abrir:function(id){atual=id;pinta();document.getElementById('modal-programa').classList.add('open');},
     fechar:function(){document.getElementById('modal-programa').classList.remove('open');},
+    parse:parse, serializar:serializar, materializar:materializar,
+    tick:function(vid,i){var v=(DB.vendas||[]).find(function(x){return x.id===vid;});if(!v)return;var cr=cronOf(v).map(function(x){return Object.assign({},x);});cr[i].feito=!cr[i].feito;v.cron=cr;atualizarEstadoVenda(v);save();renderAll();pinta();},
+    guardarCron:function(vid){var v=(DB.vendas||[]).find(function(x){return x.id===vid;});if(!v)return;
+      var antigo=cronOf(v), novo=parse(document.getElementById('pg-cr-'+vid).value).map(function(st){
+        var _ds=parse(document.getElementById('pg-cr-'+vid).value).filter(function(z){return z.data;}).map(function(z){return z.data;}).sort(), _an=_ds.length?_ds[0]:(v.data||todayISO());
+        var data=st.data||addDiasA(_an,st.dia||0), ja=antigo.find(function(a){return a.t===st.t;});
+        return {t:st.t,d:st.d||'',data:data,feito:!!(ja&&ja.feito)};}).sort(function(a,b){return a.data<b.data?-1:1;});
+      v.cron=novo; v.fim=null; save();renderAll();pinta();toast('✓ Cronograma guardado');},
     guardarFim:function(vid){var v=(DB.vendas||[]).find(function(x){return x.id===vid;});if(!v)return;var d=document.getElementById('pg-fim-'+vid).value;v.fim=d||null;if(d){var p=prod(v.produto);if(p&&!p.dataFim&&!p.duracaoDias)p.dataFim=d;}save();renderAll();pinta();toast('✓ Data de fim guardada');},
     terminar:function(vid){var v=(DB.vendas||[]).find(function(x){return x.id===vid;});if(!v)return;v.estado='terminada';save();renderAll();pinta();toast('✓ Programa concluído — próximo nível desbloqueado');},
     subir:function(id){
