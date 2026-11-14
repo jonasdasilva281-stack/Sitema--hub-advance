@@ -8725,5 +8725,154 @@ window.haPros=(function(){
 })();
 </script>
 
+<!-- BLOCO 34 · Todo o interesse precisa de um próximo passo: Quem faz? · O que faz? · Até quando? -->
+<style>
+.ha-ps{font-size:10.5px;margin-top:5px;padding:3px 7px;border-radius:6px;background:var(--g7);color:var(--g3);display:inline-block;max-width:100%}
+.ha-ps.sem{background:#FDEDEC;color:#C0392B;font-weight:600}
+.ha-pp{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--g7);color:var(--g3);margin:0 6px 4px 0}
+</style>
+<script>
+window.haPasso=(function(){
+  var FIM=['fechado','perdido','standby'];
+  function ativo(l){ return FIM.indexOf(l.etapa)<0; }
+  function completo(l){ return !!(l.proxQuem&&l.proxAcao&&l.proxData); }
+  function falta(l){ var f=[]; if(!l.proxQuem) f.push('quem faz'); if(!l.proxAcao) f.push('o que faz'); if(!l.proxData) f.push('até quando'); return f; }
+  function nomes(){ return (DB.equipa||[]).map(function(m){return m.nome;}); }
+  function opts(sel){ var n=nomes(); if(sel&&n.indexOf(sel)<0) n.push(sel); return '<option value="">— escolher —</option>'+n.map(function(x){return '<option'+(x===sel?' selected':'')+'>'+esc(x)+'</option>';}).join(''); }
+  function val(id){ var e=document.getElementById(id); return e?String(e.value||'').trim():''; }
+  function setSel(id,v){ var e=document.getElementById(id); if(!e) return; e.innerHTML=opts(v||''); e.value=v||''; }
+  function lead(id){ return (DB.leads||[]).find(function(x){return x.id===+id;}); }
+
+  /* ── Modal completo do lead ── */
+  function injetaLead(){
+    var d=document.getElementById('ld-proxdata'); if(!d) return;
+    var row=d.closest('.fr'); if(!row) return;
+    var lb=d.parentNode.querySelector('label'); if(lb) lb.textContent='Até quando?';
+    var tp=document.getElementById('ld-proxtipo'), lb2=tp&&tp.parentNode.querySelector('label'); if(lb2) lb2.textContent='Canal';
+    if(!document.getElementById('ld-quem')){
+      var r=document.createElement('div'); r.className='fr fg'; r.id='ld-passo-row';
+      r.innerHTML='<div><label class="fl">Quem faz? <span style="color:var(--re)">*</span></label><select class="fi" id="ld-quem"></select></div>'+
+        '<div><label class="fl">O que faz? <span style="color:var(--re)">*</span></label><input class="fi" id="ld-acao" placeholder="Ex: enviar proposta"></div>';
+      row.parentNode.insertBefore(r,row);
+    }
+    var q=document.getElementById('ld-quem'); q.innerHTML=opts(q.value);
+  }
+  /* ── Popup rápido "Próximo contacto" ── */
+  function injetaPC(){
+    var d=document.getElementById('pc-data'); if(!d) return;
+    var fg=d.closest('.fg'); if(!fg) return;
+    var lb=fg.querySelector('label'); if(lb) lb.textContent='Até quando?';
+    if(!document.getElementById('pc-quem')){
+      var a=document.createElement('div'); a.className='fg'; a.id='pc-passo-row';
+      a.innerHTML='<label class="fl">Quem faz? <span style="color:var(--re)">*</span></label><select class="fi" id="pc-quem"></select>'+
+        '<label class="fl" style="margin-top:8px">O que faz? <span style="color:var(--re)">*</span></label><input class="fi" id="pc-acao" placeholder="Ex: enviar proposta">';
+      fg.parentNode.insertBefore(a,fg);
+    }
+    var q=document.getElementById('pc-quem'); q.innerHTML=opts(q.value);
+  }
+
+  var _om=window.om;
+  window.om=function(id){ var r=_om.apply(this,arguments); try{ if(id==='lead') injetaLead(); }catch(e){ console.error('Próximo passo:',e); } return r; };
+
+  var _rl=window.resetLeadModal;
+  window.resetLeadModal=function(){ var r=_rl.apply(this,arguments); try{ injetaLead(); setSel('ld-quem',''); var a=document.getElementById('ld-acao'); if(a) a.value=''; }catch(e){} return r; };
+
+  var _el=window.editLead;
+  window.editLead=function(id){
+    var r=_el.apply(this,arguments);
+    try{ var l=lead(id); if(l){ injetaLead(); setSel('ld-quem',l.proxQuem||''); var a=document.getElementById('ld-acao'); if(a) a.value=l.proxAcao||''; } }catch(e){ console.error('Próximo passo:',e); }
+    return r;
+  };
+
+  var _sl=window.saveLead2;
+  window.saveLead2=function(){
+    var etapa=val('ld-etapa'), q=val('ld-quem'), a=val('ld-acao'), d=val('ld-proxdata'), id=val('ld-id');
+    var perda=window.saveLead&&window.saveLead._abrirPerda;
+    if(!perda&&FIM.indexOf(etapa)<0){
+      var f=[]; if(!q) f.push('Quem faz'); if(!a) f.push('O que faz'); if(!d) f.push('Até quando');
+      if(f.length){ toast('⚠ Todo o interesse precisa de um próximo passo. Falta: '+f.join(', '),'#C0392B'); return; }
+    }
+    var n0=(DB.leads||[]).length;
+    var r=_sl.apply(this,arguments);
+    try{
+      var m=document.getElementById('modal-lead');
+      if(m&&!m.classList.contains('open')){
+        var l=id?lead(id):((DB.leads.length>n0)?DB.leads[DB.leads.length-1]:null);
+        if(l){ l.proxQuem=q; l.proxAcao=a; save(); renderAll(); }
+      }
+    }catch(e){ console.error('Próximo passo:',e); }
+    return r;
+  };
+
+  var _op=window.openProxContacto;
+  window.openProxContacto=function(id){
+    var r=_op.apply(this,arguments);
+    try{ var l=lead(id); if(l){ injetaPC(); setSel('pc-quem',l.proxQuem||''); var a=document.getElementById('pc-acao'); if(a) a.value=l.proxAcao||''; } }catch(e){ console.error('Próximo passo:',e); }
+    return r;
+  };
+  var _sp=window.saveProxContacto;
+  window.saveProxContacto=function(){
+    var q=val('pc-quem'), a=val('pc-acao'), d=val('pc-data'), id=parseInt(val('pc-leadid'));
+    var f=[]; if(!q) f.push('Quem faz'); if(!a) f.push('O que faz'); if(!d) f.push('Até quando');
+    if(f.length){ toast('⚠ Todo o interesse precisa de um próximo passo. Falta: '+f.join(', '),'#C0392B'); return; }
+    var r=_sp.apply(this,arguments);
+    try{ var l=lead(id); if(l){ l.proxQuem=q; l.proxAcao=a; save(); renderAll(); } }catch(e){ console.error('Próximo passo:',e); }
+    return r;
+  };
+
+  /* ── Cartões do Pipeline ── */
+  function decora(){
+    document.querySelectorAll('.pl-card').forEach(function(c){
+      var m=(c.getAttribute('onclick')||'').match(/editLead\((\d+)\)/); if(!m) return;
+      var l=lead(m[1]); if(!l||!ativo(l)) return;
+      var old=c.querySelector('.ha-ps'); if(old) old.remove();
+      var el=document.createElement('div'); el.className='ha-ps'+(completo(l)?'':' sem');
+      el.innerHTML=completo(l)?'👤 '+esc(l.proxQuem)+' · '+esc(l.proxAcao):'⚠ Falta: '+falta(l).join(', ');
+      var sub=c.querySelector('.pl-card-sub'); if(sub) sub.insertAdjacentElement('afterend',el); else c.appendChild(el);
+    });
+  }
+  var _rp=window.renderPipeline;
+  window.renderPipeline=function(){ var r=_rp.apply(this,arguments); try{ decora(); }catch(e){ console.error('Próximo passo:',e); } return r; };
+
+  /* ── Visão Geral ── */
+  function renderVG(){
+    var P=document.getElementById('p-overview'); if(!P) return;
+    var el=document.getElementById('ov-passos');
+    if(!el){
+      el=document.createElement('div'); el.id='ov-passos'; el.className='hm';
+      var box=document.getElementById('ov-home');
+      if(box&&box.parentNode===P) P.insertBefore(el,box.nextSibling); else P.insertBefore(el,P.firstChild);
+    }
+    var hoje=todayISO(), L=(DB.leads||[]).filter(ativo);
+    var sem=L.filter(function(l){return !completo(l);});
+    var atr=L.filter(function(l){return l.proxData&&l.proxData<hoje;});
+    var lista=L.filter(function(l){return !completo(l)||l.proxData<hoje;}).sort(function(a,b){
+      var aa=(a.proxData&&a.proxData<hoje)?0:1, bb=(b.proxData&&b.proxData<hoje)?0:1;
+      if(aa!==bb) return aa-bb; return (a.proxData||'9').localeCompare(b.proxData||'9'); });
+    var por={}; L.forEach(function(l){ if(completo(l)&&l.proxData<=hoje){ por[l.proxQuem]=(por[l.proxQuem]||0)+1; } });
+    var chips=Object.keys(por).map(function(k){ return '<span class="ha-pp"><b>'+esc(k)+'</b> · '+por[k]+' para hoje ou atrasado'+(por[k]===1?'':'s')+'</span>'; }).join('');
+    var h='<div class="hm-c"><div class="hm-ch"><h3>Próximo passo · quem faz, o quê, até quando</h3><a onclick="nav(\'pipeline\',document.querySelector(\'.ni[onclick*=&quot;\\\'pipeline\\\'&quot;]\'))">Abrir pipeline</a></div>';
+    h+='<div style="font-size:11.5px;color:var(--g4);margin-bottom:8px">Todo o interesse precisa de um próximo passo.</div>';
+    if(!lista.length){
+      h+='<div class="hm-e" style="padding:4px 0">✓ Todos os leads ativos têm quem faz, o que faz e até quando.</div>'+(chips?'<div style="margin-top:8px">'+chips+'</div>':'');
+    } else {
+      h+='<div style="font-size:12px;margin-bottom:6px"><b>'+sem.length+'</b> sem próximo passo completo · <b style="color:'+(atr.length?'#C0392B':'inherit')+'">'+atr.length+'</b> atrasado'+(atr.length===1?'':'s')+'</div>'+(chips?'<div style="margin-bottom:6px">'+chips+'</div>':'');
+      h+=lista.slice(0,8).map(function(l){
+        var at=l.proxData&&l.proxData<hoje;
+        var sub=completo(l)?'👤 '+esc(l.proxQuem)+' · '+esc(l.proxAcao)+' · até '+fmtDate(l.proxData):'Falta: '+falta(l).join(', ');
+        return '<div class="hm-r"><div class="n" onclick="editLead('+l.id+')"><b>'+esc(l.nome)+(at?' <span class="tag tr" style="font-size:9.5px">atrasado</span>':'')+'</b><span>'+sub+'</span></div><button class="btn bs bsm" onclick="openProxContacto('+l.id+')">Definir</button></div>';
+      }).join('')+(lista.length>8?'<div style="font-size:11px;color:var(--g4);padding-top:6px">+ '+(lista.length-8)+' no Pipeline</div>':'');
+    }
+    el.innerHTML=h+'</div>';
+  }
+  var _ro=window.renderOverview;
+  window.renderOverview=function(){ var r=_ro.apply(this,arguments); try{ renderVG(); }catch(e){ console.error('Próximo passo:',e); } return r; };
+
+  try{ injetaLead(); injetaPC(); }catch(e){}
+  setTimeout(function(){ try{ renderVG(); decora(); }catch(e){} },400);
+  return {render:renderVG,decora:decora};
+})();
+</script>
+
 </body>
 </html>
