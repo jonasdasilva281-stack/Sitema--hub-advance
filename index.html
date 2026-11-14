@@ -8874,5 +8874,119 @@ window.haPasso=(function(){
 })();
 </script>
 
+<!-- BLOCO 35 · Depois do follow-up: respondeu? seguiu? porquê? o que ajustar? -->
+<style>
+.ha-ps.res{background:#EEF4FF;color:#27458F;margin-left:4px}
+.ha-ps.res.neg{background:#FFF4E5;color:#9A5B00}
+.ha-rs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.ha-rs div{background:var(--g7);border-radius:10px;padding:8px 10px}.ha-rs b{display:block;font-size:18px}.ha-rs span{font-size:10.5px;color:var(--g4)}
+@media(max-width:700px){.ha-rs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+<script>
+window.haResultado=(function(){
+  var RES={seguiu:'Respondeu e seguiu',naoseguiu:'Respondeu, mas não seguiu',semresp:'Não respondeu',tempo:'Pediu mais tempo'};
+  var NEG=['naoseguiu','semresp'];
+  var PORQUES=['Sem orçamento','Não era o momento','Achou caro','Não viu valor na oferta','Escolheu concorrente','Não tinha autoridade de decisão','Demorámos a responder','A mensagem não prendeu','Canal errado','Visto e sem resposta','Outro'];
+  var FIM=['fechado','perdido','standby'];
+  function val(id){ var e=document.getElementById(id); return e?String(e.value||'').trim():''; }
+  function lead(id){ return (DB.leads||[]).find(function(x){return x.id===+id;}); }
+  function inject(){
+    var nota=document.getElementById('ia-nota'); if(!nota) return;
+    if(!document.getElementById('ia-res')){
+      var fgN=nota.closest('.fg'), d=document.createElement('div'); d.id='ia-res-wrap';
+      d.innerHTML='<div class="fg"><label class="fl">O que aconteceu depois do follow-up? <span style="color:var(--re)">*</span></label><select class="fi" id="ia-res" onchange="haResultado.mudou()"><option value="">— escolher —</option>'+Object.keys(RES).map(function(k){return '<option value="'+k+'">'+RES[k]+'</option>';}).join('')+'</select></div>'+
+        '<div class="fg" id="ia-porque-wrap" style="display:none"><label class="fl">Porquê? <span style="color:var(--re)">*</span></label><select class="fi" id="ia-porque"><option value="">— escolher —</option>'+PORQUES.map(function(p){return '<option>'+p+'</option>';}).join('')+'</select></div>'+
+        '<div class="fg" id="ia-ajuste-wrap" style="display:none"><label class="fl">O que precisamos ajustar? <span style="color:var(--re)">*</span></label><input class="fi" id="ia-ajuste" placeholder="Ex: mandar áudio, mudar a abordagem, rever o preço"></div>';
+      fgN.parentNode.insertBefore(d,fgN);
+    }
+  }
+  function mudou(){
+    var r=val('ia-res'), neg=NEG.indexOf(r)>=0;
+    var p=document.getElementById('ia-porque-wrap'), a=document.getElementById('ia-ajuste-wrap');
+    if(p) p.style.display=(neg||r==='tempo')?'':'none';
+    if(a) a.style.display=neg?'':'none';
+  }
+  var _oi=window.openInteracao;
+  window.openInteracao=function(id){
+    var r=_oi.apply(this,arguments);
+    try{ inject(); document.getElementById('ia-res').value=''; document.getElementById('ia-porque').value=''; document.getElementById('ia-ajuste').value=''; mudou(); }catch(e){ console.error('Resultado:',e); }
+    return r;
+  };
+  var _si=window.saveInteracao;
+  window.saveInteracao=function(){
+    var id=parseInt(val('ia-leadid')), res=val('ia-res'), porque=val('ia-porque'), ajuste=val('ia-ajuste'), neg=NEG.indexOf(res)>=0;
+    if(!res){ toast('⚠ Diga o que aconteceu depois do follow-up','#C0392B'); return; }
+    if(neg&&!porque){ toast('⚠ Diga porquê','#C0392B'); return; }
+    if(neg&&!ajuste){ toast('⚠ Diga o que precisamos ajustar','#C0392B'); return; }
+    var l=lead(id), n0=l?(l.interacoes||[]).length:0;
+    var r=_si.apply(this,arguments);
+    try{
+      l=lead(id);
+      var m=document.getElementById('modal-interacao');
+      if(l&&m&&!m.classList.contains('open')&&(l.interacoes||[]).length>n0){
+        var ia=l.interacoes[l.interacoes.length-1];
+        ia.res=res; ia.porque=porque; ia.ajuste=ajuste;
+        l.ultimoRes={res:res,porque:porque,ajuste:ajuste,data:todayISO()};
+        save(); renderAll();
+        if(FIM.indexOf(l.etapa)<0){
+          openProxContacto(id);
+          var hoje=todayISO(), d=document.getElementById('pc-data'), a=document.getElementById('pc-acao');
+          if(d&&(!l.proxData||l.proxData<=hoje)){ var x=new Date(); x.setDate(x.getDate()+1); d.value=isoLocal(x); }
+          if(a) a.value='';
+          toast('Agora defina o próximo passo');
+        }
+      }
+    }catch(e){ console.error('Resultado:',e); }
+    return r;
+  };
+
+  function decora(){
+    document.querySelectorAll('.pl-card').forEach(function(c){
+      var m=(c.getAttribute('onclick')||'').match(/editLead\((\d+)\)/); if(!m) return;
+      var l=lead(m[1]); if(!l||!l.ultimoRes||FIM.indexOf(l.etapa)>=0) return;
+      var u=l.ultimoRes, old=c.querySelector('.ha-ps.res'); if(old) old.remove();
+      var el=document.createElement('div'); el.className='ha-ps res'+(NEG.indexOf(u.res)>=0?' neg':'');
+      el.innerHTML='↩ '+esc(RES[u.res]||'')+(u.porque?' · '+esc(u.porque):'');
+      var ps=c.querySelector('.ha-ps:not(.res)'), sub=c.querySelector('.pl-card-sub');
+      if(ps) ps.insertAdjacentElement('afterend',el); else if(sub) sub.insertAdjacentElement('afterend',el); else c.appendChild(el);
+    });
+  }
+  var _rp=window.renderPipeline;
+  window.renderPipeline=function(){ var r=_rp.apply(this,arguments); try{ decora(); }catch(e){ console.error('Resultado:',e); } return r; };
+
+  function renderVG(){
+    var P=document.getElementById('p-overview'); if(!P) return;
+    var el=document.getElementById('ov-resultados');
+    if(!el){
+      el=document.createElement('div'); el.id='ov-resultados'; el.className='hm';
+      var ref=document.getElementById('ov-passos')||document.getElementById('ov-home');
+      if(ref&&ref.parentNode===P) P.insertBefore(el,ref.nextSibling); else P.insertBefore(el,P.firstChild);
+    }
+    var lim=new Date(); lim.setDate(lim.getDate()-30); var limISO=isoLocal(lim);
+    var E=[]; (DB.leads||[]).forEach(function(l){ (l.interacoes||[]).forEach(function(ia){ if(ia.res&&String(ia.data||'').slice(0,10)>=limISO) E.push({l:l,ia:ia}); }); });
+    var c={seguiu:0,naoseguiu:0,semresp:0,tempo:0}; E.forEach(function(x){ c[x.ia.res]++; });
+    var resp=c.seguiu+c.naoseguiu+c.tempo, taxa=E.length?Math.round(resp/E.length*100):0, seg=E.length?Math.round(c.seguiu/E.length*100):0;
+    var pq={}; E.forEach(function(x){ if(NEG.indexOf(x.ia.res)>=0&&x.ia.porque) pq[x.ia.porque]=(pq[x.ia.porque]||0)+1; });
+    var top=Object.keys(pq).sort(function(a,b){return pq[b]-pq[a];}).slice(0,3);
+    var aj=E.filter(function(x){return x.ia.ajuste;}).sort(function(a,b){return String(b.ia.data).localeCompare(String(a.ia.data));}).slice(0,4);
+    var h='<div class="hm-c"><div class="hm-ch"><h3>Depois do follow-up · últimos 30 dias</h3></div>';
+    if(!E.length){
+      h+='<div class="hm-e">Ainda sem resultados. Em cada contacto feito, carregue no <b>+</b> do cartão e diga o que aconteceu, porquê e o que ajustar.</div>';
+    } else {
+      h+='<div class="ha-rs"><div><b>'+E.length+'</b><span>follow-ups registados</span></div><div><b>'+taxa+'%</b><span>responderam</span></div><div><b>'+seg+'%</b><span>seguiram</span></div><div><b>'+c.naoseguiu+' · '+c.semresp+'</b><span>não seguiram · sem resposta</span></div></div>';
+      h+=top.length?'<div style="font-size:12px;margin-bottom:6px"><b>Porque não seguem:</b> '+top.map(function(k){return esc(k)+' ('+pq[k]+')';}).join(' · ')+'</div>':'';
+      h+=aj.length?'<div style="font-size:12px;font-weight:600;margin:8px 0 2px">O que precisamos ajustar</div>'+aj.map(function(x){ return '<div class="hm-r"><div class="n" onclick="editLead('+x.l.id+')"><b>'+esc(x.ia.ajuste)+'</b><span>'+esc(x.l.nome)+' · '+esc(RES[x.ia.res]||'')+(x.ia.porque?' · '+esc(x.ia.porque):'')+'</span></div></div>'; }).join(''):'';
+    }
+    el.innerHTML=h+'</div>';
+  }
+  var _ro=window.renderOverview;
+  window.renderOverview=function(){ var r=_ro.apply(this,arguments); try{ renderVG(); }catch(e){ console.error('Resultado:',e); } return r; };
+
+  try{ inject(); }catch(e){}
+  setTimeout(function(){ try{ renderVG(); decora(); }catch(e){} },450);
+  return {mudou:mudou,render:renderVG};
+})();
+</script>
+
 </body>
 </html>
