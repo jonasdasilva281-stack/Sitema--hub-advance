@@ -8425,5 +8425,305 @@ window.haFM=(function(){
   var _rm=window.renderMarketing; window.renderMarketing=function(){ var r=_rm.apply(this,arguments); return r; };
 })();
 </script>
+
+<!-- BLOCO 33 · Prospeção ICP: conteúdo → qualificação → abordagem (Hub Mentorias e Hub Solutions) -->
+<style>
+.pr-wrap{display:grid;gap:14px}
+.pr-tabs{display:flex;gap:8px;flex-wrap:wrap}
+.pr-tab{flex:1;min-width:110px;padding:9px 12px;border-radius:10px;border:1.5px solid var(--g6);background:var(--wh);font:600 12.5px 'Inter',sans-serif;cursor:pointer;color:var(--g3)}
+.pr-tab.on{background:var(--g);border-color:var(--g);color:#fff}
+.pr-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:700px){.pr-kpis{grid-template-columns:repeat(2,1fr)}}
+.pr-k{padding:12px 14px;border:1px solid var(--g6);border-radius:12px;background:var(--wh)}
+.pr-k b{display:block;font:700 22px 'Space Grotesk','Inter',sans-serif;line-height:1.1}
+.pr-k span{font-size:11px;color:var(--g4)}
+.pr-bar{height:8px;background:var(--g6);border-radius:6px;overflow:hidden;margin-top:8px}
+.pr-bar i{display:block;height:100%;background:var(--g);border-radius:6px;transition:width .3s}
+.pr-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--g6);flex-wrap:wrap}
+.pr-row .pr-n{flex:1;min-width:160px}
+.pr-row .pr-n b{font-size:13px;display:block}
+.pr-row .pr-n small{font-size:11px;color:var(--g4)}
+.pr-nv{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.pr-nv.q{background:#FEE4E2;color:#B42318}.pr-nv.m{background:#FEF0C7;color:#B54708}.pr-nv.f{background:#F2F4F7;color:#475467}.pr-nv.x{background:#F3F4F6;color:#94A3B8}
+.pr-add{display:grid;grid-template-columns:1.4fr 1.2fr 1.2fr auto;gap:8px}
+@media(max-width:700px){.pr-add{grid-template-columns:1fr 1fr}}
+.pr-ck{display:flex;gap:9px;align-items:flex-start;padding:7px 0;font-size:12.5px;cursor:pointer}
+.pr-ck input{margin-top:2px;accent-color:var(--g);width:17px;height:17px}
+.pr-ck em{margin-left:auto;font-style:normal;font-size:11px;color:var(--g4);white-space:nowrap}
+</style>
+<script>
+window.haPros=(function(){
+  var CFG={
+    mentorias:{
+      nome:'Hub Mentorias',
+      icp:'Profissionais de beleza e estética (manicure, lash, estética, cabeleireira, massagem) em Portugal, com negócio a funcionar ou a começar, agenda irregular e vontade de cobrar melhor e organizar o negócio.',
+      meta:60, prod:/mentoria/i,
+      crit:[['Profissional de beleza ou estética',25],['Vive em Portugal ou na Europa',10],['Tem clientes ou negócio a funcionar',20],['Interagiu com o conteúdo (comentou, respondeu, guardou)',15],['Perfil ativo (publica toda a semana)',10],['Diz que a agenda está vazia ou que não sabe quanto cobrar',20]],
+      msg:{
+        quente:'Olá [nome], pelo que me contou, faz sentido falarmos 20 minutos. Explico-lhe como funciona o acompanhamento e vemos juntos se é o passo certo para si. Tem disponibilidade amanhã ou depois?',
+        morno:'Obrigado por partilhar, [nome]. Neste momento, o melhor ponto de partida para si é algo mais leve do que a mentoria (o workshop ou o kit). Quer que lhe envie o link e explique como escolher?',
+        frio:'Obrigado por partilhar, [nome]. Vou continuar a publicar conteúdo sobre agenda e preços. Se mais tarde quiser conversar, é só escrever.',
+        p1c:'Olá [nome], vi o seu comentário e já lhe explico. Antes disso, uma pergunta rápida: o que mais a trava hoje no negócio, a agenda com pouca procura ou saber quanto cobrar?',
+        p1r:'Olá [nome], obrigado pela mensagem! Conte-me um pouco: há quanto tempo tem o seu negócio e o que gostava de mudar primeiro?',
+        p1f:'Olá [nome], tudo bem? Vi o seu trabalho e gostei do cuidado no seu perfil. Ajudo profissionais de beleza a encher a agenda e a cobrar o que valem. Posso fazer-lhe uma pergunta rápida sobre o seu negócio?',
+        p2:'Olá [nome], só para a minha mensagem não ficar esquecida. Se fizer sentido, diga-me qual é o seu maior desafio hoje e eu digo-lhe por onde começar.',
+        p3:'Olá [nome], não quero ser insistente, por isso deixo o assunto aqui. Se mais tarde quiser falar sobre agenda ou preços, é só escrever.'
+      }
+    },
+    solutions:{
+      nome:'Hub Advance Solutions',
+      icp:'Donos de negócios de serviços (beleza, estética, saúde, bem-estar) em Portugal, com o negócio a funcionar, sem site ou com um que não traz clientes, que querem captar mais clientes online.',
+      meta:30, prod:/./,
+      crit:[['Tem um negócio de serviços a funcionar',25],['Sem site, ou site fraco que não traz clientes',25],['Pediu orçamento ou comentou a palavra do evento',20],['Tem um problema concreto para resolver já',15],['É quem decide',10],['Já investe (ou está disposto a investir) em marketing',5]],
+      msg:{
+        quente:'Perfeito, [nome]. Para lhe fazer um orçamento certo, preciso de 15 minutos para perceber o que precisa. Podemos falar amanhã? Entretanto, veja alguns casos em hubadvance.pt/solutions/portfolio',
+        morno:'Obrigado, [nome]. Envio-lhe o portefólio com casos parecidos com o seu negócio: hubadvance.pt/solutions/portfolio. Veja com calma e diga-me o que lhe faz sentido.',
+        frio:'Obrigado por partilhar, [nome]. Fica o portefólio em hubadvance.pt/solutions/portfolio para quando for o momento certo. Estou por aqui.',
+        p1c:'Olá [nome], vi o seu comentário. Para lhe dar a solução certa: o que precisa de resolver primeiro no seu negócio, ter mais clientes, aparecer melhor online ou organizar a gestão?',
+        p1r:'Olá [nome], obrigado pela mensagem! Conte-me um pouco do seu negócio e do que gostava de resolver primeiro.',
+        p1f:'Olá [nome], tudo bem? Vi o seu negócio e acho que pode conseguir mais clientes online. Na Hub Advance Solutions ajudamos negócios de serviços a fazer isso. Posso perguntar o que lhe faria mais falta hoje?',
+        p2:'Olá [nome], só a confirmar se viu a minha mensagem. Se quiser, envio-lhe exemplos de negócios parecidos com o seu.',
+        p3:'Olá [nome], deixo o assunto por aqui para não incomodar. Se mais tarde precisar, o portefólio está em hubadvance.pt/solutions/portfolio'
+      }
+    }
+  };
+  var ORIG=['Comentou palavra-chave','Respondeu a story','DM recebida','Perfil encontrado','Seguidor novo','Indicação','Lista quente'];
+  var QUENTES=['Comentou palavra-chave','Respondeu a story','DM recebida'];
+  var EST={novo:'Por abordar',abordado:'Abordada',respondeu:'Respondeu',qualificado:'Qualificada',pipeline:'No pipeline',descartado:'Descartada'};
+  var tab='hoje', geralSel='mentorias', filtro='', verTodas=false, cur=null;
+
+  function D(){ var d=DB.prospecao=DB.prospecao||{}; d.lista=d.lista||[]; d.meta=d.meta||{}; d.icp=d.icp||{}; return d; }
+  function A(){ var g=window.HA_AREA; return (g==='mentorias'||g==='solutions')?g:geralSel; }
+  function lista(a){ return D().lista.filter(function(p){return p.area===a;}); }
+  function find(id){ return D().lista.find(function(p){return p.id===id;}); }
+  function meta(a){ var m=D().meta[a]; return m>0?m:CFG[a].meta; }
+  function icp(a){ return D().icp[a]||CFG[a].icp; }
+  function addD(iso,n){ var d=new Date(iso+'T12:00:00'); d.setDate(d.getDate()+n); return isoLocal(d); }
+  function primeiro(n){ return String(n||'').trim().split(/\s+/)[0]||''; }
+  function tel(t){ var d=String(t||'').replace(/\D/g,''); if(d.length===9) d='351'+d; return d; }
+  function score(p){ var c=CFG[p.area].crit, s=0; (p.crit||[]).forEach(function(i){ if(c[i]) s+=c[i][1]; }); return Math.min(100,s); }
+  function nivel(p){ if(!(p.crit||[]).length) return ''; var s=score(p); return s>=70?'quente':s>=40?'morno':'frio'; }
+  function tagNv(p){ var n=nivel(p); if(!n) return ''; var k=n==='quente'?'q':n==='morno'?'m':'f'; return '<span class="pr-nv '+k+'">'+n+' · '+score(p)+'</span>'; }
+  function interage(p){ return QUENTES.indexOf(p.origem)>=0; }
+  function hojeN(a){ var h=todayISO(); return lista(a).reduce(function(n,p){ return n+(p.msgs||[]).filter(function(m){return m.d===h&&typeof m.p==='number';}).length; },0); }
+  function ontemN(a){ var o=addD(todayISO(),-1); return lista(a).reduce(function(n,p){ return n+(p.msgs||[]).filter(function(m){return m.d===o&&typeof m.p==='number';}).length; },0); }
+
+  function fila(a){
+    var h=todayISO(), out=[];
+    lista(a).forEach(function(p){
+      if(p.estado==='novo') out.push({p:p,tipo:'Abordar',passo:1,pri:interage(p)?1:2});
+      else if(p.estado==='abordado'&&p.passo<3&&addD(p.ultimo,p.passo===1?2:3)<=h) out.push({p:p,tipo:'Follow-up '+(p.passo+1)+'/3',passo:p.passo+1,pri:3});
+      else if(p.estado==='respondeu'||p.estado==='qualificado') out.push({p:p,tipo:'Qualificar e avançar',passo:0,pri:0});
+    });
+    return out.sort(function(x,y){ return x.pri-y.pri||(x.p.criado||'').localeCompare(y.p.criado||''); });
+  }
+
+  function sugestao(p){
+    var m=CFG[p.area].msg, nv=nivel(p), t, ti;
+    if(p.estado==='respondeu'||p.estado==='qualificado'){
+      if(nv){ t=m[nv]; ti='Resposta '+nv; } else { t=''; ti='Marque os critérios abaixo para ver a mensagem certa'; }
+      return {t:(t||'').replace(/\[nome\]/g,primeiro(p.nome)),ti:ti,passo:0};
+    }
+    if(p.estado==='abordado'){
+      if(p.passo>=3) return {t:'',ti:'Sem mais passos: se não respondeu, descarte ou deixe para Recuperar',passo:0};
+      var n=p.passo+1; return {t:m['p'+n].replace(/\[nome\]/g,primeiro(p.nome)),ti:'Follow-up '+n+'/3',passo:n};
+    }
+    if(p.estado==='novo'){
+      var k=p.origem==='Comentou palavra-chave'?'p1c':(p.origem==='Respondeu a story'||p.origem==='DM recebida')?'p1r':'p1f';
+      return {t:m[k].replace(/\[nome\]/g,primeiro(p.nome)),ti:'1.ª abordagem',passo:1};
+    }
+    return {t:'',ti:'',passo:0};
+  }
+
+  function render(){
+    var el=document.getElementById('p-prospecao'); if(!el) return;
+    var a=A(), c=CFG[a], h='<div class="pr-wrap">';
+    if(!window.HA_AREA||window.HA_AREA==='geral'){
+      h+='<div class="pr-tabs">'+['mentorias','solutions'].map(function(k){ return '<button type="button" class="pr-tab'+(a===k?' on':'')+'" onclick="haPros.area(\''+k+'\')">'+CFG[k].nome+'</button>'; }).join('')+'</div>';
+    }
+    var hn=hojeN(a), mt=meta(a), pc=Math.min(100,Math.round(hn/mt*100)), on=ontemN(a);
+    var sete=addD(todayISO(),-6), L=lista(a).filter(function(p){return p.primeiroEm&&p.primeiroEm>=sete;});
+    var resp=L.filter(function(p){return ['respondeu','qualificado','pipeline'].indexOf(p.estado)>=0;}).length;
+    var q=lista(a).filter(function(p){return nivel(p)==='quente'&&p.estado!=='descartado';}).length;
+    var pip=lista(a).filter(function(p){return p.estado==='pipeline';}).length;
+    h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><div class="ct">Prospeção · '+c.nome+'</div><div style="font-size:11.5px;color:var(--g4)">Ontem: '+on+' abordadas</div></div>'+
+      '<div style="display:flex;align-items:baseline;gap:6px;margin-top:8px"><b style="font:700 30px \'Space Grotesk\',\'Inter\',sans-serif">'+hn+'</b><span style="color:var(--g4);font-size:13px">/ '+mt+' abordadas hoje</span></div><div class="pr-bar"><i style="width:'+pc+'%"></i></div>'+
+      '<div class="pr-kpis" style="margin-top:12px"><div class="pr-k"><b>'+L.length+'</b><span>abordadas · 7 dias</span></div><div class="pr-k"><b>'+(L.length?Math.round(resp/L.length*100)+'%':'—')+'</b><span>responderam ('+resp+')</span></div><div class="pr-k"><b>'+q+'</b><span>quentes</span></div><div class="pr-k"><b>'+pip+'</b><span>passaram ao pipeline</span></div></div></div>';
+    h+='<div class="pr-tabs">'+[['hoje','Hoje'],['lista','Lista'],['icp','ICP & meta']].map(function(t){ return '<button type="button" class="pr-tab'+(tab===t[0]?' on':'')+'" onclick="haPros.tab(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
+    h+=tab==='hoje'?vHoje(a):tab==='lista'?vLista(a):vIcp(a);
+    el.innerHTML=h+'</div>';
+    badge();
+  }
+
+  function linha(p,tipo){
+    return '<div class="pr-row"><div class="pr-n"><b>'+esc(p.nome)+'</b><small>'+(p.insta?'@'+esc(p.insta)+' · ':'')+esc(p.origem)+' · '+(tipo||EST[p.estado])+'</small></div>'+tagNv(p)+'<button type="button" class="btn bp bsm" onclick="haPros.abrir('+p.id+')">Abrir</button></div>';
+  }
+  function vHoje(a){
+    var f=fila(a), h='';
+    h+='<div class="card"><div class="ct" style="margin-bottom:4px">Adicionar pessoas</div><div style="font-size:11.5px;color:var(--g4);margin-bottom:8px">Uma a uma, ou cole uma lista (uma por linha: nome, @instagram, origem).</div>'+
+      '<div class="pr-add"><input class="fi" id="pr-nome" placeholder="Nome"><input class="fi" id="pr-insta" placeholder="@instagram"><select class="fi" id="pr-orig">'+ORIG.map(function(o){return '<option>'+o+'</option>';}).join('')+'</select><button type="button" class="btn bp bsm" onclick="haPros.add()">+ Adicionar</button></div>'+
+      '<details style="margin-top:8px"><summary style="font-size:12px;color:var(--g3);cursor:pointer">Colar lista</summary><textarea class="fi" id="pr-bulk" rows="5" style="margin-top:6px" placeholder="Ana Silva, @ana.nails, Comentou palavra-chave&#10;@lash.marta&#10;Joana Reis, @joana.estetica"></textarea><button type="button" class="btn bs bsm" style="margin-top:6px" onclick="haPros.bulk()">Importar lista</button></details></div>';
+    var n=verTodas?f.length:20;
+    h+='<div class="card"><div class="ct">Para fazer hoje · '+f.length+'</div>'+(f.length?f.slice(0,n).map(function(x){ return linha(x.p,x.tipo); }).join('')+(f.length>n?'<div style="padding-top:10px"><button type="button" class="btn bs bsm" onclick="haPros.todas()">Mostrar as '+f.length+'</button></div>':''):'<div class="empty" style="padding:14px">Nada pendente. Adicione pessoas acima.</div>')+'</div>';
+    return h;
+  }
+  function vLista(a){
+    var L=lista(a).filter(function(p){return !filtro||p.estado===filtro;}).sort(function(x,y){return (y.criado||'').localeCompare(x.criado||'');});
+    var h='<div class="card"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px"><div class="ct" style="flex:1">Todas · '+L.length+'</div><select class="fi" style="width:auto" onchange="haPros.filtrar(this.value)"><option value="">Todos os estados</option>'+Object.keys(EST).map(function(k){return '<option value="'+k+'"'+(filtro===k?' selected':'')+'>'+EST[k]+'</option>';}).join('')+'</select></div>';
+    h+=L.length?L.slice(0,100).map(function(p){return linha(p);}).join(''):'<div class="empty" style="padding:14px">Sem pessoas neste estado.</div>';
+    return h+(L.length>100?'<div style="font-size:11px;color:var(--g4);padding-top:8px">A mostrar as 100 mais recentes.</div>':'')+'</div>';
+  }
+  function vIcp(a){
+    var c=CFG[a];
+    return '<div class="card"><div class="ct" style="margin-bottom:6px">Cliente ideal (ICP)</div><textarea class="fi" id="pr-icp" rows="4" onchange="haPros.icp(this.value)">'+esc(icp(a))+'</textarea>'+
+      '<div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap"><label style="font-size:12px;color:var(--g3)">Meta diária de abordagens <input class="fi" id="pr-meta" type="number" min="1" value="'+meta(a)+'" style="width:80px;display:inline-block;margin-left:6px" onchange="haPros.meta(this.value)"></label><button type="button" class="btn bs bsm" onclick="haPros.reset()">Repor texto original</button></div></div>'+
+      '<div class="card"><div class="ct" style="margin-bottom:4px">Como se qualifica</div><div style="font-size:11.5px;color:var(--g4);margin-bottom:8px">Cada critério vale pontos. Quente: 70 ou mais. Morno: 40 a 69. Frio: abaixo de 40.</div>'+c.crit.map(function(x){ return '<div class="pr-ck" style="cursor:default"><span>'+esc(x[0])+'</span><em>+'+x[1]+'</em></div>'; }).join('')+'</div>'+
+      '<div class="card"><div class="ct" style="margin-bottom:4px">Como se aborda</div><div style="font-size:12.5px;color:var(--g3);line-height:1.6">1. Quem interagiu com o conteúdo (comentou, respondeu, DM) vem primeiro na fila.<br>2. A 1.ª mensagem muda conforme a origem. Sem resposta: follow-up ao 2.º e ao 5.º dia.<br>3. Quando responde, marca os critérios, a mensagem seguinte muda conforme o nível.<br>4. Quente ou morno com contacto: passa ao Pipeline com um toque.</div></div>';
+  }
+
+  function badge(){
+    var b=document.getElementById('nb-pros'); if(!b) return;
+    var n=0; try{ n=fila(A()).length; }catch(e){}
+    b.textContent=n; b.style.display=n>0?'':'none';
+  }
+
+  function modal(){
+    var m=document.getElementById('modal-prosp');
+    if(!m){ m=document.createElement('div'); m.className='mo'; m.id='modal-prosp'; m.innerHTML='<div class="mbox" id="pr-mbox"></div>'; document.body.appendChild(m);
+      m.addEventListener('click',function(e){ if(e.target===m) haPros.fechar(); }); }
+    return m;
+  }
+  function abrir(id){
+    var p=find(id); if(!p) return; cur=id;
+    var c=CFG[p.area], s=sugestao(p), fim=(p.estado==='pipeline'||p.estado==='descartado');
+    var h='<div class="mh"><div><div class="mt">'+esc(p.nome)+'</div><div style="font-size:11px;color:var(--g4)">'+(p.insta?'@'+esc(p.insta)+' · ':'')+esc(p.origem)+' · '+EST[p.estado]+'</div></div><span class="mx" onclick="haPros.fechar()">✕</span></div>';
+    if(!fim){
+      h+='<div class="fg"><label class="fl" id="pr-mt">'+esc(s.ti)+'</label><textarea class="fi" id="pr-msg" rows="5" oninput="this.dataset.ed=\'1\'">'+esc(s.t)+'</textarea>'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button type="button" class="btn bs bsm" onclick="haPros.copiar()">Copiar</button>'+
+        (p.insta?'<button type="button" class="btn bs bsm" onclick="haPros.ig()">DM Instagram</button>':'')+(p.tel?'<button type="button" class="btn bs bsm" onclick="haPros.wa()">WhatsApp</button>':'')+
+        '<button type="button" class="btn bp bsm" onclick="haPros.enviada()">✓ Enviada</button></div></div>';
+      h+='<div class="fg"><label class="fl">Qualificação <span id="pr-sc" style="margin-left:6px">'+tagNv(p)+'</span></label>'+c.crit.map(function(x,i){ return '<label class="pr-ck"><input type="checkbox"'+((p.crit||[]).indexOf(i)>=0?' checked':'')+' onchange="haPros.crit('+i+',this.checked)"><span>'+esc(x[0])+'</span><em>+'+x[1]+'</em></label>'; }).join('')+'</div>';
+      h+='<div class="fg"><label class="fl">Contactos</label><div class="fr"><input class="fi" id="pr-m-insta" placeholder="@instagram" value="'+esc(p.insta?'@'+p.insta:'')+'" onchange="haPros.contacto()"><input class="fi" id="pr-m-tel" placeholder="Telemóvel (opcional)" value="'+esc(p.tel||'')+'" onchange="haPros.contacto()"></div></div>';
+      h+='<div style="display:flex;gap:6px;flex-wrap:wrap">'+((p.estado==='novo'||p.estado==='abordado')?'<button type="button" class="btn bs bsm" onclick="haPros.estado(\'respondeu\')">Respondeu</button>':'')+'<button type="button" class="btn bp bsm" onclick="haPros.pipeline()">→ Passar ao Pipeline</button><button type="button" class="btn bs bsm" onclick="haPros.estado(\'descartado\')">Sem interesse</button></div>';
+    } else if(p.estado==='descartado'){
+      h+='<div class="al alb" style="margin:8px 0">Descartada. Pode reabrir se voltar a falar consigo.</div><button type="button" class="btn bs bsm" onclick="haPros.estado(\'novo\')">Reabrir</button>';
+    } else {
+      h+='<div class="al alg" style="margin:8px 0">Já está no Pipeline.</div>';
+    }
+    h+='<div style="margin-top:14px;text-align:right"><button type="button" class="btn bs bsm" style="color:#C0392B" onclick="haPros.apagar()">Apagar</button></div>';
+    var mo=modal();
+    document.getElementById('pr-mbox').innerHTML=h;
+    mo.classList.add('open');
+  }
+
+  function dup(a,insta){
+    if(!insta) return false; var k=insta.toLowerCase();
+    return lista(a).some(function(p){return (p.insta||'').toLowerCase()===k;}) || (DB.leads||[]).some(function(l){return (l.insta||'').replace(/^@/,'').toLowerCase()===k;});
+  }
+  function clean(t){ return String(t||'').trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i,'').replace(/[\/?].*$/,'').replace(/^@/,'').replace(/\s+/g,''); }
+  function novoP(a,nome,insta,orig,tl){
+    var o=ORIG.find(function(x){return orig&&x.toLowerCase().indexOf(String(orig).toLowerCase().trim())===0;})||'Perfil encontrado';
+    D().lista.push({id:uid(),area:a,nome:nome||insta,insta:insta,tel:tl||'',origem:o,estado:'novo',passo:0,crit:[],msgs:[],criado:todayISO()});
+  }
+
+  return {
+    render:render, badge:badge, abrir:abrir,
+    area:function(k){ geralSel=k; render(); },
+    tab:function(t){ tab=t; render(); },
+    todas:function(){ verTodas=true; render(); },
+    filtrar:function(v){ filtro=v; render(); },
+    fechar:function(){ var m=document.getElementById('modal-prosp'); if(m) m.classList.remove('open'); cur=null; render(); },
+    add:function(){
+      var a=A(), nome=document.getElementById('pr-nome').value.trim(), insta=clean(document.getElementById('pr-insta').value), o=document.getElementById('pr-orig').value;
+      if(!nome&&!insta){ toast('Escreva o nome ou o Instagram','#C0392B'); return; }
+      if(dup(a,insta)){ toast('⚠ Essa pessoa já está na lista ou no pipeline','#C0392B'); return; }
+      novoP(a,nome,insta,o,''); save(); render(); toast('✓ Adicionada');
+    },
+    bulk:function(){
+      var a=A(), t=document.getElementById('pr-bulk').value, ok=0, rep=0;
+      t.split(/\n/).forEach(function(ln){
+        ln=ln.trim(); if(!ln) return;
+        var s=ln.split(/[,;\t]/).map(function(x){return x.trim();}), nome='', insta='';
+        if(s.length===1){ if(s[0].charAt(0)==='@'){ insta=clean(s[0]); nome=insta; } else { nome=s[0]; } }
+        else { nome=s[0]; insta=clean(s[1]); }
+        if(!nome&&!insta) return;
+        if(dup(a,insta)){ rep++; return; }
+        novoP(a,nome,insta,s[2],''); ok++;
+      });
+      save(); render(); toast('✓ '+ok+' adicionadas'+(rep?' · '+rep+' repetidas ignoradas':''), ok?undefined:'#C0392B');
+    },
+    icp:function(v){ D().icp[A()]=v.trim(); save(); toast('✓ ICP guardado'); },
+    meta:function(v){ D().meta[A()]=Math.max(1,+v||CFG[A()].meta); save(); render(); },
+    reset:function(){ delete D().icp[A()]; save(); render(); },
+    copiar:function(){
+      var t=document.getElementById('pr-msg').value;
+      function fb(){ var ta=document.getElementById('pr-msg'); ta.select(); try{ document.execCommand('copy'); toast('✓ Mensagem copiada'); }catch(e){ toast('Selecione e copie a mensagem','#C0392B'); } }
+      if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function(){ toast('✓ Mensagem copiada'); },fb); else fb();
+    },
+    ig:function(){ var p=find(cur); if(!p||!p.insta) return; window.open('https://ig.me/m/'+encodeURIComponent(p.insta),'_blank'); },
+    wa:function(){ var p=find(cur); if(!p||!p.tel) return; window.open('https://wa.me/'+tel(p.tel)+'?text='+encodeURIComponent(document.getElementById('pr-msg').value),'_blank'); },
+    enviada:function(){
+      var p=find(cur); if(!p) return; var s=sugestao(p), h=todayISO();
+      if(!s.t&&!s.passo){ toast('Sem mensagem para marcar','#C0392B'); return; }
+      p.msgs=p.msgs||[]; p.msgs.push({d:h,p:s.passo||'nivel'});
+      if(s.passo){ p.passo=s.passo; p.ultimo=h; if(p.estado==='novo'){ p.estado='abordado'; p.primeiroEm=h; } }
+      else p.ultimo=h;
+      save(); toast('✓ Marcada como enviada'); abrir(p.id); render();
+    },
+    crit:function(i,on){
+      var p=find(cur); if(!p) return; var c=p.crit||[], k=c.indexOf(i);
+      if(on&&k<0) c.push(i); if(!on&&k>=0) c.splice(k,1); p.crit=c;
+      if(p.estado==='respondeu'&&c.length) p.estado='qualificado';
+      save();
+      var sc=document.getElementById('pr-sc'); if(sc) sc.innerHTML=tagNv(p);
+      var ta=document.getElementById('pr-msg');
+      if(ta&&ta.dataset.ed!=='1'){ var s=sugestao(p); ta.value=s.t; var lb=document.getElementById('pr-mt'); if(lb) lb.textContent=s.ti; }
+    },
+    contacto:function(){
+      var p=find(cur); if(!p) return;
+      p.insta=clean(document.getElementById('pr-m-insta').value); p.tel=document.getElementById('pr-m-tel').value.trim(); save();
+    },
+    estado:function(e){
+      var p=find(cur); if(!p) return;
+      if(e==='respondeu'){ p.estado=(p.crit||[]).length?'qualificado':'respondeu'; p.respondeuEm=todayISO(); if(!p.primeiroEm) p.primeiroEm=todayISO(); }
+      else p.estado=e;
+      save(); abrir(p.id); render();
+    },
+    pipeline:function(){
+      var p=find(cur); if(!p) return; var a=p.area;
+      if(!p.insta&&!tel(p.tel)){ toast('⚠ Falta o Instagram ou o telemóvel','#C0392B'); return; }
+      if((DB.leads||[]).some(function(l){ return p.insta&&(l.insta||'').replace(/^@/,'').toLowerCase()===p.insta.toLowerCase(); })){ toast('⚠ Já existe um lead com esse Instagram','#C0392B'); return; }
+      var ps=(DB.produtos||[]).filter(function(x){return (x.area||'mentorias')===a;}), pr=ps.find(function(x){return CFG[a].prod.test(x.nome);})||ps[0], nv=nivel(p);
+      var nota='Prospeção ICP · '+p.origem+(nv?' · '+nv+' ('+score(p)+'/100)':'');
+      DB.leads=DB.leads||[];
+      DB.leads.push({id:uid(),nome:p.nome,contacto:tel(p.tel),insta:p.insta?'@'+p.insta:'',origem:'Instagram',produto:pr?pr.nome:'',etapa:'novo',proxData:todayISO(),proxTipo:p.tel?'WhatsApp':'Instagram',motivo:'',notas:nota,area:a,createdAt:new Date().toISOString(),interacoes:[{id:Date.now(),tipo:'Prospeção',nota:nota,data:new Date().toISOString()}]});
+      p.estado='pipeline'; p.pipelineEm=todayISO(); save(); renderAll(); toast('✓ Passou ao Pipeline'); abrir(p.id);
+    },
+    apagar:function(){
+      if(!confirm('Apagar esta pessoa da prospeção?')) return;
+      D().lista=D().lista.filter(function(p){return p.id!==cur;}); save(); haPros.fechar(); toast('Removida','#C0392B');
+    }
+  };
+})();
+(function(){
+  var content=document.getElementById('content');
+  if(content&&!document.getElementById('p-prospecao')){ var d=document.createElement('div'); d.className='panel'; d.id='p-prospecao'; content.appendChild(d); }
+  var after=document.querySelector('.sb-nav .ni[onclick*="\'metas\'"]')||document.querySelector('.sb-nav .ni[onclick*="\'captacao\'"]');
+  if(after&&!document.querySelector('.ni-pros')){
+    var ni=document.createElement('div'); ni.className='ni ni-pros'; ni.setAttribute('onclick',"nav('prospecao',this)");
+    ni.innerHTML='<span class="ni-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><span class="ni-label">Prospeção</span><span class="nb nb-blue" id="nb-pros" style="display:none">0</span>';
+    after.parentNode.insertBefore(ni,after.nextSibling);
+  }
+  if(typeof titles==='object') titles.prospecao='Prospeção ICP';
+  var _ra=window.renderAll;
+  window.renderAll=function(){
+    var r=_ra.apply(this,arguments);
+    try{ var el=document.getElementById('p-prospecao'); if(el&&el.classList.contains('on')) haPros.render(); else haPros.badge(); }catch(e){ console.error('Prospeção:',e); }
+    return r;
+  };
+  try{ haPros.badge(); }catch(e){}
+})();
+</script>
+
 </body>
 </html>
