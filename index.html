@@ -8988,5 +8988,27 @@ window.haResultado=(function(){
 })();
 </script>
 
+<!-- BLOCO 36 · Captação sem metas (as metas ficam só na secção Metas). Não apaga dados. -->
+<script>
+(function(){
+  if(!window.haCap) return;
+  var _r=haCap.render;
+  haCap.render=function(){
+    var C=DB.captacao, guardadas=C&&C.metas;
+    if(C) C.metas={};                       // o funil desenha-se sem barras de meta
+    var r;
+    try{ r=_r.apply(this,arguments); } finally{ if(C) C.metas=guardadas||{}; }
+    try{
+      var el=document.getElementById('p-captacao'); if(!el) return r;
+      [].slice.call(el.querySelectorAll('b')).forEach(function(b){
+        if(/^Metas do mês$/.test(b.textContent.trim())&&b.parentNode&&b.parentNode.parentNode) b.parentNode.parentNode.removeChild(b.parentNode);
+      });
+    }catch(e){ console.error('Captação sem metas:',e); }
+    return r;
+  };
+  setTimeout(function(){ try{ haCap.render(); }catch(e){} },500);
+})();
+</script>
+
 </body>
 </html>
