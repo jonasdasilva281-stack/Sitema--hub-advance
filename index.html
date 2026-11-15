@@ -9028,5 +9028,91 @@ window.haResultado=(function(){
 .cap-tabs button[onclick*="'metas'"]{display:none !important}
 </style>
 
+<!-- BLOCO 41 · Entrega numa só secção: programas lado a lado, com a estrutura de entrega e as pessoas dentro. Produtos saem das Vendas. -->
+<style>
+.sb-nav .ni[onclick*="'mentorados'"],.sb-nav .ni[onclick*="'entregas'"],.sb-nav .ni[onclick*="'produtos'"]{display:none !important}
+.ha-en-top{display:flex;gap:14px;flex-wrap:wrap;align-items:baseline;margin-bottom:12px}
+.ha-en-top b{font-size:18px}.ha-en-top span{font-size:12px;color:var(--g4)}
+.ha-en{display:flex;gap:12px;align-items:flex-start;overflow-x:auto;padding-bottom:12px;scroll-snap-type:x proximity}
+.ha-en-col{flex:0 0 320px;max-width:88vw;background:#fff;border:1px solid var(--g6);border-radius:12px;padding:14px 15px;scroll-snap-align:start}
+.ha-en-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ha-en-h b{font-size:14px}.ha-en-h span{font-size:11px;color:var(--g4);white-space:nowrap}
+.ha-en-sec{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--g4);margin:14px 0 6px;font-weight:600}
+.ha-en-col ul,.ha-en-col ol{margin:0;padding-left:18px;font-size:12px;color:var(--g3);line-height:1.6}
+.ha-en-col details summary{font-size:11.5px;color:var(--g3);cursor:pointer;margin-top:6px}
+.ha-en-p{border-top:1px solid var(--g6);padding:10px 0}
+.ha-en-p .n{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+.ha-en-p .n b{font-size:12.5px}.ha-en-p .n span{font-size:10.5px;color:var(--g4)}
+</style>
+<script>
+window.haEntrega=(function(){
+  var C=document.getElementById('content');
+  if(C&&!document.getElementById('p-entrega')){ var d=document.createElement('div'); d.className='panel'; d.id='p-entrega'; C.appendChild(d); }
+  if(typeof titles==='object') titles.entrega='Entrega';
+  var ref=document.querySelector('.sb-nav .ni[onclick*="\'mentorados\'"]');
+  if(ref&&!document.querySelector('.ni-entrega')){
+    var ni=document.createElement('div'); ni.className='ni ni-entrega'; ni.setAttribute('onclick',"nav('entrega',this)");
+    var ic=ref.querySelector('.ni-icon'); ni.innerHTML=(ic?ic.outerHTML:'')+'<span class="ni-label">Entrega</span><span class="nb nb-blue" id="nb-entrega" style="display:none">0</span>';
+    ref.parentNode.insertBefore(ni,ref);
+  }
+  // todos os atalhos antigos (Programas / Entregas) abrem a secção única
+  var _nav=window.nav;
+  window.nav=function(id,el){
+    if(id==='mentorados'||id==='entregas'){ id='entrega'; el=document.querySelector('.ni-entrega'); }
+    return _nav.call(this,id,el);
+  };
+  function plural(n,s,p){ return n+' '+(n===1?s:p); }
+  function item(it){
+    var q=it.q, t;
+    if(it.u==='encontros') t=plural(q,'encontro','encontros');
+    else if(it.u==='horas') t=q+'h';
+    else if(it.u==='etapas') t=plural(q,'etapa','etapas');
+    else if(it.u==='acesso') t='Acesso';
+    else t=plural(q,'entrega','entregas');
+    return '<li>'+t+(it.mensal?' por mês':'')+'</li>';
+  }
+  function fase(st){ return '<li>'+esc(st.t||'')+(st.data?' · '+fmtDate(st.data):(st.dia!=null&&st.dia!==''?' · +'+st.dia+' dias':''))+(st.enc?' · '+plural(+st.enc,'encontro','encontros'):'')+'</li>'; }
+  function grupos(){
+    var g={}, ordem=[];
+    (DB.vendas||[]).forEach(function(v){
+      var k=v.produtoId||('n:'+(v.produto||'sem'));
+      if(!g[k]){ g[k]={p:DB.produtos.find(function(x){return x.id===v.produtoId;})||null,nome:v.produto||'Sem programa',vs:[],fin:[]}; ordem.push(k); }
+      if(v.estado==='em_curso') g[k].vs.push(v); else g[k].fin.push(v);
+    });
+    return ordem.map(function(k){return g[k];}).filter(function(x){return x.vs.length;}).sort(function(a,b){return b.vs.length-a.vs.length;});
+  }
+  function pessoa(v){
+    return '<div class="ha-en-p"><div class="n"><b>'+esc(v.cliente)+'</b><span>desde '+fmtDate(v.data)+'</span></div>'+entregaBarras(v,false)+
+      (v.mentoradoId?'<div style="margin-top:6px"><button class="btn bs bsm" onclick="haProg.abrir('+v.mentoradoId+')">Acompanhamento</button></div>':'')+'</div>';
+  }
+  function coluna(g){
+    var p=g.p, its=p?entregaveisDe(p):[], fs=p?(p.cronograma||[]):[];
+    var h='<div class="ha-en-col"><div class="ha-en-h"><b>'+esc(p?(p.nomeC||p.nome):g.nome)+'</b><span>'+plural(g.vs.length,'pessoa','pessoas')+'</span></div>';
+    h+='<div class="ha-en-sec">Estrutura de entrega</div>';
+    h+=its.length?'<ul>'+its.map(item).join('')+'</ul>':'<div style="font-size:12px;color:var(--g4)">Escolha o produto na compra para ver a estrutura.</div>';
+    if(fs.length) h+='<details><summary>Fases ('+fs.length+')</summary><ol>'+fs.map(fase).join('')+'</ol></details>';
+    h+='<div class="ha-en-sec">Pessoas dentro</div>'+g.vs.map(pessoa).join('');
+    if(g.fin.length) h+='<details><summary>Concluídas ('+g.fin.length+')</summary><div style="font-size:12px;color:var(--g3);padding-top:4px">'+g.fin.map(function(v){return esc(v.cliente);}).join(' · ')+'</div></details>';
+    return h+'</div>';
+  }
+  function badge(){
+    var b=document.getElementById('nb-entrega'); if(!b) return;
+    var n=(DB.vendas||[]).filter(function(v){return v.estado==='em_curso';}).length;
+    b.textContent=n; b.style.display=n>0?'':'none';
+  }
+  function render(){
+    var el=document.getElementById('p-entrega'); badge(); if(!el||!el.classList.contains('on')) return;
+    var gs=grupos(), pes=gs.reduce(function(s,g){return s+g.vs.length;},0);
+    var h='<div class="ha-en-top"><b>Entrega</b><span>'+plural(gs.length,'programa ativo','programas ativos')+' · '+plural(pes,'pessoa dentro','pessoas dentro')+'</span></div>';
+    h+=gs.length?'<div class="ha-en">'+gs.map(coluna).join('')+'</div>':'<div class="card"><div class="empty">Ainda não há pessoas em programas. Quando registar uma compra, ela aparece aqui, dentro do programa.</div></div>';
+    el.innerHTML=h;
+  }
+  var _ra=window.renderAll;
+  window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ render(); }catch(e){ console.error('Entrega:',e); } return r; };
+  try{ badge(); }catch(e){}
+  return {render:render};
+})();
+</script>
+
 </body>
 </html>
