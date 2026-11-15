@@ -1961,7 +1961,7 @@ function openMarcar(ptype,pid,presetData){
     document.getElementById('rn-ptype').value=ptype;
     document.getElementById('rn-pid').value=obj.id;
     var tipo='Sessão de acompanhamento';
-    if(ptype==='lead') tipo=(obj.etapa==='novo'||obj.etapa==='sdr')?'Chamada SDR':'Chamada Closer';
+    if(ptype==='lead') tipo='Chamada Closer';
     rnRenderTipos(tipo); rnUpdateSugestoes(tipo);
     if(ptype==='mentorado'){
       var ult=sessoesDe(obj).filter(function(r){return r.hora;}).pop();
@@ -2951,8 +2951,7 @@ function rnSelectWho(idx){
   if(r.tipo==='equipa') tipoAuto='Reunião de equipa';
   else if(r.tipo==='lead'){
     var et=r.obj.etapa;
-    if(et==='sdr'||et==='novo') tipoAuto='Chamada SDR';
-    else if(et==='closer'||et==='followup') tipoAuto='Chamada Closer';
+    tipoAuto='Chamada Closer';
   }
   rnRenderTipos(tipoAuto);
   rnUpdateSugestoes(tipoAuto);
@@ -10036,6 +10035,35 @@ window.haMktX=(function(){
   var _n=haMkt.novoPlano; haMkt.novoPlano=function(){ var r=_n.apply(this,arguments); novo(); return r; };
   var _e=haMkt.editPlano; haMkt.editPlano=function(){ var r=_e.apply(this,arguments); ativo=false; return r; };
   var _x=haMktX.nova; haMktX.nova=function(){ var r=_x.apply(this,arguments); novo(); return r; };
+})();
+</script>
+
+
+<!-- BLOCO 51 · Processo: o SDR marca a reunião (não vende); a lead passa para o Pipeline e a equipa de vendas trabalha-a -->
+<script>
+(function(){
+  var _sr=window.saveReuniao;
+  window.saveReuniao=function(){
+    var tipo=(document.getElementById('rn-tipo')||{}).value, pt=(document.getElementById('rn-ptype')||{}).value, pid=parseInt((document.getElementById('rn-pid')||{}).value,10)||0, who=((document.getElementById('rn-who')||{}).value||'').trim();
+    var n0=DB.reunioes.length, r=_sr.apply(this,arguments);
+    try{
+      var l=pid&&pt==='lead'?DB.leads.find(function(x){return x.id===pid;}):DB.leads.find(function(x){return x.nome===who;});
+      var marcou=DB.reunioes.length>n0||true;
+      if(l&&/closer|sdr/i.test(tipo||'')&&(l.etapa==='novo'||l.etapa==='sdr'||!l.etapa)){
+        l.etapa='closer'; l.passouVendas=todayISO(); l.sdrMarcou=true;
+        l.interacoes=l.interacoes||[]; l.interacoes.push({data:todayISO(),tipo:'SDR',nota:'Reunião marcada pelo SDR. Lead passou para o Pipeline (vendas).'});
+        save(); renderAll(); toast('✓ '+l.nome+' passou para o Pipeline (vendas)');
+      }
+    }catch(e){ console.error('SDR→Pipeline:',e); }
+    return r;
+  };
+  if(window.haMktX&&haMktX.sdr){
+    var _sd=haMktX.sdr;
+    haMktX.sdr=function(){
+      var m=todayISO().slice(0,7), n=(DB.leads||[]).filter(function(l){return l.passouVendas&&l.passouVendas.slice(0,7)===m;}).length;
+      return '<div class="hm-c" style="margin-bottom:12px;background:#F0FAF6"><div style="font-size:12.5px;line-height:1.7"><b>Como funciona:</b> o SDR não vende. Aborda, qualifica e <b>marca a reunião</b>; ao marcar, a lead passa para o <a style="color:var(--g);cursor:pointer;font-weight:600" onclick="nav(\'pipeline\',document.querySelector(\'.ni[onclick*=&quot;\\\'pipeline\\\'&quot;]\'))">Pipeline</a> (etapa Closer) e a equipa de vendas trabalha-a. <b>'+n+'</b> lead'+(n===1?'':'s')+' passada'+(n===1?'':'s')+' para vendas este mês.</div></div>'+_sd.apply(this,arguments);
+    };
+  }
 })();
 </script>
 
