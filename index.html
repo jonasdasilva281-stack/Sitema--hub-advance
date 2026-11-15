@@ -9698,6 +9698,12 @@ window.haMktX=(function(){
     h+='<div class="hm-c" style="margin-bottom:12px"><div class="hm-ch"><h3>Como funciona</h3></div><div style="font-size:12.5px;line-height:1.7;color:var(--g3)">Cria conteúdo para atrair, depois acelera com tráfego pago o que já tem resposta. O SDR prospeta e marca reuniões, e a venda fecha na call. <b>Cada produto tem a sua campanha</b> em <a style="color:var(--g);cursor:pointer;font-weight:600" onclick="haMktF.aba(\'produto\')">Por produto</a>.'+(sem.length?'<br><span style="color:#B7791F"><b>'+sem.length+' produto'+(sem.length>1?'s':'')+' sem campanha ativa:</b> '+sem.slice(0,5).map(function(p){return esc(p.nomeC||p.nome);}).join(', ')+(sem.length>5?'…':'')+'.</span>':'')+'</div></div>';
     return h;
   }
+  function plano(x){
+    var ps=x.passos||[]; if(!x.estrategia&&!ps.length) return '<div style="font-size:11px;color:#B7791F;margin:-2px 0 8px 2px;cursor:pointer" onclick="haMkt.editPlano('+x.id+')">⚠ Falta definir a estratégia e os passos</div>';
+    var f=ps.filter(function(q){return q.feito;}).length;
+    return '<details class="mx-pl"><summary>Estratégia e passos · '+f+'/'+ps.length+'</summary>'+(x.estrategia?'<div class="mx-es">'+esc(x.estrategia)+'</div>':'')
+      +ps.map(function(q,i){ return '<label class="mx-ps"><input type="checkbox" '+(q.feito?'checked ':'')+'onchange="haMktX.passo('+x.id+','+i+')"><span'+(q.feito?' style="text-decoration:line-through;color:var(--g4)"':'')+'>'+esc(q.t)+'</span></label>'; }).join('')+'</details>';
+  }
   function porProduto(){
     var PL=(DB.mktPlanos||[]), h='<div style="font-size:12.5px;color:var(--g4);margin-bottom:6px">Cada produto tem a sua campanha: atração, tráfego pago e prospeção.</div>';
     HA_NIVEIS.forEach(function(n){
@@ -9709,7 +9715,7 @@ window.haMktX=(function(){
         return '<div class="mx-p"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><b style="font-size:13.5px">'+esc(p.nomeC||p.nome)+'</b><div style="font-size:11px;color:var(--g4)">'+eur(p.valor||0)+(p.tipo==='recorrente'?'/mês':'')+'</div></div>'
           +(at.length?'<span class="tag tg" style="font-size:9.5px">'+at.length+' ativa'+(at.length>1?'s':'')+'</span>':'<span class="tag ty" style="font-size:9.5px">Sem campanha</span>')+'</div>'
           +'<div style="display:flex;gap:22px;margin:12px 0 6px"><div><div style="font-size:19px;font-weight:700">'+ls.length+'</div><div style="font-size:10.5px;color:var(--g4)">Leads</div></div><div><div style="font-size:19px;font-weight:700">'+fe.length+'</div><div style="font-size:10.5px;color:var(--g4)">Fechados</div></div><div><div style="font-size:19px;font-weight:700">'+(inv?eur(inv):'—')+'</div><div style="font-size:10.5px;color:var(--g4)">Investido</div></div></div>'
-          +cs.map(function(x){ return '<div class="mx-cp" onclick="haMkt.editPlano('+x.id+')"><span><b>'+esc(x.nome)+'</b><br><span style="color:var(--g4)">'+esc(x.etapa||'—')+' · '+esc(x.canal||'')+(x.fim?' · até '+fmtDate(x.fim):'')+'</span></span><span class="tag '+(ativa(x)?'tg':'tgr')+'" style="font-size:9.5px;align-self:flex-start">'+(ativa(x)?'Ativa':'Terminada')+'</span></div>'; }).join('')
+          +cs.map(function(x){ return '<div class="mx-cp" onclick="haMkt.editPlano('+x.id+')"><span><b>'+esc(x.nome)+'</b><br><span style="color:var(--g4)">'+esc(x.etapa||'—')+' · '+esc(x.canal||'')+(x.fim?' · até '+fmtDate(x.fim):'')+'</span></span><span class="tag '+(ativa(x)?'tg':'tgr')+'" style="font-size:9.5px;align-self:flex-start">'+(ativa(x)?'Ativa':'Terminada')+'</span></div>'+plano(x); }).join('')
           +'<div style="margin-top:10px"><button class="btn bs bsm" onclick="haMktX.nova('+p.id+')">+ Campanha para este produto</button></div></div>';
       }).join('')+'</div>':'<div style="font-size:12px;color:var(--g4)">Sem produtos neste nível.</div>';
     });
@@ -9732,6 +9738,7 @@ window.haMktX=(function(){
     return h;
   }
   return {funil:funil,produto:porProduto,sdr:sdr,
+    passo:function(id,i){ var x=(DB.mktPlanos||[]).find(function(p){return p.id===id;}); if(!x||!x.passos||!x.passos[i]) return; x.passos[i].feito=!x.passos[i].feito; save(); renderAll(); },
     nova:function(id){ haMkt.novoPlano(); var e=document.getElementById('mkp-produto'); if(e) e.value=id; var p=DB.produtos.find(function(x){return x.id===id;}); var n=document.getElementById('mkp-nome'); if(n&&p) n.value='Campanha · '+(p.nomeC||p.nome); }
   };
 })();
@@ -9743,14 +9750,27 @@ window.haMktX=(function(){
     d.className='fr fg'; d.innerHTML='<div><label class="fl">Produto da campanha</label><select class="fi" id="mkp-produto"></select></div><div><label class="fl">Etapa do funil</label><select class="fi" id="mkp-etapa"><option>Atração orgânica</option><option>Tráfego pago</option><option>Prospeção SDR</option></select></div>';
     alvo.parentNode.insertBefore(d,alvo);
   }
+  var MODELO={
+    'Atração orgânica':['Definir o público e a oferta deste produto','Planear os conteúdos da semana (3 a 5 posts)','Criar e publicar os conteúdos','Responder a comentários e DMs no mesmo dia','Analisar alcance e leads no fim da semana'],
+    'Tráfego pago':['Escolher o conteúdo orgânico que já funciona','Definir público e orçamento diário','Criar anúncios: copy e criativo','Lançar e acompanhar o custo por lead','Otimizar: pausar o que não converte e escalar o que converte'],
+    'Prospeção SDR':['Montar a lista de potenciais clientes (ICP)','Abordar por WhatsApp, DM ou email','Identificar necessidades e qualificar','Marcar reunião com quem tem potencial','Registar tudo no sistema e fazer o follow-up']
+  };
+  if(mod&&!document.getElementById('mkp-estrategia')){
+    var o=document.getElementById('mkp-obj').closest('.fg'), z=document.createElement('div');
+    z.innerHTML='<div class="fg"><label class="fl">Estratégia <span style="font-size:9.5px;color:var(--g4);font-weight:400">público, mensagem, oferta</span></label><textarea class="fi" id="mkp-estrategia" rows="3" placeholder="Ex.: Atrair esteticistas que não sabem precificar, com 3 reels por semana e CTA para o workshop"></textarea></div>'
+      +'<div class="fg"><label class="fl">Passos a seguir <span style="font-size:9.5px;color:var(--g4);font-weight:400">um por linha, por ordem</span> <a style="font-size:11px;color:var(--g);cursor:pointer;float:right" onclick="haMktX.modelo()">usar passos sugeridos</a></label><textarea class="fi" id="mkp-passos" rows="6" placeholder="1.º passo&#10;2.º passo…"></textarea></div>';
+    o.parentNode.insertBefore(z,o.nextSibling);
+    var et=document.getElementById('mkp-etapa'); if(et) et.addEventListener('change',function(){ var t=document.getElementById('mkp-passos'); if(t&&!t.value.trim()) t.value=(MODELO[et.value]||[]).join('\n'); });
+  }
+  window.haMktX.modelo=function(){ var t=document.getElementById('mkp-passos'), et=document.getElementById('mkp-etapa'); if(t&&et) t.value=(MODELO[et.value]||[]).join('\n'); };
   function opcoes(){ var e=document.getElementById('mkp-produto'); if(e) e.innerHTML='<option value="">— Sem produto —</option>'+(DB.produtos||[]).map(function(p){return '<option value="'+p.id+'">'+esc(p.nomeC||p.nome)+'</option>';}).join(''); }
-  var _n=haMkt.novoPlano; haMkt.novoPlano=function(){ var r=_n.apply(this,arguments); opcoes(); document.getElementById('mkp-produto').value=''; document.getElementById('mkp-etapa').value='Atração orgânica'; return r; };
-  var _e=haMkt.editPlano; haMkt.editPlano=function(id){ var r=_e.apply(this,arguments); opcoes(); var x=(DB.mktPlanos||[]).find(function(p){return p.id===id;}); if(x){ document.getElementById('mkp-produto').value=x.produtoId||''; document.getElementById('mkp-etapa').value=x.etapa||'Atração orgânica'; } return r; };
+  var _n=haMkt.novoPlano; haMkt.novoPlano=function(){ var r=_n.apply(this,arguments); opcoes(); document.getElementById('mkp-produto').value=''; document.getElementById('mkp-etapa').value='Atração orgânica'; document.getElementById('mkp-estrategia').value=''; document.getElementById('mkp-passos').value=MODELO['Atração orgânica'].join('\n'); return r; };
+  var _e=haMkt.editPlano; haMkt.editPlano=function(id){ var r=_e.apply(this,arguments); opcoes(); var x=(DB.mktPlanos||[]).find(function(p){return p.id===id;}); if(x){ document.getElementById('mkp-produto').value=x.produtoId||''; document.getElementById('mkp-etapa').value=x.etapa||'Atração orgânica'; document.getElementById('mkp-estrategia').value=x.estrategia||''; document.getElementById('mkp-passos').value=(x.passos||[]).map(function(q){return q.t;}).join('\n'); } return r; };
   var _s=haMkt.savePlano; haMkt.savePlano=function(){
-    var pid=parseInt(document.getElementById('mkp-produto').value,10)||null, et=document.getElementById('mkp-etapa').value, id=parseInt(document.getElementById('mkp-id').value,10)||0, antes=(DB.mktPlanos||[]).length;
+    var est=document.getElementById('mkp-estrategia').value.trim(), linhas=document.getElementById('mkp-passos').value.split('\n').map(function(l){return l.replace(/^\s*\d+[.)]\s*/,'').trim();}).filter(Boolean), pid=parseInt(document.getElementById('mkp-produto').value,10)||null, et=document.getElementById('mkp-etapa').value, id=parseInt(document.getElementById('mkp-id').value,10)||0, antes=(DB.mktPlanos||[]).length;
     var r=_s.apply(this,arguments);
     var x=id?(DB.mktPlanos||[]).find(function(p){return p.id===id;}):((DB.mktPlanos||[]).length>antes?DB.mktPlanos[DB.mktPlanos.length-1]:null);
-    if(x){ x.produtoId=pid; x.etapa=et; save(); renderAll(); }
+    if(x){ x.produtoId=pid; x.etapa=et; x.estrategia=est; var ant=x.passos||[]; x.passos=linhas.map(function(t){ var a=ant.find(function(q){return q.t===t;}); return {t:t,feito:a?!!a.feito:false}; }); save(); renderAll(); }
     return r;
   };
   // Nível no formulário do produto
@@ -9773,6 +9793,11 @@ window.haMktX=(function(){
 </script>
 
 
+<style>
+.mx-pl{margin:-2px 0 10px;font-size:12px}.mx-pl summary{cursor:pointer;color:var(--g);font-weight:600;font-size:11.5px}
+.mx-es{margin:6px 0;padding:8px 10px;background:var(--g7);border-radius:8px;color:var(--g3);line-height:1.5}
+.mx-ps{display:flex;gap:8px;align-items:flex-start;padding:4px 0;cursor:pointer}.mx-ps input{margin-top:2px}
+</style>
 <!-- BLOCO 48 · Captação, Marketing e Prospeção trabalham juntos: um só item de menu, três separadores -->
 <style>
 </style>
