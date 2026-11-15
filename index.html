@@ -9406,5 +9406,102 @@ window.haEventosAgenda=(function(){
 })();
 </script>
 
+<!-- BLOCO 45 · Financeiro: metas e objetivos no topo, gráficos, e a rotina de sexta passa para a Agenda -->
+<style>
+.fx-m{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:14px}
+.fx-c{background:#fff;border:1px solid var(--g6);border-radius:12px;padding:15px 17px}
+.fx-l{font-size:11px;color:var(--g4);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.fx-v{font-size:26px;font-weight:700;line-height:1.1;margin:5px 0 2px}
+.fx-s{font-size:11.5px;color:var(--g4)}
+.fx-b{height:8px;background:var(--g6);border-radius:6px;overflow:hidden;margin:10px 0 6px}
+.fx-b i{display:block;height:100%;background:var(--g);border-radius:6px}
+.fx-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px;margin-bottom:14px}
+.fx-g h4{margin:0 0 2px;font-size:13.5px;font-weight:700}.fx-g .fx-s{margin-bottom:8px}
+.fx-g svg{width:100%;height:auto;display:block}
+.fx-leg{display:flex;gap:14px;font-size:11px;color:var(--g4);margin-top:6px}.fx-leg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+#ag-rotina{margin-bottom:14px;background:#fff;border:1px solid var(--g6);border-radius:12px;padding:10px 14px}
+#ag-rotina>summary{cursor:pointer;font-size:13px;font-weight:700;list-style:none}
+#ag-rotina>summary small{font-weight:400;color:var(--g4);margin-left:6px}
+#ag-rotina #fin-rotina{margin:12px 0 2px !important}
+</style>
+<script>
+window.haFinX=(function(){
+  var MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  function eur(n){ return (n<0?'−':'')+Math.abs(Math.round(n)).toLocaleString('pt-PT')+' €'; }
+  function curto(n){ n=Math.round(n); return Math.abs(n)>=1000?(n/1000).toLocaleString('pt-PT',{maximumFractionDigits:1})+'k':String(n); }
+  function ga(){ return (typeof HA_AREA!=='undefined'&&HA_AREA)||null; }
+  function metaMes(mes){
+    if(ga()==='solutions'){ var s=DB.funilSol&&DB.funilSol.metas; return s&&s.faturado!=null?+s.faturado:0; }
+    var f=DB.funil&&DB.funil.meses&&DB.funil.meses[mes]; return f&&f.metas&&f.metas.faturado!=null?+f.metas.faturado:2294;
+  }
+  function meses(n){ var o=[], d=new Date(); d.setDate(1); for(var i=n-1;i>=0;i--){ var x=new Date(d.getFullYear(),d.getMonth()-i,1); o.push({k:x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2),l:MES[x.getMonth()]}); } return o; }
+  function somaMes(arr,campo){ var m={}; arr.forEach(function(x){ var k=(x.data||'').slice(0,7); if(k) m[k]=(m[k]||0)+(+x.valor||0); }); return m; }
+  function metas(){
+    var hoje=todayISO(), mes=hoje.slice(0,7), pg=(DB.pagamentos||[]).filter(function(p){return p.estado==='Pago';}), rec=somaMes(pg)[mes]||0;
+    var obj=metaMes(mes), d=new Date(), dia=d.getDate(), dm=new Date(d.getFullYear(),d.getMonth()+1,0).getDate(), proj=dia?rec/dia*dm:0;
+    var pc=obj?Math.min(100,Math.round(rec/obj*100)):0, pc5=Math.min(100,Math.round(rec/5000*100));
+    var h='<div class="fx-m">';
+    h+='<div class="fx-c"><div class="fx-l">Objetivo do mês</div><div class="fx-v">'+eur(rec)+' <span style="font-size:14px;font-weight:500;color:var(--g4)">de '+eur(obj)+'</span></div><div class="fx-b"><i style="width:'+pc+'%"></i></div><div class="fx-s"><b>'+pc+'%</b> do objetivo · '+(obj>rec?'faltam <b>'+eur(obj-rec)+'</b>':'<b style="color:var(--g)">objetivo atingido</b>')+'</div></div>';
+    h+='<div class="fx-c"><div class="fx-l">Meta de faturação</div><div class="fx-v">'+eur(rec)+' <span style="font-size:14px;font-weight:500;color:var(--g4)">de 5.000 €</span></div><div class="fx-b"><i style="width:'+pc5+'%"></i></div><div class="fx-s"><b>'+pc5+'%</b> da meta mensal</div></div>';
+    h+='<div class="fx-c"><div class="fx-l">Ritmo do mês</div><div class="fx-v">'+eur(proj)+'</div><div class="fx-s">projeção para fechar o mês ao ritmo atual · dia '+dia+' de '+dm+'</div>'+(obj?'<div class="fx-s" style="margin-top:6px;color:'+(proj>=obj?'var(--g)':'#B7791F')+'"><b>'+(proj>=obj?'No caminho do objetivo':'Abaixo do objetivo em '+eur(obj-proj))+'</b></div>':'')+'</div>';
+    return h+'</div>';
+  }
+  function barras(){
+    var ms=meses(6), pg=(DB.pagamentos||[]).filter(function(p){return p.estado==='Pago';}), R=somaMes(pg), S=somaMes(DB.despesas||[]);
+    var max=Math.max.apply(null,ms.map(function(m){return Math.max(R[m.k]||0,S[m.k]||0);}).concat([1])), W=560,H=210,pl=8,pb=26,pt=18,ch=H-pb-pt,bw=(W-pl*2)/ms.length, g='';
+    for(var i=0;i<=2;i++){ var y=pt+ch-(ch*i/2); g+='<line x1="'+pl+'" x2="'+(W-pl)+'" y1="'+y+'" y2="'+y+'" stroke="#EEF0F2"/>'; }
+    ms.forEach(function(m,i){
+      var r=R[m.k]||0,s=S[m.k]||0,hr=ch*r/max,hs=ch*s/max,x=pl+i*bw+bw*0.16,w=bw*0.31;
+      g+='<rect x="'+x+'" y="'+(pt+ch-hr)+'" width="'+w+'" height="'+Math.max(hr,1)+'" rx="3" style="fill:var(--g)"/><rect x="'+(x+w+4)+'" y="'+(pt+ch-hs)+'" width="'+w+'" height="'+Math.max(hs,1)+'" rx="3" fill="#E9B4AB"/>'
+        +(r?'<text x="'+(x+w/2)+'" y="'+(pt+ch-hr-5)+'" text-anchor="middle" font-size="10" fill="#374151" font-weight="600">'+curto(r)+'</text>':'')
+        +'<text x="'+(pl+i*bw+bw/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="11" fill="#6B7280">'+m.l+'</text>';
+    });
+    return '<div class="fx-c"><h4>Receita e saídas</h4><div class="fx-s">Últimos 6 meses · só pagamentos confirmados</div><svg viewBox="0 0 '+W+' '+H+'">'+g+'</svg><div class="fx-leg"><span><i style="background:var(--g)"></i>Receita</span><span><i style="background:#E9B4AB"></i>Saídas</span></div></div>';
+  }
+  function porProduto(){
+    var m={}; (DB.pagamentos||[]).filter(function(p){return p.estado==='Pago'&&(+p.valor||0)>0;}).forEach(function(p){
+      var pr=(typeof haProdPorNome==='function'?haProdPorNome(p.produto):null), n=pr?(pr.nomeC||pr.nome):(p.produto||'Outro'); m[n]=(m[n]||0)+(+p.valor||0); });
+    var a=Object.keys(m).map(function(k){return [k,m[k]];}).sort(function(x,y){return y[1]-x[1];}).slice(0,6), tot=Object.keys(m).reduce(function(s,k){return s+m[k];},0)||1, max=a.length?a[0][1]:1;
+    var h=a.length?a.map(function(e){ return '<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px">'+esc(e[0])+'</span><b>'+eur(e[1])+' <span style="font-weight:400;color:var(--g4)">'+Math.round(e[1]/tot*100)+'%</span></b></div><div class="fx-b" style="margin:0"><i style="width:'+Math.round(e[1]/max*100)+'%"></i></div></div>'; }).join(''):'<div class="fx-s">Sem pagamentos.</div>';
+    return '<div class="fx-c"><h4>Receita por produto</h4><div class="fx-s">Total recebido · os 6 que mais faturam</div>'+h+'</div>';
+  }
+  function saldo(){
+    var ms=meses(12), pg=(DB.pagamentos||[]).filter(function(p){return p.estado==='Pago';}), R=somaMes(pg), S=somaMes(DB.despesas||[]), acc=0, pts=[];
+    var ant=0; Object.keys(R).forEach(function(k){ if(k<ms[0].k) ant+=R[k]; }); Object.keys(S).forEach(function(k){ if(k<ms[0].k) ant-=S[k]; }); acc=ant;
+    ms.forEach(function(m){ acc+=(R[m.k]||0)-(S[m.k]||0); pts.push(acc); });
+    var W=560,H=210,pl=10,pr=14,pb=26,pt=22,mn=Math.min.apply(null,pts.concat([0])),mx=Math.max.apply(null,pts.concat([1])),rg=(mx-mn)||1;
+    var X=function(i){return pl+(W-pl-pr)*i/(pts.length-1);}, Y=function(v){return pt+(H-pt-pb)*(1-(v-mn)/rg);};
+    var d=pts.map(function(v,i){return (i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1);}).join(' '), area=d+' L'+X(pts.length-1)+' '+Y(mn)+' L'+X(0)+' '+Y(mn)+' Z';
+    var lab=ms.map(function(m,i){return (i%2===0||i===ms.length-1)?'<text x="'+X(i)+'" y="'+(H-8)+'" text-anchor="middle" font-size="11" fill="#6B7280">'+m.l+'</text>':'';}).join('');
+    var li=pts.length-1, tag='<rect x="'+(X(li)-64)+'" y="'+(Y(pts[li])-26)+'" width="72" height="19" rx="9" style="fill:var(--g)"/><text x="'+(X(li)-10)+'" y="'+(Y(pts[li])-13)+'" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="600">'+eur(pts[li])+'</text>';
+    var zero=mn<0?'<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+Y(0)+'" y2="'+Y(0)+'" stroke="#D1D5DB" stroke-dasharray="4 4"/>':'';
+    return '<div class="fx-c"><h4>Saldo acumulado</h4><div class="fx-s">Últimos 12 meses · receita menos saídas</div><svg viewBox="0 0 '+W+' '+H+'">'+zero+'<path d="'+area+'" style="fill:var(--g)" fill-opacity=".09"/><path d="'+d+'" fill="none" style="stroke:var(--g)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="'+X(li)+'" cy="'+Y(pts[li])+'" r="4" style="fill:var(--g)"/>'+tag+lab+'</svg></div>';
+  }
+  function rotinaParaAgenda(){
+    var box=document.getElementById('fin-rotina'), ag=document.getElementById('p-agenda'); if(!box||!ag) return;
+    var det=document.getElementById('ag-rotina');
+    if(!det){
+      det=document.createElement('details'); det.id='ag-rotina'; det.innerHTML='<summary></summary>';
+      if(new Date().getDay()===5) det.open=true;
+      ag.insertBefore(det,ag.firstChild);
+    }
+    if(box.parentNode!==det) det.appendChild(box);
+    var sol=ga()==='solutions', tk=((DB.finRotina||{})[todayISO()+'|'+(ga()||'geral')])||{}, feitos=Object.keys(tk).length;
+    det.firstChild.innerHTML='💰 Rotina financeira de sexta-feira <small>'+(sol?'9h00–10h00':'11h00–12h00')+' · '+feitos+' de 4 feitos</small>';
+  }
+  function render(){
+    var P=document.getElementById('p-financeiro'); if(!P) return;
+    var m=document.getElementById('fin-metas'); if(!m){ m=document.createElement('div'); m.id='fin-metas'; var bt=P.firstElementChild; P.insertBefore(m,bt&&bt.nextSibling); }
+    m.innerHTML=metas();
+    var g=document.getElementById('fin-graficos');
+    if(!g){ g=document.createElement('div'); g.className='fx-g'; g.id='fin-graficos'; var prev=document.getElementById('fin-prev'); var card=prev&&prev.closest('.card'); if(card) card.parentNode.insertBefore(g,card); else P.appendChild(g); }
+    g.innerHTML=barras()+saldo()+porProduto();
+    rotinaParaAgenda();
+  }
+  var _r=window.renderFinanceiro; window.renderFinanceiro=function(){ var r=_r.apply(this,arguments); try{ render(); }catch(e){ console.error('Financeiro gráficos:',e); } return r; };
+  return {render:render};
+})();
+</script>
+
 </body>
 </html>
