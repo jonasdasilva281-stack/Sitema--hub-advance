@@ -7851,7 +7851,7 @@ window.haCap=(function(){
 <!-- BLOCO 23 · Secção Captação organizada: 3 separadores + "Agora" -->
 <script>
 (function(){
-  var TABS=[['captacao','Captação','o que fazer'],['marketing','Marketing','como estamos'],['metas','Metas','o que queremos']];
+  var TABS=[['captacao','Captação','o que fazer'],['marketing','Marketing','como estamos'],['prospecao','Prospeção','quem abordar'],['metas','Metas','o que queremos']];
   function go(p){ return "nav('"+p+"',document.querySelector('.ni[onclick*=&quot;\\'"+p+"\\'&quot;]'))"; }
   function barra(at){
     return '<div class="cap-tabs" style="display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap">'+TABS.map(function(t,i){ var on=t[0]===at;
@@ -7873,8 +7873,10 @@ window.haCap=(function(){
   function decorar(){
     var c=document.getElementById('p-captacao'); if(c&&c.querySelector('#cap-main')&&!c.querySelector('.cap-tabs')) c.insertAdjacentHTML('afterbegin',barra('captacao')+agora());
     var m=document.getElementById('p-marketing'); if(m&&m.children.length&&!m.querySelector('.cap-tabs')) m.insertAdjacentHTML('afterbegin',barra('marketing'));
+    var pr=document.getElementById('p-prospecao'); if(pr&&pr.children.length&&!pr.querySelector('.cap-tabs')) pr.insertAdjacentHTML('afterbegin',barra('prospecao'));
     var t=document.getElementById('p-metas'); if(t&&!t.querySelector('.cap-tabs')) t.insertAdjacentHTML('afterbegin',barra('metas'));
   }
+  window.haCapDecorar=decorar;
   var _rm=window.renderMarketing; window.renderMarketing=function(){ var r=_rm.apply(this,arguments); try{ decorar(); }catch(e){ console.error(e); } return r; };
   decorar();
 })();
@@ -9767,6 +9769,29 @@ window.haMktX=(function(){
     if(p&&nv){ p.nivel=nv; try{ save(); renderAll(); }catch(er){} }
     return r;
   };
+})();
+</script>
+
+
+<!-- BLOCO 48 · Captação, Marketing e Prospeção trabalham juntos: um só item de menu, três separadores -->
+<style>
+.sb-nav .ni[onclick*="'marketing'"],.sb-nav .ni.ni-pros{display:none !important}
+</style>
+<script>
+(function(){
+  var JUNTOS=['captacao','marketing','prospecao'];
+  var _nav=window.nav;
+  window.nav=function(id,el){
+    var r=_nav.call(this,id,el);
+    if(JUNTOS.indexOf(id)>=0){
+      var c=document.querySelector('.sb-nav .ni[onclick*="\'captacao\'"]');
+      document.querySelectorAll('.ni').forEach(function(n){ n.classList.remove('on'); });
+      if(c) c.classList.add('on');
+    }
+    return r;
+  };
+  var _ra=window.renderAll;
+  window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ if(window.haCapDecorar) haCapDecorar(); }catch(e){ console.error('Captação junta:',e); } return r; };
 })();
 </script>
 
