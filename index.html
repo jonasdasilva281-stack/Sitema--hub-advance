@@ -9446,7 +9446,7 @@ window.haFinX=(function(){
     return {v:n?soma+(12-n)*metaMes(todayISO().slice(0,7)):12*metaMes(todayISO().slice(0,7)),def:true};
   }
   function seg(){
-    return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px"><div class="fx-l">Metas e objetivos</div><div class="en-seg" style="display:inline-flex;background:#F3F4F6;border:1px solid var(--g6);border-radius:10px;padding:3px;gap:2px">'
+    return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px"><div class="fx-l">Metas e objetivos</div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bp bsm" onclick="haFinX.definirMes()">🎯 Definir objetivo do mês</button><button class="btn bs bsm" onclick="haFinX.definirAno()">🎯 Definir objetivo do ano</button></div><div class="en-seg" style="display:inline-flex;background:#F3F4F6;border:1px solid var(--g6);border-radius:10px;padding:3px;gap:2px">'
       +[['mes','Mês'],['ano','Ano '+new Date().getFullYear()]].map(function(x){return '<button style="border:0;background:'+(vista===x[0]?'#fff':'transparent')+';box-shadow:'+(vista===x[0]?'0 1px 2px rgba(15,23,42,.08)':'none')+';font:600 12px inherit;color:'+(vista===x[0]?'inherit':'var(--g4)')+';padding:7px 14px;border-radius:8px;cursor:pointer" onclick="haFinX.vista(\''+x[0]+'\')">'+x[1]+'</button>';}).join('')+'</div></div>';
   }
   function metas(){
@@ -9525,6 +9525,13 @@ window.haFinX=(function(){
   var _r=window.renderFinanceiro; window.renderFinanceiro=function(){ var r=_r.apply(this,arguments); try{ render(); }catch(e){ console.error('Financeiro gráficos:',e); } return r; };
   return {render:render,
     vista:function(v){ vista=v; try{ sessionStorage.setItem('fx_vista',v); }catch(e){} render(); },
+    definirMes:function(){
+      var mes=todayISO().slice(0,7), atual=metaMes(mes), r=prompt('Objetivo de faturação para este mês (em €):',Math.round(atual)); if(r===null) return;
+      var n=parseFloat(String(r).replace(/\s/g,'').replace(',','.')); if(!isFinite(n)||n<0){ toast('Valor inválido','#C0392B'); return; }
+      if(ga()==='solutions'){ DB.funilSol=DB.funilSol||{}; DB.funilSol.metas=DB.funilSol.metas||{}; DB.funilSol.metas.faturado=n; }
+      else { DB.funil=DB.funil||{}; DB.funil.meses=DB.funil.meses||{}; var f=DB.funil.meses[mes]=DB.funil.meses[mes]||{}; f.metas=f.metas||{}; f.metas.faturado=n; }
+      save(); render(); toast('✓ Objetivo do mês guardado');
+    },
     definirAno:function(){
       var atual=objAno().v, r=prompt('Objetivo de faturação para '+new Date().getFullYear()+' (em €):',Math.round(atual)); if(r===null) return;
       var n=parseFloat(String(r).replace(/\s/g,'').replace(',','.')); if(!isFinite(n)||n<0){ toast('Valor inválido','#C0392B'); return; }
