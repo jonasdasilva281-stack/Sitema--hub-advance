@@ -9072,14 +9072,26 @@ window.haEntrega=(function(){
     return '<li>'+t+(it.mensal?' por mês':'')+'</li>';
   }
   function fase(st){ return '<li>'+esc(st.t||'')+(st.data?' · '+fmtDate(st.data):(st.dia!=null&&st.dia!==''?' · +'+st.dia+' dias':''))+(st.enc?' · '+plural(+st.enc,'encontro','encontros'):'')+'</li>'; }
+  function nk(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
   function grupos(){
     var g={}, ordem=[];
+    function get(p,nome){ var k=p?('p'+p.id):('n:'+nk(nome)); if(!g[k]){ g[k]={p:p||null,nome:nome,vs:[],ms:[],fin:[]}; ordem.push(k); } return g[k]; }
+    (DB.produtos||[]).forEach(function(p){ get(p,p.nomeC||p.nome); });          // todos os produtos, sempre
     (DB.vendas||[]).forEach(function(v){
-      var k=v.produtoId||('n:'+(v.produto||'sem'));
-      if(!g[k]){ g[k]={p:DB.produtos.find(function(x){return x.id===v.produtoId;})||null,nome:v.produto||'Sem programa',vs:[],fin:[]}; ordem.push(k); }
-      if(v.estado==='em_curso') g[k].vs.push(v); else g[k].fin.push(v);
+      var p=DB.produtos.find(function(x){return x.id===v.produtoId;})||DB.produtos.find(function(x){return x.nome===v.produto;});
+      var gr=get(p,v.produto||'Sem programa'); (v.estado==='em_curso'?gr.vs:gr.fin).push(v);
     });
-    return ordem.map(function(k){return g[k];}).filter(function(x){return x.vs.length;}).sort(function(a,b){return b.vs.length-a.vs.length;});
+    (DB.mentorados||[]).forEach(function(m){                                      // alunas sem compra registada
+      if(['Concluído','Inativo','Stand by'].indexOf(m.estado)>=0) return;
+      var p=DB.produtos.find(function(x){return x.nome===m.produto;}), gr=get(p,m.produto||'Sem programa');
+      var tem=gr.vs.concat(gr.fin).some(function(v){return v.mentoradoId===m.id||nk(v.cliente)===nk(m.nome);});
+      if(!tem) gr.ms.push(m);
+    });
+    return ordem.map(function(k,i){ g[k].i=i; return g[k]; }).filter(function(x){return x.p||x.vs.length||x.ms.length||x.fin.length;})
+      .sort(function(a,b){ return (b.vs.length+b.ms.length)-(a.vs.length+a.ms.length)||a.i-b.i; });
+  }
+  function pessoaM(m){
+    return '<div class="ha-en-p"><div class="n"><b>'+esc(m.nome)+'</b><span>sem compra registada</span></div><div><button class="btn bs bsm" onclick="haProg.abrir('+m.id+')">Acompanhamento</button></div></div>';
   }
   function pessoa(v){
     return '<div class="ha-en-p"><div class="n"><b>'+esc(v.cliente)+'</b><span>desde '+fmtDate(v.data)+'</span></div>'+entregaBarras(v,false)+
@@ -9087,11 +9099,11 @@ window.haEntrega=(function(){
   }
   function coluna(g){
     var p=g.p, its=p?entregaveisDe(p):[], fs=p?(p.cronograma||[]):[];
-    var h='<div class="ha-en-col"><div class="ha-en-h"><b>'+esc(p?(p.nomeC||p.nome):g.nome)+'</b><span>'+plural(g.vs.length,'pessoa','pessoas')+'</span></div>';
+    var h='<div class="ha-en-col"><div class="ha-en-h"><b>'+esc(p?(p.nomeC||p.nome):g.nome)+'</b><span>'+plural(g.vs.length+g.ms.length,'pessoa','pessoas')+'</span></div>';
     h+='<div class="ha-en-sec">Estrutura de entrega</div>';
     h+=its.length?'<ul>'+its.map(item).join('')+'</ul>':'<div style="font-size:12px;color:var(--g4)">Escolha o produto na compra para ver a estrutura.</div>';
     if(fs.length) h+='<details><summary>Fases ('+fs.length+')</summary><ol>'+fs.map(fase).join('')+'</ol></details>';
-    h+='<div class="ha-en-sec">Pessoas dentro</div>'+g.vs.map(pessoa).join('');
+    h+='<div class="ha-en-sec">Pessoas dentro</div>'+((g.vs.length||g.ms.length)?g.vs.map(pessoa).join('')+g.ms.map(pessoaM).join(''):'<div style="font-size:12px;color:var(--g4)">Ainda sem pessoas neste programa.</div>');
     if(g.fin.length) h+='<details><summary>Concluídas ('+g.fin.length+')</summary><div style="font-size:12px;color:var(--g3);padding-top:4px">'+g.fin.map(function(v){return esc(v.cliente);}).join(' · ')+'</div></details>';
     return h+'</div>';
   }
@@ -9102,8 +9114,8 @@ window.haEntrega=(function(){
   }
   function render(){
     var el=document.getElementById('p-entrega'); badge(); if(!el||!el.classList.contains('on')) return;
-    var gs=grupos(), pes=gs.reduce(function(s,g){return s+g.vs.length;},0);
-    var h='<div class="ha-en-top"><b>Entrega</b><span>'+plural(gs.length,'programa ativo','programas ativos')+' · '+plural(pes,'pessoa dentro','pessoas dentro')+'</span></div>';
+    var gs=grupos(), pes=gs.reduce(function(s,g){return s+g.vs.length+g.ms.length;},0);
+    var h='<div class="ha-en-top"><b>Entrega</b><span>'+plural(gs.length,'programa','programas')+' · '+plural(pes,'pessoa dentro','pessoas dentro')+'</span></div>';
     h+=gs.length?'<div class="ha-en">'+gs.map(coluna).join('')+'</div>':'<div class="card"><div class="empty">Ainda não há pessoas em programas. Quando registar uma compra, ela aparece aqui, dentro do programa.</div></div>';
     el.innerHTML=h;
   }
