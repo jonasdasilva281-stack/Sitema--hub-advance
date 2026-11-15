@@ -4785,6 +4785,7 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     finally{ depth--; KEYS.forEach(function(k){ if(saved[k]) DB[k]=saved[k]; }); }
   }
 
+  window.haArea=function(fn){ return withArea(fn,null,[]); };
   ['renderAll','renderOverview','renderPipeline','renderMentorados','renderFinanceiro','renderPrevisao',
    'renderProdutos','renderEntregas','renderAgenda','renderMarketing','renderEquipa','renderCalendario','renderProcesso',
    'fillSelects','pgRenderDropdown','rnSearchWho','mobNav'].forEach(function(n){
@@ -9126,11 +9127,12 @@ window.haEntrega=(function(){
   function ed(p,g){
     var h='<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--g6)">';
     if(p){
-      var fm=window.haFormato(p), dest=(p.area==='solutions')?'mentorias':'solutions';
-      h+='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><select class="fi" style="height:32px;font-size:12px;flex:1;min-width:130px" onchange="haEntrega.formato('+p.id+',this.value)">'
-        +[['sessoes','Programa com sessões'],['evento','Evento de 1 dia'],['produto','Produto (ebook, ferramenta)']].map(function(o){return '<option value="'+o[0]+'"'+(o[0]===fm?' selected':'')+'>'+o[1]+'</option>';}).join('')
-        +'</select><button class="btn bs bsm" onclick="editProduto('+p.id+')">✏️ Editar</button></div>'
-        +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn bs bsm" onclick="haMoverProduto('+p.id+',\''+dest+'\')">⇄ Mover para '+(dest==='solutions'?'Solutions':'Mentorias')+'</button><button class="btn bs bsm" style="color:var(--re)" onclick="deleteProduto('+p.id+')">🗑 Apagar</button></div>';
+      var fm=window.haFormato(p), serv=(p.area==='solutions'), dest=serv?'mentorias':'solutions';
+      h+='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'
+        +(serv?'<span class="tag tb" style="font-size:9.5px">Serviço</span>':'<select class="fi" style="height:32px;font-size:12px;flex:1;min-width:130px" onchange="haEntrega.formato('+p.id+',this.value)">'
+        +[['sessoes','Programa com sessões'],['evento','Evento de 1 dia'],['produto','Produto (ebook, ferramenta)']].map(function(o){return '<option value="'+o[0]+'"'+(o[0]===fm?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>')
+        +'<button class="btn bs bsm" onclick="editProduto('+p.id+')">✏️ Editar</button></div>'
+        +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn bs bsm" onclick="haMoverProduto('+p.id+',\''+dest+'\')">⇄ Mover para '+(dest==='solutions'?'Serviços':'Educação')+'</button><button class="btn bs bsm" style="color:var(--re)" onclick="deleteProduto('+p.id+')">🗑 Apagar</button></div>';
     } else {
       h+='<div style="font-size:11.5px;color:var(--g4);margin-bottom:6px">Este nome não está na lista de produtos.</div><button class="btn bp bsm" onclick="haEntrega.criar(\''+esc(g.nome).replace(/'/g,"\\'")+'\')">+ Criar produto &quot;'+esc(g.nome)+'&quot;</button>';
     }
@@ -9168,7 +9170,7 @@ window.haEntrega=(function(){
     el.innerHTML=h;
   }
   var _ra=window.renderAll;
-  window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ render(); }catch(e){ console.error('Entrega:',e); } return r; };
+  window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ if(window.haArea) haArea(render); else render(); }catch(e){ console.error('Entrega:',e); } return r; };
   try{ badge(); }catch(e){}
   return {render:render,
     pagar:function(mid){
@@ -9189,6 +9191,7 @@ window.haEntrega=(function(){
 
 <!-- BLOCO 42 · CRM dentro da Entrega: só alunas (quem está a fazer um programa). Os leads ficam só no Pipeline. -->
 <style>
+body.area-solutions .ni-alunos{display:none !important}
 .ni-crm,body.area-geral .ni-crm{display:none !important}
 .en-tabs{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
 .en-tabs button{flex:1;min-width:150px;text-align:left;padding:10px 14px;border-radius:10px;border:1.5px solid #E5E7EB;background:#fff;color:inherit;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600}
@@ -9327,7 +9330,7 @@ window.haEntCrm=(function(){
   var _nav=window.nav;
   window.nav=function(id,el){ if(id==='crm'){ id='alunos'; el=document.querySelector('.ni-alunos'); } return _nav.call(this,id,el); };
   var _ra=window.renderAll;
-  window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ draw(); }catch(e){ console.error('CRM Entrega:',e); } return r; };
+  window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ if(window.haArea) haArea(draw); else draw(); }catch(e){ console.error('CRM Entrega:',e); } return r; };
   return {
     tab:function(t){ tab=t; renderAll(); },
     filtrar:function(f){ filtro=f; renderAll(); },
@@ -9348,12 +9351,17 @@ window.haFormatoUI=(function(){
     d.innerHTML='<label class="fl">Formato <span style="font-size:9.5px;color:var(--g4);font-weight:400">decide como aparece na Entrega</span></label><select class="fi" id="pd-formato">'+OP.map(function(o){return '<option value="'+o[0]+'">'+o[1]+'</option>';}).join('')+'</select>';
     alvo.parentNode.insertBefore(d,alvo);
     d.querySelector('select').addEventListener('change',function(){ var dg=document.getElementById('pd-digital'); if(dg) dg.checked=(this.value==='produto'); });
+    var c=document.createElement('div'); c.className='fg';
+    c.innerHTML='<label class="fl">Categoria <span style="font-size:9.5px;color:var(--g4);font-weight:400">decide onde o produto aparece</span></label><select class="fi" id="pd-categoria"><option value="mentorias">Educação · Hub Mentorias</option><option value="solutions">Serviços · Hub Advance Solutions</option></select>';
+    d.parentNode.insertBefore(c,d);
+    c.querySelector('select').addEventListener('change',function(){ d.style.display=this.value==='solutions'?'none':''; });
   }
+  function cat(v){ var e=document.getElementById('pd-categoria'); if(e){ e.value=v; e.dispatchEvent(new Event('change')); } }
   function set(v){ var e=document.getElementById('pd-formato'); if(e) e.value=v; }
   var _novo=window.novoProduto;
-  window.novoProduto=function(){ var r=_novo.apply(this,arguments); set('sessoes'); return r; };
+  window.novoProduto=function(){ var r=_novo.apply(this,arguments); set('sessoes'); cat(window.HA_AREA==='solutions'?'solutions':'mentorias'); return r; };
   var _edit=window.editProduto;
-  window.editProduto=function(id){ var r=_edit.apply(this,arguments); var p=DB.produtos.find(function(x){return x.id===id;}); if(p) set(haFormato(p)); return r; };
+  window.editProduto=function(id){ var r=_edit.apply(this,arguments); var p=DB.produtos.find(function(x){return x.id===id;}); if(p){ set(haFormato(p)); cat(p.area==='solutions'?'solutions':'mentorias'); } return r; };
   var _save=window.saveProduto;
   window.saveProduto=function(){
     var e=document.getElementById('pd-formato'), fm=e?e.value:'sessoes', dg=document.getElementById('pd-digital');
@@ -9361,7 +9369,10 @@ window.haFormatoUI=(function(){
     var nome=(document.getElementById('pd-nome').value||'').trim(), id=parseInt(document.getElementById('pd-id').value)||0;
     var r=_save.apply(this,arguments);
     var p=id?DB.produtos.find(function(x){return x.id===id;}):DB.produtos.filter(function(x){return x.nome===nome;}).pop();
-    if(p){ p.formato=fm; if(fm==='produto') p.digital=true; else if(p.digital&&fm!=='produto') p.digital=false; try{ save(); renderAll(); }catch(er){} }
+    var ce=document.getElementById('pd-categoria'), area=ce?ce.value:null;
+    if(p&&area){ p.area=area; if(area==='solutions'){ fm='sessoes'; } }
+    if(p){ p.formato=fm; if(fm==='produto') p.digital=true; else if(p.digital&&fm!=='produto') p.digital=false; try{ save(); renderAll(); }catch(er){}
+      if(area&&window.HA_AREA&&window.HA_AREA!=='geral'&&area!==window.HA_AREA) toast('✓ Produto enviado para '+(area==='solutions'?'Serviços (Hub Advance Solutions)':'Educação (Hub Mentorias)')); }
     return r;
   };
   return {};
