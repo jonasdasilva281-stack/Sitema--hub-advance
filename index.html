@@ -4884,7 +4884,7 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     var bar=document.querySelector('.topbar-actions'); if(!bar) return;
     var b=document.createElement('button');
     b.id='area-chip'; b.type='button'; b.title='Trocar de área';
-    b.onclick=showChooser;
+    b.onclick=function(){ var dest=(HA_AREA==='mentorias')?'solutions':'mentorias'; haSetArea(dest); };
     bar.insertBefore(b,bar.firstChild);
     var info=document.querySelector('#p-mentorados > .al'); if(info) info.classList.add('ha-mentoria-only');
     var logo=document.querySelector('.sb-logo img');
@@ -4990,6 +4990,7 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     document.body.classList.remove('area-solutions','area-mentorias','area-geral');
     document.body.classList.add('area-'+HA_AREA);
     var chip=document.getElementById('area-chip');
+    if(chip) chip.title='Mudar para '+AREAS[HA_AREA==='mentorias'?'solutions':'mentorias'].curto;
     if(chip) chip.innerHTML='<span class="ac-dot"></span>'+a.curto+'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16l-4-4 4-4M17 8l4 4-4 4M3 12h18"/></svg>';
     var sub=document.querySelector('.sb-logo .logo-sub'); if(sub) sub.textContent=a.nome;
 
