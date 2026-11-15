@@ -8385,7 +8385,7 @@ window.haFM=(function(){
 <!-- BLOCO 32 · Marketing no formato "Campanhas & conteúdo" -->
 <script>
 (function(){
-  var aba='campanhas';
+  var aba='funil';
   function area(){ return (typeof HA_AREA!=='undefined'&&HA_AREA)||null; }
   function eur(n){ return (Math.round((n||0)*100)/100).toLocaleString('pt-PT',{maximumFractionDigits:2})+' €'; }
   function dl(l){ return (l.createdAt||'').slice(0,10); }
@@ -8402,8 +8402,10 @@ window.haFM=(function(){
     var h='<div class="hm-top"><div><h2 style="margin:0 0 4px">Campanhas &amp; conteúdo</h2><div class="f" style="font-style:normal">Onde estão a vir os leads e o que está a ser publicado.</div></div><div style="display:flex;gap:10px;align-items:center"><div class="hm-sync"><i></i>'+(navigator.onLine?'Online — sincronizado':'Offline')+'</div><button class="btn bp" onclick="haMkt.novoPlano()">Nova campanha</button></div></div>';
     h+='<div class="hm-k" style="grid-template-columns:repeat(3,minmax(0,1fr))">'+kpi('Investido total',eur(inv))+kpi('Leads gerados',lg)+kpi('Custo por lead',lg&&inv?eur(inv/lg):'—')+'</div>';
     h+='<div class="hm-c" style="margin-bottom:14px"><div class="hm-ch"><h3>📊 Leads por canal de origem ('+L.length+' total)</h3></div>'+(linhas.length?linhas.map(function(x){ var p=Math.round(x.n/L.length*100); return '<div style="margin:9px 0"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px"><b>'+esc(x.c)+'</b><span style="color:var(--g4)">'+x.n+' lead'+(x.n>1?'s':'')+' · '+p+'%</span></div><div class="sbw" style="width:100%"><div class="sbb" style="width:'+p+'%;background:var(--g)"></div></div></div>'; }).join(''):'<div class="hm-e">Ainda não há leads com origem registada.</div>')+'</div>';
-    h+='<div style="display:flex;gap:8px;margin-bottom:12px">'+[['campanhas','Campanhas'],['conteudo','Conteúdo']].map(function(t){ return '<button class="rc-pill'+(aba===t[0]?' on':'')+'" onclick="haMktF.aba(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
-    if(aba==='campanhas'){
+    h+='<div style="display:flex;gap:8px;margin-bottom:12px">'+[['funil','Funil'],['produto','Por produto'],['campanhas','Campanhas'],['conteudo','Conteúdo'],['sdr','SDR']].map(function(t){ return '<button class="rc-pill'+(aba===t[0]?' on':'')+'" onclick="haMktF.aba(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
+    if(aba!=='campanhas'&&aba!=='conteudo'&&window.haMktX&&haMktX[aba]){
+      h+=haMktX[aba]();
+    }else if(aba==='campanhas'){
       h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px">'+(PL.length?PL.map(function(x){ var ativa=!x.fim||x.fim>=hoje, ls=leadsDe(x);
         return '<div class="hm-c" style="position:relative"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div style="cursor:pointer" onclick="haMkt.editPlano('+x.id+')"><b style="font-size:13.5px">'+esc(x.nome)+'</b> <span class="tag '+(ativa?'tg':'tgr')+'" style="font-size:9.5px">'+(ativa?'Ativa':'Terminada')+'</span><div style="font-size:11.5px;color:var(--g4);margin-top:2px">'+esc(x.canal||'')+(x.ini?' · desde '+fmtDate(x.ini):'')+(x.fim?' até '+fmtDate(x.fim):'')+'</div>'+(x.obj?'<div style="font-size:11.5px;color:var(--g3);margin-top:4px">'+esc(x.obj)+'</div>':'')+'</div><button class="btn bd bsm" onclick="haMkt.delPlano('+x.id+')">×</button></div>'+
           '<div style="display:flex;gap:28px;margin-top:12px"><div><div style="font-size:22px;font-weight:700">'+ls.length+'</div><div style="font-size:11px;color:var(--g4)">Leads</div></div><div><div style="font-size:22px;font-weight:700">'+(x.gasto!==''&&x.gasto!=null?eur(parseFloat(x.gasto)||0):'—')+'</div><div style="font-size:11px;color:var(--g4)">Investido</div></div></div></div>'; }).join(''):'<div class="hm-c"><div class="hm-e">Ainda não há campanhas. Use "Nova campanha" para registar anúncios, lançamentos e parcerias.</div></div>')+'</div>';
@@ -9094,6 +9096,18 @@ window.haEntrega=(function(){
   function pessoaM(m){
     return '<div class="ha-en-p"><div class="n"><b>'+esc(m.nome)+'</b><span>sem compra registada</span></div><div><button class="btn bp bsm" onclick="haEntrega.pagar('+m.id+')">Registar pagamento</button> <button class="btn bs bsm" onclick="haProg.abrir('+m.id+')">Acompanhamento</button></div></div>';
   }
+  // níveis da escada de valor
+  window.HA_NIVEIS=[
+    {k:'entrada',n:'Entrada',d:'Primeiro passo pago: transforma seguidores em clientes',c:'#0C447C'},
+    {k:'nutricao',n:'Nutrição',d:'Mantém a pessoa perto: aprender, recorrência e upsell',c:'#B7791F'},
+    {k:'transformacao',n:'Transformação',d:'Os produtos mais caros: mudam o negócio da cliente',c:'#0B6E4F'}
+  ];
+  window.haNivel=function(p){
+    if(!p) return 'entrada';
+    if(p.nivel) return p.nivel;
+    if(p.tipo==='recorrente') return 'nutricao';
+    var v=+p.valor||0; return v>=500?'transformacao':v>=100?'nutricao':'entrada';
+  };
   // formato do produto: 'sessoes' (programa com sessões) · 'evento' (1 dia) · 'produto' (ebook, ferramenta…)
   window.haFormato=function(p){
     if(!p) return 'sessoes';
@@ -9166,7 +9180,9 @@ window.haEntrega=(function(){
     var el=document.getElementById('p-entrega'); badge(); if(!el||!el.classList.contains('on')) return;
     var gs=grupos(), pes=gs.reduce(function(s,g){return s+g.vs.length+g.ms.length;},0);
     var h='<div class="ha-en-top"><b>Entrega</b><span>'+plural(gs.length,'programa','programas')+' · '+plural(pes,'pessoa dentro','pessoas dentro')+'</span><button class="btn bp bsm" style="margin-left:auto" onclick="novoProduto()">+ Novo produto</button></div>';
-    h+=gs.length?'<div class="ha-en">'+gs.map(coluna).join('')+'</div>':'<div class="card"><div class="empty">Ainda não há pessoas em programas. Quando registar uma compra, ela aparece aqui, dentro do programa.</div></div>';
+    var porNivel=HA_NIVEIS.map(function(n){ return {n:n,g:gs.filter(function(x){return x.p&&haNivel(x.p)===n.k;})}; });
+    var sem=gs.filter(function(x){return !x.p;}); if(sem.length) porNivel.push({n:{k:'outros',n:'Outros',d:'Pessoas ligadas a nomes que não estão na lista de produtos',c:'#6B7280'},g:sem});
+    h+=gs.length?porNivel.map(function(x){ return '<div class="ha-nv" style="margin:18px 0 8px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:'+x.n.c+';border-radius:20px;padding:3px 11px">'+x.n.n+'</span><span style="font-size:12px;color:var(--g4)">'+x.n.d+' · '+plural(x.g.length,'produto','produtos')+'</span></div>'+(x.g.length?'<div class="ha-en">'+x.g.map(coluna).join('')+'</div>':'<div style="font-size:12px;color:var(--g4);padding:2px 0 6px">Ainda sem produtos neste nível.</div>'); }).join(''):'<div class="card"><div class="empty">Ainda não há pessoas em programas. Quando registar uma compra, ela aparece aqui, dentro do programa.</div></div>';
     el.innerHTML=h;
   }
   var _ra=window.renderAll;
@@ -9631,6 +9647,125 @@ window.haRH=(function(){
     criar:function(i){ var a=acoes[i]; if(!a) return;
       DB.tarefas.push({id:uid(),nome:a.t,ambito:'empresa',produto:'',resp:a.r,prior:'Alta',prazo:sexta(),projeto:'Desempenho da equipa',notas:'Criada pela análise de desempenho',done:false,criadoEm:todayISO()});
       save(); renderAll(); toast('✓ Tarefa criada para '+a.r+' (prazo '+fmtDate(sexta())+')'); }
+  };
+})();
+</script>
+
+<!-- BLOCO 47 · Níveis do produto (Entrada · Nutrição · Transformação) + Marketing: funil, campanha por produto e SDR -->
+<style>
+.mx-f{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.mx-s{background:#fff;border:1px solid var(--g6);border-radius:12px;padding:14px 15px;position:relative}
+.mx-s .t{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--g4);font-weight:700}
+.mx-s .v{font-size:26px;font-weight:700;line-height:1.1;margin:6px 0 2px}
+.mx-s .u{font-size:11.5px;color:var(--g4);line-height:1.45}
+.mx-s .k{font-size:11.5px;margin-top:8px;padding-top:8px;border-top:1px solid var(--g6);color:var(--g3)}
+.mx-cv{position:absolute;right:-16px;top:50%;transform:translateY(-50%);z-index:2;background:#F3F4F6;border:1px solid var(--g6);border-radius:20px;font-size:10px;font-weight:700;padding:2px 6px;color:var(--g3)}
+.mx-p{background:#fff;border:1px solid var(--g6);border-radius:12px;padding:14px 16px}
+.mx-pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.mx-cp{display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:7px 0;border-top:1px solid var(--g6);cursor:pointer}
+@media(max-width:900px){.mx-f{grid-template-columns:repeat(2,1fr)}.mx-cv{display:none}}
+</style>
+<script>
+window.haMktX=(function(){
+  var ETAPAS=['Atração orgânica','Tráfego pago','Prospeção SDR'];
+  function eur(n){ return Math.round(n||0).toLocaleString('pt-PT')+' €'; }
+  function mes(){ return todayISO().slice(0,7); }
+  function prodDe(l){ return (typeof haProdPorNome==='function')?haProdPorNome(l.produto):null; }
+  function dl(l){ return (l.createdAt||'').slice(0,10); }
+  function leadsDoProduto(p){ return (DB.leads||[]).filter(function(l){ var q=prodDe(l); return q&&q.id===p.id; }); }
+  function leadsDaCamp(x){ var fim=x.fim||'2999-12-31'; return (DB.leads||[]).filter(function(l){return l.origem===x.canal&&dl(l)>=(x.ini||'0')&&dl(l)<=fim&&(!x.produtoId||(prodDe(l)&&prodDe(l).id===x.produtoId));}); }
+  function ativa(x){ return !x.fim||x.fim>=todayISO(); }
+  function cv(a,b){ return b?Math.round(a/b*100)+'%':'—'; }
+
+  function funil(){
+    var m=mes(), C=(DB.conteudo||[]).filter(function(c){return c.estado==='Publicado'&&(c.data||'').slice(0,7)===m;}),
+      alc=C.reduce(function(t,c){return t+(+c.alcance||0);},0), PL=(DB.mktPlanos||[]),
+      pagas=PL.filter(function(x){return x.etapa==='Tráfego pago'||(!x.etapa&&(+x.gasto||0)>0);}), ativas=pagas.filter(ativa),
+      inv=pagas.reduce(function(t,x){return t+(+x.gasto||0);},0), lp=pagas.reduce(function(t,x){return t+leadsDaCamp(x).length;},0),
+      L=DB.leads||[], novos=L.filter(function(l){return dl(l).slice(0,7)===m;}),
+      ab=L.filter(function(l){return l.etapa==='novo'||l.etapa==='sdr';}),
+      R=(DB.reunioes||[]).filter(function(r){return /sdr|closer/i.test(r.tipo||'')&&(r.data||'').slice(0,7)===m;}), real=R.filter(function(r){return r.estado==='realizada';}),
+      fech=L.filter(function(l){return l.etapa==='fechado';}),
+      rec=(DB.pagamentos||[]).filter(function(p){return p.estado==='Pago'&&(p.data||'').slice(0,7)===m;}).reduce(function(t,p){return t+(+p.valor||0);},0);
+    var h='<div class="mx-f">';
+    h+='<div class="mx-s"><div class="t">1 · Atração</div><div class="v">'+C.length+'</div><div class="u">conteúdos publicados este mês · criação e construção de audiência</div><div class="k">'+alc.toLocaleString('pt-PT')+' de alcance · <b>'+novos.length+'</b> leads novos</div><span class="mx-cv">'+cv(novos.length,alc)+'</span></div>';
+    h+='<div class="mx-s"><div class="t">2 · Tráfego pago</div><div class="v">'+eur(inv)+'</div><div class="u">investido para acelerar o que já funciona no orgânico</div><div class="k">'+ativas.length+' campanha'+(ativas.length===1?'':'s')+' ativa'+(ativas.length===1?'':'s')+' · '+lp+' leads'+(lp&&inv?' · '+eur(inv/lp)+'/lead':'')+'</div><span class="mx-cv">'+cv(ab.length,novos.length)+'</span></div>';
+    h+='<div class="mx-s"><div class="t">3 · SDR</div><div class="v">'+R.length+'</div><div class="u">reuniões marcadas este mês · prospeção e qualificação</div><div class="k">'+ab.length+' leads por abordar · '+real.length+' realizadas</div><span class="mx-cv">'+cv(real.length,R.length)+'</span></div>';
+    h+='<div class="mx-s"><div class="t">4 · Venda</div><div class="v">'+eur(rec)+'</div><div class="u">recebido este mês</div><div class="k"><b>'+fech.length+'</b> leads fechados no total</div></div></div>';
+    var sem=(DB.produtos||[]).filter(function(p){return !PL.some(function(x){return x.produtoId===p.id&&ativa(x);});});
+    h+='<div class="hm-c" style="margin-bottom:12px"><div class="hm-ch"><h3>Como funciona</h3></div><div style="font-size:12.5px;line-height:1.7;color:var(--g3)">Cria conteúdo para atrair, depois acelera com tráfego pago o que já tem resposta. O SDR prospeta e marca reuniões, e a venda fecha na call. <b>Cada produto tem a sua campanha</b> em <a style="color:var(--g);cursor:pointer;font-weight:600" onclick="haMktF.aba(\'produto\')">Por produto</a>.'+(sem.length?'<br><span style="color:#B7791F"><b>'+sem.length+' produto'+(sem.length>1?'s':'')+' sem campanha ativa:</b> '+sem.slice(0,5).map(function(p){return esc(p.nomeC||p.nome);}).join(', ')+(sem.length>5?'…':'')+'.</span>':'')+'</div></div>';
+    return h;
+  }
+  function porProduto(){
+    var PL=(DB.mktPlanos||[]), h='<div style="font-size:12.5px;color:var(--g4);margin-bottom:6px">Cada produto tem a sua campanha: atração, tráfego pago e prospeção.</div>';
+    HA_NIVEIS.forEach(function(n){
+      var ps=(DB.produtos||[]).filter(function(p){return haNivel(p)===n.k;});
+      h+='<div style="margin:18px 0 8px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:'+n.c+';border-radius:20px;padding:3px 11px">'+n.n+'</span><span style="font-size:12px;color:var(--g4)">'+n.d+'</span></div>';
+      h+=ps.length?'<div class="mx-pg">'+ps.map(function(p){
+        var cs=PL.filter(function(x){return x.produtoId===p.id;}), at=cs.filter(ativa), ls=leadsDoProduto(p), fe=ls.filter(function(l){return l.etapa==='fechado';}),
+          inv=cs.reduce(function(t,x){return t+(+x.gasto||0);},0);
+        return '<div class="mx-p"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><b style="font-size:13.5px">'+esc(p.nomeC||p.nome)+'</b><div style="font-size:11px;color:var(--g4)">'+eur(p.valor||0)+(p.tipo==='recorrente'?'/mês':'')+'</div></div>'
+          +(at.length?'<span class="tag tg" style="font-size:9.5px">'+at.length+' ativa'+(at.length>1?'s':'')+'</span>':'<span class="tag ty" style="font-size:9.5px">Sem campanha</span>')+'</div>'
+          +'<div style="display:flex;gap:22px;margin:12px 0 6px"><div><div style="font-size:19px;font-weight:700">'+ls.length+'</div><div style="font-size:10.5px;color:var(--g4)">Leads</div></div><div><div style="font-size:19px;font-weight:700">'+fe.length+'</div><div style="font-size:10.5px;color:var(--g4)">Fechados</div></div><div><div style="font-size:19px;font-weight:700">'+(inv?eur(inv):'—')+'</div><div style="font-size:10.5px;color:var(--g4)">Investido</div></div></div>'
+          +cs.map(function(x){ return '<div class="mx-cp" onclick="haMkt.editPlano('+x.id+')"><span><b>'+esc(x.nome)+'</b><br><span style="color:var(--g4)">'+esc(x.etapa||'—')+' · '+esc(x.canal||'')+(x.fim?' · até '+fmtDate(x.fim):'')+'</span></span><span class="tag '+(ativa(x)?'tg':'tgr')+'" style="font-size:9.5px;align-self:flex-start">'+(ativa(x)?'Ativa':'Terminada')+'</span></div>'; }).join('')
+          +'<div style="margin-top:10px"><button class="btn bs bsm" onclick="haMktX.nova('+p.id+')">+ Campanha para este produto</button></div></div>';
+      }).join('')+'</div>':'<div style="font-size:12px;color:var(--g4)">Sem produtos neste nível.</div>';
+    });
+    return h;
+  }
+  function sdr(){
+    var hoje=todayISO(), L=DB.leads||[], ab=L.filter(function(l){return l.etapa==='novo'||l.etapa==='sdr';}).sort(function(a,b){return (a.proxData||a.createdAt||'9').localeCompare(b.proxData||b.createdAt||'9');}),
+      R=(DB.reunioes||[]).filter(function(r){return /sdr|closer/i.test(r.tipo||'')&&r.estado==='agendada'&&(r.data||'')>=hoje;}).sort(function(a,b){return (a.data+(a.hora||'')).localeCompare(b.data+(b.hora||''));}),
+      fim=(function(){var d=new Date(hoje+'T12:00:00'); d.setDate(d.getDate()+(7-((d.getDay()+6)%7))-1); return isoLocal(d);})(),
+      sem=R.filter(function(r){return r.data<=fim;}), m=mes(), feitas=(DB.reunioes||[]).filter(function(r){return /sdr|closer/i.test(r.tipo||'')&&r.estado==='realizada'&&(r.data||'').slice(0,7)===m;}).length;
+    var k=function(l,v){ return '<div class="hm-t" style="cursor:default"><div class="l">'+l+'</div><div class="v">'+v+'</div></div>'; };
+    var h='<div class="hm-k" style="grid-template-columns:repeat(4,minmax(0,1fr))">'+k('Leads por abordar',ab.length)+k('Reuniões marcadas',R.length)+k('Marcadas esta semana',sem.length)+k('Realizadas no mês',feitas)+'</div>';
+    h+='<div class="hm-g" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div class="hm-c"><div class="hm-ch"><h3>Abordar · '+ab.length+'</h3></div>'+(ab.length?ab.slice(0,12).map(function(l){
+      var tel=typeof normalizeTel==='function'?normalizeTel(l.contacto||''):'', atras=l.proxData&&l.proxData<hoje;
+      return '<div class="hm-r"><div class="n"><b>'+esc(l.nome)+(atras?' <span class="tag tr" style="font-size:9.5px">atrasado</span>':'')+'</b><span>'+esc(l.origem||'')+(l.produto?' · '+esc(l.produto):'')+(l.proxAcao?' · '+esc(l.proxAcao):'')+'</span></div>'
+        +(tel&&tel.length>=6?'<a class="btn bs bsm" target="_blank" href="https://wa.me/'+tel+'">WhatsApp</a>':'')
+        +'<button class="btn bs bsm" onclick="openMarcar(\'lead\','+l.id+')">📅 Marcar</button><button class="btn bp bsm" onclick="openProxContacto('+l.id+')">Feito</button></div>';
+    }).join(''):'<div class="hm-e">Sem leads por abordar.</div>')+'</div>'
+    +'<div class="hm-c"><div class="hm-ch"><h3>Reuniões marcadas · '+R.length+'</h3></div>'+(R.length?R.slice(0,10).map(function(r){ return '<div class="hm-r"><div class="n"><b>'+esc(r.who)+'</b><span>'+esc(r.tipo||'')+' · '+fmtDate(r.data)+(r.hora?' às '+r.hora:'')+'</span></div></div>'; }).join(''):'<div class="hm-e">Nenhuma reunião marcada. Marque a primeira a partir da lista ao lado.</div>')+'</div></div>';
+    return h;
+  }
+  return {funil:funil,produto:porProduto,sdr:sdr,
+    nova:function(id){ haMkt.novoPlano(); var e=document.getElementById('mkp-produto'); if(e) e.value=id; var p=DB.produtos.find(function(x){return x.id===id;}); var n=document.getElementById('mkp-nome'); if(n&&p) n.value='Campanha · '+(p.nomeC||p.nome); }
+  };
+})();
+// campo Produto e Etapa na campanha + Nível no produto
+(function(){
+  var mod=document.getElementById('modal-mkp');
+  if(mod&&!document.getElementById('mkp-produto')){
+    var alvo=document.getElementById('mkp-obj').closest('.fg'), d=document.createElement('div');
+    d.className='fr fg'; d.innerHTML='<div><label class="fl">Produto da campanha</label><select class="fi" id="mkp-produto"></select></div><div><label class="fl">Etapa do funil</label><select class="fi" id="mkp-etapa"><option>Atração orgânica</option><option>Tráfego pago</option><option>Prospeção SDR</option></select></div>';
+    alvo.parentNode.insertBefore(d,alvo);
+  }
+  function opcoes(){ var e=document.getElementById('mkp-produto'); if(e) e.innerHTML='<option value="">— Sem produto —</option>'+(DB.produtos||[]).map(function(p){return '<option value="'+p.id+'">'+esc(p.nomeC||p.nome)+'</option>';}).join(''); }
+  var _n=haMkt.novoPlano; haMkt.novoPlano=function(){ var r=_n.apply(this,arguments); opcoes(); document.getElementById('mkp-produto').value=''; document.getElementById('mkp-etapa').value='Atração orgânica'; return r; };
+  var _e=haMkt.editPlano; haMkt.editPlano=function(id){ var r=_e.apply(this,arguments); opcoes(); var x=(DB.mktPlanos||[]).find(function(p){return p.id===id;}); if(x){ document.getElementById('mkp-produto').value=x.produtoId||''; document.getElementById('mkp-etapa').value=x.etapa||'Atração orgânica'; } return r; };
+  var _s=haMkt.savePlano; haMkt.savePlano=function(){
+    var pid=parseInt(document.getElementById('mkp-produto').value,10)||null, et=document.getElementById('mkp-etapa').value, id=parseInt(document.getElementById('mkp-id').value,10)||0, antes=(DB.mktPlanos||[]).length;
+    var r=_s.apply(this,arguments);
+    var x=id?(DB.mktPlanos||[]).find(function(p){return p.id===id;}):((DB.mktPlanos||[]).length>antes?DB.mktPlanos[DB.mktPlanos.length-1]:null);
+    if(x){ x.produtoId=pid; x.etapa=et; save(); renderAll(); }
+    return r;
+  };
+  // Nível no formulário do produto
+  var cat=document.getElementById('pd-categoria'), ref=cat&&cat.closest('.fg');
+  if(ref&&!document.getElementById('pd-nivel')){
+    var n=document.createElement('div'); n.className='fg';
+    n.innerHTML='<label class="fl">Nível do produto <span style="font-size:9.5px;color:var(--g4);font-weight:400">escada de valor</span></label><select class="fi" id="pd-nivel"><option value="entrada">Entrada · primeiro passo, barato</option><option value="nutricao">Nutrição · relação e recorrência</option><option value="transformacao">Transformação · os mais caros</option></select>';
+    ref.parentNode.insertBefore(n,ref.nextSibling);
+  }
+  var _np=window.novoProduto; window.novoProduto=function(){ var r=_np.apply(this,arguments); var e=document.getElementById('pd-nivel'); if(e) e.value='entrada'; return r; };
+  var _ep=window.editProduto; window.editProduto=function(id){ var r=_ep.apply(this,arguments); var p=DB.produtos.find(function(x){return x.id===id;}); var e=document.getElementById('pd-nivel'); if(p&&e) e.value=haNivel(p); return r; };
+  var _sp=window.saveProduto; window.saveProduto=function(){
+    var e=document.getElementById('pd-nivel'), nv=e?e.value:null, nome=(document.getElementById('pd-nome').value||'').trim(), id=parseInt(document.getElementById('pd-id').value)||0;
+    var r=_sp.apply(this,arguments);
+    var p=id?DB.produtos.find(function(x){return x.id===id;}):DB.produtos.filter(function(x){return x.nome===nome;}).pop();
+    if(p&&nv){ p.nivel=nv; try{ save(); renderAll(); }catch(er){} }
+    return r;
   };
 })();
 </script>
