@@ -9977,7 +9977,7 @@ window.haMktX=(function(){
   }
   window.haRel={per:function(p){ per=p; renderAll(); },
     tick:function(id,k){ var x=(DB.mktPlanos||[]).find(function(p){return p.id===id;}); if(!x) return; x.feitos=x.feitos||{}; x.feitos[k]=!x.feitos[k]; save(); renderAll(); },
-    gerar:gerar,garantir:garantir,vigor:vigor,direcao:direcao,metaInfo:metaInfo,res:res};
+    gerar:gerar,garantir:garantir,vigor:vigor,ativas:function(){ var h=todayISO(); return (DB.mktPlanos||[]).filter(function(x){return doSetor(x)&&(!x.ini||x.ini<=h)&&(!x.fim||x.fim>=h);}); },fmtN:fmtN,direcao:direcao,metaInfo:metaInfo,res:res};
   if(window.haMktX){ haMktX.hoje=hoje; haMktX.relatorio=relatorio; }
 
   // campos Meta no formulário + rotina gerada ao guardar
@@ -10104,6 +10104,55 @@ window.haMktX=(function(){
   window.renderAll=function(){
     var r=_ra.apply(this,arguments);
     try{ var el=document.getElementById('p-campvigor'); if(el&&el.classList.contains('on')){ el.innerHTML='<div style="font-size:12.5px;color:var(--g4);margin-bottom:10px">Campanhas em vigor e o resultado individual de cada uma.</div>'+haRel.vigor(); if(window.haCapDecorar) haCapDecorar(); } }catch(e){ console.error('Campanhas em vigor:',e); }
+    return r;
+  };
+})();
+</script>
+
+
+<!-- BLOCO 53 · Painel da captação = dashboard de marketing: frase do dia, objetivos, o que fazer hoje, funil -->
+<style>
+.pd-fr{background:#0B6E4F;color:#fff;border-radius:12px;padding:16px 18px;margin:0 0 14px}
+.pd-fr q{display:block;font-size:15px;font-weight:600;line-height:1.5;quotes:none}
+.pd-fr small{display:block;opacity:.8;margin-top:6px;font-size:12px}
+.pd-o{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--g6);font-size:13px}
+.pd-o:first-of-type{border-top:0}
+.pd-o .t{flex:1;min-width:0}.pd-o .t small{display:block;color:var(--g3);margin-top:3px;font-size:12px;line-height:1.5}
+.pd-h{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--g4);font-weight:700;margin:16px 0 8px}
+</style>
+<script>
+(function(){
+  var FR={
+    atraso:['Atrás do ritmo não é falhar. É só um dia bem feito de cada vez até apanhar a meta.','Quem recupera a meio da campanha é quem aparece todos os dias. Hoje é um desses dias.','O resultado vem da repetição. Cumpra a rotina de hoje e a meta volta ao alcance.'],
+    ritmo:['Está no ritmo. Manter a consistência vale mais do que qualquer truque.','O que faz hoje é o resultado que vê daqui a duas semanas. Continue.','Consistência a funcionar: não mude o que está a dar certo.'],
+    ok:['Meta cumprida. Agora é escolher se sobe a fasquia ou se escala o que funcionou.','Resultados assim saem de dias repetidos com disciplina. Parabéns, e vamos ao próximo nível.'],
+    sem:['Defina uma meta e os dias passam a ter direção. Uma campanha sem número é só movimento.','O que não se mede não se melhora. Escolha o número desta semana.']
+  };
+  function estado(){
+    var A=haRel.ativas(), e='sem', pior={atraso:3,ritmo:2,ok:1,sem:0}, v=-1;
+    A.forEach(function(x){ var k=haRel.metaInfo(x).estado; if(pior[k]>v){ v=pior[k]; e=k; } });
+    return e;
+  }
+  function dash(){
+    var A=haRel.ativas(), h=todayISO(), est=estado(), pool=FR[est], di=Math.floor(new Date(h+'T12:00:00')/864e5), fr=pool[di%pool.length];
+    var MI=A.map(function(x){ return {x:x,mi:haRel.metaInfo(x)}; }).filter(function(o){return o.mi.m;}).sort(function(a,b){ var r={atraso:0,ritmo:1,ok:2,sem:3}; return r[a.mi.estado]-r[b.mi.estado]; });
+    var risco=MI.filter(function(o){return o.mi.estado==='atraso';}).length, wd=((new Date(h+'T12:00:00').getDay()+6)%7)+1, tot=0, fe=0;
+    A.forEach(function(x){ haRel.garantir(x); x.rotina.forEach(function(r,i){ if(r.f==='d'||(r.f==='s'&&(r.dia||5)===wd)){ tot++; if(x.feitos[h+'|'+i]) fe++; } }); });
+    var K=function(a,b){return '<div><b>'+a+'</b><span>'+b+'</span></div>';};
+    var o='<div class="pd-fr"><q>“'+esc(fr)+'”</q><small>'+fmtDate(h)+' · '+(est==='atraso'?'há campanhas atrás do ritmo':est==='ritmo'?'tudo no ritmo':est==='ok'?'meta atingida':'sem metas definidas')+'</small></div>'
+      +'<div class="rp-k" style="margin-top:0">'+K(A.length,'campanhas em vigor')+K(risco,'atrás do ritmo')+K(fe+'/'+tot,'rotina de hoje feita')+K((DB.leads||[]).filter(function(l){return (l.createdAt||'').slice(0,10)===h;}).length,'leads novos hoje')+'</div>';
+    o+='<div class="card" style="margin-bottom:14px"><div class="ct">O que precisamos fazer para alcançar os objetivos</div>'
+      +(MI.length?MI.map(function(q){ var x=q.x, mi=q.mi, dr=haRel.direcao(x,mi,x.ini||h,h), cor=mi.estado==='atraso'?'tr':'tg';
+        return '<div class="pd-o"><span class="tag '+cor+'" style="font-size:9.5px">'+({atraso:'Atrasada',ritmo:'No ritmo',ok:'Atingida'}[mi.estado])+'</span><div class="t"><b>'+esc(x.nome)+'</b> <span style="color:var(--g4)">'+haRel.fmtN(x,mi.at)+' / '+haRel.fmtN(x,mi.m)+'</span><small>'+dr.l.map(esc).join(' ')+'</small></div></div>'; }).join('')
+        :'<div style="font-size:12.5px;color:var(--g4);padding:6px 0">Sem campanhas com meta. Crie uma em Marketing → Por produto, com datas e meta, e este quadro diz-lhe o que fazer.</div>')+'</div>';
+    o+='<div class="pd-h">Rotina das campanhas, hoje</div>'+(A.length?haMktX.hoje().replace(/^<div style="font-size:12.5px[^>]*>[^<]*<\/div>/,''):'<div style="font-size:12.5px;color:var(--g4);margin-bottom:12px">Sem campanhas a decorrer hoje.</div>');
+    o+='<div class="pd-h">Tarefas gerais e funil</div>';
+    return '<div id="ha-dash">'+o+'</div>';
+  }
+  var _ra=window.renderAll;
+  window.renderAll=function(){
+    var r=_ra.apply(this,arguments);
+    try{ var P=document.getElementById('p-captacao'), b=P&&P.querySelector('.cap-tabs'); if(P&&P.classList.contains('on')&&b&&!P.querySelector('#ha-dash')) b.insertAdjacentHTML('afterend',dash()); }catch(e){ console.error('Painel marketing:',e); }
     return r;
   };
 })();
