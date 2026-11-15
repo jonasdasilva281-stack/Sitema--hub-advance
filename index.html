@@ -9238,7 +9238,7 @@ window.haEntCrm=(function(){
   function barra(){
     var nF=alunas().filter(function(a){return a.fazer;}).length;
     return '<div class="en-tabs"><button class="'+(tab==='programas'?'on':'')+'" onclick="haEntCrm.tab(\'programas\')">Programas<small>lado a lado, com a estrutura de entrega</small></button>'+
-      '<button class="'+(tab==='crm'?'on':'')+'" onclick="haEntCrm.tab(\'crm\')">CRM · '+nF+' aluna'+(nF===1?'':'s')+'<small>todas as pessoas nos programas</small></button></div>';
+      '<button class="'+(tab==='crm'?'on':'')+'" onclick="haEntCrm.tab(\'crm\')">Base de clientes · '+nF+' aluna'+(nF===1?'':'s')+'<small>todas as pessoas nos programas</small></button></div>';
   }
   function draw(){
     var el=document.getElementById('p-entrega'); if(!el||!el.classList.contains('on')) return;
