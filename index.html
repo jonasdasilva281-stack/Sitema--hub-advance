@@ -1031,7 +1031,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div id="pg-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:300;background:#fff;border:1px solid var(--g6);border-radius:10px;box-shadow:var(--shadow-lg);max-height:220px;overflow-y:auto;margin-top:4px"></div>
   </div>
   <div class="fr fg"><div><label class="fl">Produto</label><select class="fi" id="pg-produto" onchange="autoValor()"></select></div><div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pg-valor" oninput="calcParcela()"></div></div>
-  <div class="fg"><label class="fl">Forma de pagamento</label><select class="fi" id="pg-forma"><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>Transferência Bancária</option><option>MB Way</option><option>PayPal</option><option>Stripe</option><option>Dinheiro</option><option>Outro</option></select></div>
+  <div class="fg"><label class="fl">Forma de pagamento</label><select class="fi" id="pg-forma"><option>Stripe</option><option>Revolut</option><option>Transferência Bancária</option><option>PayPal</option><option>Dinheiro</option><option>Outro</option></select></div>
   <div class="fr fg"><div><label class="fl">Parcelas</label><select class="fi" id="pg-parcelas" onchange="calcParcela()"></select></div><div><label class="fl">Data 1ª parcela</label><input type="date" class="fi" id="pg-data" onchange="calcParcela()"></div></div>
   <div id="pg-info" style="display:none" class="al alg"></div>
   <div class="fg"><label class="fl">Estado</label><select class="fi" id="pg-estado"><option value="Pago">Pago</option><option value="Pendente">Pendente</option></select></div>
@@ -2478,7 +2478,7 @@ function renderFinanceiro(){
 
   // Formas de pagamento
   var porForma={};
-  pags.filter(function(p){return p.estado==='Pago';}).forEach(function(p){ var f=p.formaPagamento||'Não especificado'; porForma[f]=(porForma[f]||0)+parseFloat(p.valor||0); });
+  pags.filter(function(p){return p.estado==='Pago';}).forEach(function(p){ var f=({'Outro':'Stripe','Cartão de Débito':'Stripe','Cartão de Crédito':'Stripe','MB Way':'Revolut'})[p.formaPagamento]||p.formaPagamento||'Não especificado'; porForma[f]=(porForma[f]||0)+parseFloat(p.valor||0); });
   var totalFormas=Object.values(porForma).reduce(function(s,v){return s+v;},0)||1;
   document.getElementById('fin-formas').innerHTML=Object.keys(porForma).length?Object.entries(porForma).sort(function(a,b){return b[1]-a[1];}).map(function(e){
     var pct=Math.round(e[1]/totalFormas*100);
