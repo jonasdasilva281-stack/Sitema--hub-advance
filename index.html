@@ -7870,7 +7870,7 @@ window.haCap=(function(){
       (its.length?'<div style="display:flex;flex-direction:column;gap:9px;margin-top:10px">'+its.map(function(x){return x.h;}).join('')+'</div>':'<div style="font-size:12.5px;color:var(--g3);margin-top:6px">'+(prox?'Próximo passo: <b>'+esc(prox.t)+'</b> · '+fmtDate(prox.data):'Sem passos marcados. Adicione abaixo o que vem a seguir.')+'</div>')+'</div>';
   }
   function decorar(){
-    var c=document.getElementById('p-captacao'); if(c&&c.querySelector('#cap-main')&&!c.querySelector('.cap-tabs')) c.insertAdjacentHTML('afterbegin',barra('captacao')+agora());
+    var c=document.getElementById('p-captacao'); if(c&&c.querySelector('#cap-main')&&!c.querySelector('.cap-tabs')) c.insertAdjacentHTML('afterbegin',barra('captacao'));
     var m=document.getElementById('p-marketing'); if(m&&m.children.length&&!m.querySelector('.cap-tabs')) m.insertAdjacentHTML('afterbegin',barra('marketing'));
     var cv=document.getElementById('p-campvigor'); if(cv&&cv.children.length&&!cv.querySelector('.cap-tabs')) cv.insertAdjacentHTML('afterbegin',barra('campvigor'));
     var pr=document.getElementById('p-prospecao'); if(pr&&pr.children.length&&!pr.querySelector('.cap-tabs')) pr.insertAdjacentHTML('afterbegin',barra('prospecao'));
@@ -10146,7 +10146,6 @@ window.haMktX=(function(){
         return '<div class="pd-o"><span class="tag '+cor+'" style="font-size:9.5px">'+({atraso:'Atrasada',ritmo:'No ritmo',ok:'Atingida'}[mi.estado])+'</span><div class="t"><b>'+esc(x.nome)+'</b> <span style="color:var(--g4)">'+haRel.fmtN(x,mi.at)+' / '+haRel.fmtN(x,mi.m)+'</span><small>'+dr.l.map(esc).join(' ')+'</small></div></div>'; }).join('')
         :'<div style="font-size:12.5px;color:var(--g4);padding:6px 0">Sem campanhas com meta. Crie uma em Marketing → Por produto, com datas e meta, e este quadro diz-lhe o que fazer.</div>')+'</div>';
     o+='<div class="pd-h">Rotina das campanhas, hoje</div>'+(A.length?haMktX.hoje().replace(/^<div style="font-size:12.5px[^>]*>[^<]*<\/div>/,''):'<div style="font-size:12.5px;color:var(--g4);margin-bottom:12px">Sem campanhas a decorrer hoje.</div>');
-    o+='<div class="pd-h">Tarefas gerais e funil</div>';
     return '<div id="ha-dash">'+o+'</div>';
   }
   var _ra=window.renderAll;
@@ -10155,6 +10154,48 @@ window.haMktX=(function(){
     try{ var P=document.getElementById('p-captacao'), b=P&&P.querySelector('.cap-tabs'); if(P&&P.classList.contains('on')&&b&&!P.querySelector('#ha-dash')) b.insertAdjacentHTML('afterend',dash()); }catch(e){ console.error('Painel marketing:',e); }
     return r;
   };
+})();
+</script>
+
+
+<!-- BLOCO 54 · Funil em 3D que reage ao rato -->
+<style>
+.f3-wrap{perspective:1200px;max-width:640px;margin:6px auto 4px;position:relative;cursor:grab}
+.f3-scene{position:relative;width:100%;transform-style:preserve-3d;transform:rotateX(var(--rx,14deg)) rotateY(var(--ry,-8deg));transition:transform .18s ease-out}
+.f3-l{position:absolute;left:50%;transform-origin:50% 50%}
+.f3-t{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:Inter,sans-serif;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.25);padding:0 12%}
+.f3-t b{font-size:13px;font-weight:600}.f3-t strong{font-size:19px;font-weight:700;line-height:1.1}.f3-t em{font-style:normal;font-size:11px;opacity:.9;font-weight:500}.f3-t u{text-decoration:none;font-size:10px;opacity:.85;margin-top:1px}
+@media(max-width:600px){.f3-t b{font-size:11px}.f3-t strong{font-size:16px}.f3-t u{display:none}}
+</style>
+<script>
+(function(){
+  var COR=['#0B6E4F','#138A63','#1A9E75','#3DB88F','#6CCBA7'];
+  function esc2(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function shade(hex,k){ var n=parseInt(hex.slice(1),16), r=(n>>16)&255, g=(n>>8)&255, b=n&255; r=Math.round(r*k); g=Math.round(g*k); b=Math.round(b*k); return 'rgb('+r+','+g+','+b+')'; }
+  function draw(st){
+    var n=st.length, H=64, G=7, W=560, bot=Math.round(W*0.24), tot=n*(H+G), wt=[];
+    for(var i=0;i<=n;i++) wt.push(W-(W-bot)*i/n);
+    var h='<div class="f3-wrap" style="height:'+(Math.round(tot*Math.min(1,1))+24)+'px"><div class="f3-scene" style="height:'+tot+'px">';
+    st.forEach(function(s,i){
+      var y=i*(H+G), top=wt[i], bt=wt[i+1], cut=((top-bt)/2)/top*100, c=s.warn?'#B7791F':COR[Math.min(i,COR.length-1)];
+      var clip='polygon(0 0,100% 0,'+(100-cut)+'% 100%,'+cut+'% 100%)', wpc=(top/W*100).toFixed(2)+'%';
+      [-30,-24,-18,-12,-6].forEach(function(z,k){ h+='<div class="f3-l" style="top:'+y+'px;height:'+H+'px;width:'+wpc+';clip-path:'+clip+';background:'+shade(c,.55+k*.06)+';transform:translateX(-50%) translateZ('+z+'px)"></div>'; });
+      var pc=s.meta?Math.round(s.val/s.meta*100):null, prev=i>0?(st[i-1].val||0):0, cv=i>0&&prev?Math.round((s.val||0)/prev*100):null;
+      h+='<div class="f3-l" style="top:'+y+'px;height:'+H+'px;width:'+wpc+';clip-path:'+clip+';background:linear-gradient(180deg,'+shade(c,1.12)+','+c+');transform:translateX(-50%) translateZ(0)"><div class="f3-t"><b>'+esc2(s.n)+'</b><strong>'+Number(s.val||0).toLocaleString('pt-PT')+'</strong>'+(s.meta?'<em>meta '+Number(s.meta).toLocaleString('pt-PT')+' · '+pc+'%</em>':'')+(i>0?'<u>↓ '+(cv==null?'—':cv+'%')+' passam</u>':'')+'</div></div>';
+    });
+    return h+'</div></div>';
+  }
+  window.haFunnel.draw=draw;
+  document.addEventListener('mousemove',function(e){
+    var w=e.target&&e.target.closest&&e.target.closest('.f3-wrap'); if(!w) return;
+    var r=w.getBoundingClientRect(); if(!r.width||!r.height) return; var px=(e.clientX-r.left)/r.width-.5, py=(e.clientY-r.top)/r.height-.5, sc=w.firstChild;
+    sc.style.setProperty('--ry',(px*50).toFixed(1)+'deg'); sc.style.setProperty('--rx',(14-py*34).toFixed(1)+'deg');
+  });
+  document.addEventListener('mouseout',function(e){
+    var w=e.target&&e.target.closest&&e.target.closest('.f3-wrap'); if(!w) return;
+    if(e.relatedTarget&&w.contains(e.relatedTarget)) return;
+    w.firstChild.style.setProperty('--ry','-8deg'); w.firstChild.style.setProperty('--rx','14deg');
+  });
 })();
 </script>
 
