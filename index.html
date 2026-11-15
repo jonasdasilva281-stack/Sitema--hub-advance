@@ -9541,5 +9541,87 @@ window.haFinX=(function(){
 })();
 </script>
 
+<!-- BLOCO 46 · Equipa: líder / analista de RH — avalia o desempenho de cada colaborador e propõe estratégias (com tarefas prontas a criar) -->
+<style>
+.rh{margin-bottom:16px}
+.rh-top{background:#fff;border:1px solid var(--g6);border-radius:12px;padding:16px 18px;margin-bottom:12px}
+.rh-top h3{margin:0 0 3px;font-size:16px;font-weight:700}.rh-top .s{font-size:12px;color:var(--g4)}
+.rh-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:12px}
+.rh-sum div{background:#F9FAFB;border:1px solid var(--g6);border-radius:10px;padding:10px 12px}
+.rh-sum small{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--g4);font-weight:600}
+.rh-sum b{font-size:14px}
+.rh-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:12px}
+.rh-c{background:#fff;border:1px solid var(--g6);border-radius:12px;padding:15px 16px}
+.rh-h{display:flex;align-items:center;gap:10px}
+.rh-h .n{flex:1;min-width:0}.rh-h .n b{display:block;font-size:13.5px}.rh-h .n span{font-size:11px;color:var(--g4)}
+.rh-sc{text-align:right}.rh-sc b{font-size:24px;line-height:1}.rh-sc small{display:block;font-size:10px;color:var(--g4)}
+.rh-pill{display:inline-block;font-size:10px;font-weight:600;border-radius:20px;padding:2px 9px}
+.rh-bar{height:6px;background:var(--g6);border-radius:6px;overflow:hidden;margin:10px 0 8px}.rh-bar i{display:block;height:100%;border-radius:6px}
+.rh-m{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.rh-m div{text-align:center;background:#F9FAFB;border-radius:8px;padding:7px 2px}.rh-m b{display:block;font-size:15px}.rh-m small{font-size:9.5px;color:var(--g4)}
+.rh-e{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--g4);font-weight:600;margin:10px 0 4px}
+.rh-a{display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--g6);font-size:12px;line-height:1.45}
+.rh-a span{flex:1}.rh-a button{flex-shrink:0}
+</style>
+<script>
+window.haRH=(function(){
+  var acoes=[];
+  function addD(d,n){ var x=new Date(d+'T12:00:00'); x.setDate(x.getDate()+n); return isoLocal(x); }
+  function sexta(){ var h=todayISO(), d=new Date(h+'T12:00:00'), n=(5-d.getDay()+7)%7; return addD(h,n||7); }
+  function dados(m,hoje){
+    var T=(DB.tarefas||[]).filter(function(t){return t.resp===m.nome;}), pend=T.filter(function(t){return !t.done;}),
+      atras=pend.filter(function(t){return t.prazo&&t.prazo<hoje;}), f30=T.filter(function(t){return t.done&&(t.doneEm||'')>=addD(hoje,-30);}),
+      cp=f30.filter(function(t){return t.prazo;}), np=cp.filter(function(t){return (t.doneEm||'')<=t.prazo;}),
+      fu=(DB.leads||[]).filter(function(l){return l.proxQuem===m.nome&&['fechado','perdido','standby'].indexOf(l.etapa)<0;}),
+      fa=fu.filter(function(l){return l.proxData&&l.proxData<hoje;});
+    var total=f30.length+pend.length+fu.length, score=null;
+    if(total){
+      var conc=(f30.length+pend.length)?f30.length/(f30.length+pend.length):1, pont=cp.length?np.length/cp.length:1, pen=(atras.length+fa.length)/Math.max(1,pend.length+fu.length);
+      score=Math.round(100*(0.4*conc+0.3*pont+0.3*(1-pen)));
+    }
+    return {m:m,pend:pend,atras:atras,f30:f30,cp:cp,np:np,fu:fu,fa:fa,total:total,score:score};
+  }
+  function estado(sc){ return sc==null?{t:'Sem dados',bg:'#F3F4F6',c:'#6B7280',bar:'#D1D5DB'}:sc>=75?{t:'Forte',bg:'#E1F5EE',c:'#0B6E4F',bar:'#0B6E4F'}:sc>=50?{t:'Atenção',bg:'#FEF3C7',c:'#92400E',bar:'#D97706'}:{t:'Crítico',bg:'#FEE2E2',c:'#991B1B',bar:'#DC2626'}; }
+  function estrategias(d,todos){
+    var a=[], n=d.m.nome, media=todos.reduce(function(s,x){return s+x.pend.length;},0)/Math.max(1,todos.length);
+    var livre=todos.filter(function(x){return x.m!==d.m;}).sort(function(x,y){return x.pend.length-y.pend.length;})[0];
+    if(d.total===0) a.push({t:'Sem responsabilidades registadas. Definir 3 entregas claras para esta semana, com prazo e resultado esperado.',tf:'Definir as 3 entregas da semana de '+n});
+    if(d.atras.length) a.push({t:d.atras.length+' tarefa'+(d.atras.length>1?'s':'')+' em atraso. Rever hoje: concluir, renegociar o prazo ou retirar. Fazer uma revisão de 10 min às 09h00 durante a semana.',tf:'Rever e resolver as '+d.atras.length+' tarefas em atraso de '+n});
+    if(d.fa.length) a.push({t:d.fa.length+' follow-up'+(d.fa.length>1?'s':'')+' de leads em atraso. Reservar um bloco fixo de 30 min por dia só para follow-ups e registar o resultado de cada um.',tf:'Fazer os '+d.fa.length+' follow-ups em atraso (bloco de 30 min diário)'});
+    if(d.pend.length>=5&&d.pend.length>=media*1.5&&livre) a.push({t:'Carga alta ('+d.pend.length+' pendentes, a média da equipa é '+Math.round(media)+'). Passar 2 tarefas para '+livre.m.nome+', que tem menos carga, e ficar só com as de maior impacto.',tf:'Redistribuir 2 tarefas de '+n+' para '+livre.m.nome});
+    if(d.cp.length>=3&&d.np.length/d.cp.length<0.7) a.push({t:'Só '+Math.round(d.np.length/d.cp.length*100)+'% das tarefas foram entregues no prazo. Prazos mais realistas: estimar o tempo antes de aceitar e deixar uma margem de 20%.',tf:'Rever prazos e estimativas das tarefas de '+n});
+    if(d.score!=null&&d.score>=75&&!d.atras.length&&!d.fa.length) a.push({t:'Desempenho forte. Reconhecer o resultado e dar mais responsabilidade: um objetivo novo ou apoiar a formação de outro colega.',tf:'Reunião de reconhecimento e novo objetivo para '+n});
+    if(!a.length) a.push({t:'Sem alertas. Manter o ritmo e fazer um check-in semanal de 15 min para alinhar prioridades.',tf:'Check-in semanal de 15 min com '+n});
+    return a;
+  }
+  function render(){
+    var P=document.getElementById('p-equipa'); if(!P) return;
+    var box=document.getElementById('eq-rh'); if(!box){ box=document.createElement('div'); box.id='eq-rh'; box.className='rh'; P.insertBefore(box,P.firstChild); }
+    var hoje=todayISO(), ds=(DB.equipa||[]).map(function(m){return dados(m,hoje);}); acoes=[];
+    var com=ds.filter(function(d){return d.score!=null;}).sort(function(a,b){return b.score-a.score;});
+    var atrT=ds.reduce(function(s,d){return s+d.atras.length+d.fa.length;},0), carga=ds.slice().sort(function(a,b){return b.pend.length-a.pend.length;})[0];
+    var h='<div class="rh-top"><h3>👥 Líder de equipa · Análise de desempenho</h3><div class="s">Avalia cada pessoa pelos últimos 30 dias: tarefas concluídas, cumprimento de prazos, atrasos e follow-ups. Os números vêm do que está registado no sistema.</div><div class="rh-sum">'
+      +'<div><small>Melhor desempenho</small><b>'+(com.length?esc(com[0].m.nome)+' · '+com[0].score:'—')+'</b></div>'
+      +'<div><small>Precisa de apoio</small><b>'+(com.length>1&&com[com.length-1].score<75?esc(com[com.length-1].m.nome)+' · '+com[com.length-1].score:'Ninguém em risco')+'</b></div>'
+      +'<div><small>Maior carga</small><b>'+(carga&&carga.pend.length?esc(carga.m.nome)+' · '+carga.pend.length+' pendentes':'—')+'</b></div>'
+      +'<div><small>Atrasos na equipa</small><b style="color:'+(atrT?'#B7791F':'var(--g)')+'">'+atrT+'</b></div></div></div><div class="rh-g">';
+    ds.forEach(function(d){
+      var e=estado(d.score), est=estrategias(d,ds);
+      h+='<div class="rh-c"><div class="rh-h"><div class="av" style="background:'+d.m.cor+';width:38px;height:38px;font-size:13px">'+initials(d.m.nome)+'</div><div class="n"><b>'+esc(d.m.nome)+'</b><span>'+esc(d.m.funcao||'')+'</span></div><div class="rh-sc"><b style="color:'+e.bar+'">'+(d.score==null?'—':d.score)+'</b><small>pontuação</small></div></div>'
+        +'<div class="rh-bar"><i style="width:'+(d.score||0)+'%;background:'+e.bar+'"></i></div><span class="rh-pill" style="background:'+e.bg+';color:'+e.c+'">'+e.t+'</span>'
+        +'<div class="rh-m" style="margin-top:10px"><div><b>'+d.f30.length+'</b><small>feitas 30d</small></div><div><b>'+d.pend.length+'</b><small>pendentes</small></div><div><b style="color:'+(d.atras.length?'#B7791F':'inherit')+'">'+d.atras.length+'</b><small>atrasadas</small></div><div><b style="color:'+(d.fa.length?'#B7791F':'inherit')+'">'+d.fa.length+'</b><small>follow-ups atrasados</small></div></div>'
+        +'<div class="rh-e">Estratégias para melhorar</div>'+est.map(function(x){ acoes.push({r:d.m.nome,t:x.tf}); return '<div class="rh-a"><span>'+esc(x.t)+'</span><button class="btn bs bsm" onclick="haRH.criar('+(acoes.length-1)+')">+ Tarefa</button></div>'; }).join('')+'</div>';
+    });
+    box.innerHTML=h+'</div>';
+  }
+  var _re=window.renderEquipa; window.renderEquipa=function(){ var r=_re.apply(this,arguments); try{ render(); }catch(e){ console.error('Líder RH:',e); } return r; };
+  return {render:render,
+    criar:function(i){ var a=acoes[i]; if(!a) return;
+      DB.tarefas.push({id:uid(),nome:a.t,ambito:'empresa',produto:'',resp:a.r,prior:'Alta',prazo:sexta(),projeto:'Desempenho da equipa',notas:'Criada pela análise de desempenho',done:false,criadoEm:todayISO()});
+      save(); renderAll(); toast('✓ Tarefa criada para '+a.r+' (prazo '+fmtDate(sexta())+')'); }
+  };
+})();
+</script>
+
 </body>
 </html>
