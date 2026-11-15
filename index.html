@@ -1104,7 +1104,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
   <div class="fg"><label class="fl">Nome curto</label><input class="fi" id="pd-nomec"></div>
   <div class="fg"><label class="fl">Link do produto <span style="font-size:9.5px;color:var(--g4);font-weight:400">página de venda, checkout ou Hotmart</span></label><input class="fi" id="pd-link" type="url" placeholder="https://"></div>
   <div class="fr fg">
-    <div><label class="fl">Termina em <span style="font-size:9.5px;color:var(--g4);font-weight:400">ex.: dia do workshop</span></label><input type="date" class="fi" id="pd-datafim"></div>
+    <div><label class="fl">Data do evento / termina em <span style="font-size:9.5px;color:var(--g4);font-weight:400">eventos vão para a agenda</span></label><input type="date" class="fi" id="pd-datafim"></div>
     <div><label class="fl">ou dura (dias) <span style="font-size:9.5px;color:var(--g4);font-weight:400">a contar da compra</span></label><input type="number" min="0" class="fi" id="pd-durdias" placeholder="Ex: 30"></div>
   </div>
   <div style="font-size:11px;color:var(--g4);margin:-6px 0 12px">A pessoa só avança para o nível seguinte depois de terminar este.</div>
@@ -9328,6 +9328,44 @@ window.haFormatoUI=(function(){
     return r;
   };
   return {};
+})();
+</script>
+
+<!-- BLOCO 44 · Eventos de 1 dia vão para a agenda no dia marcado (e acompanham a data se mudar) -->
+<script>
+window.haEventosAgenda=(function(){
+  var ocupado=false;
+  try{ if(typeof etaColors==='object'&&!etaColors['Evento']) etaColors['Evento']='#0B6E4F'; }catch(e){}
+  function dataEv(p){ if(p.dataFim) return p.dataFim; var c=(p.cronograma||[]).find(function(f){return f.data;}); return c?c.data:''; }
+  function horaEv(p){
+    var fs=(p.cronograma||[]).filter(function(f){return f.data&&f.data===dataEv(p);}), t=fs.map(function(f){return (f.t||'')+' '+(f.desc||f.d||'');}).join(' ');
+    var m=t.match(/(\d{1,2})\s*(?:h|:)\s*(\d{2})?/i); if(!m) return '';
+    var h=+m[1]; if(h>23) return ''; return ('0'+h).slice(-2)+':'+(m[2]||'00');
+  }
+  function sync(){
+    if(ocupado||typeof DB!=='object') return; ocupado=true;
+    try{
+      var mudou=false, hoje=todayISO();
+      (DB.produtos||[]).forEach(function(p){
+        var r=(DB.reunioes||[]).find(function(x){return x.eventoProdId===p.id;});
+        var ev=haFormato(p)==='evento', d=ev?dataEv(p):'';
+        if(!ev||!d){ if(r&&r.estado==='agendada'){ DB.reunioes=DB.reunioes.filter(function(x){return x!==r;}); mudou=true; } return; }
+        var h=horaEv(p), nome=p.nomeC||p.nome;
+        if(r){
+          if(r.estado!=='agendada') return;
+          if(r.data!==d||r.who!==nome||(h&&r.hora!==h)){ r.data=d; r.who=nome; if(h) r.hora=h; mudou=true; }
+        } else if(d>=hoje){
+          DB.reunioes.push({id:uid(),who:nome,personType:null,personId:null,eventoProdId:p.id,data:d,hora:h,tipo:'Evento',notas:'',formato:'Evento de 1 dia',estado:'agendada'});
+          mudou=true;
+        }
+      });
+      if(mudou){ try{ save(); }catch(e){} }
+      return mudou;
+    } finally { ocupado=false; }
+  }
+  var _ra=window.renderAll;
+  window.renderAll=function(){ try{ sync(); }catch(e){ console.error('Eventos agenda:',e); } return _ra.apply(this,arguments); };
+  return {sync:sync};
 })();
 </script>
 
