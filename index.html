@@ -9207,7 +9207,6 @@ window.haEntrega=(function(){
 
 <!-- BLOCO 42 · CRM dentro da Entrega: só alunas (quem está a fazer um programa). Os leads ficam só no Pipeline. -->
 <style>
-body.area-solutions .ni-alunos{display:none !important}
 .ni-crm,body.area-geral .ni-crm{display:none !important}
 .en-tabs{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
 .en-tabs button{flex:1;min-width:150px;text-align:left;padding:10px 14px;border-radius:10px;border:1.5px solid #E5E7EB;background:#fff;color:inherit;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600}
@@ -9246,7 +9245,7 @@ window.haEntCrm=(function(){
   function digits(t){ var n=String(t||'').replace(/\D/g,''); if(n.length===9) n='351'+n; return n; }
   function ativoM(m){ return ['Concluído','Inativo','Stand by'].indexOf(m.estado)<0; }
   function alunas(){
-    var map={};
+    var map={}, sol=(window.HA_AREA==='solutions');
     (DB.vendas||[]).forEach(function(v){
       var m=v.mentoradoId?DB.mentorados.find(function(x){return x.id===v.mentoradoId;}):DB.mentorados.find(function(x){return nk(x.nome)===nk(v.cliente);});
       var k=m?('m'+m.id):('c'+nk(v.cliente));
@@ -9254,8 +9253,8 @@ window.haEntCrm=(function(){
     });
     (DB.mentorados||[]).forEach(function(m){ var k='m'+m.id; if(!map[k]) map[k]={k:k,m:m,nome:m.nome,vs:[]}; });
     return Object.keys(map).map(function(k){
-      var a=map[k], cur=a.vs.some(function(v){return v.estado==='em_curso'&&haFormatoV(v)==='sessoes';});
-      a.fazer=a.vs.length?cur:(a.m?(ativoM(a.m)&&haFormato(haProdPorNome(a.m.produto))==='sessoes'):false);
+      var a=map[k], cur=a.vs.some(function(v){return v.estado==='em_curso'&&(sol||haFormatoV(v)==='sessoes');});
+      a.fazer=a.vs.length?cur:(a.m?(ativoM(a.m)&&(sol||haFormato(haProdPorNome(a.m.produto))==='sessoes')):false);
       return a;
     });
   }
@@ -9330,7 +9329,8 @@ window.haEntCrm=(function(){
     var qv=(document.getElementById('en-q')||{}).value||'', tinha=document.activeElement&&document.activeElement.id==='en-q';
     filtro='fazer';
     var n=alunas().filter(function(a){return a.fazer;}).length;
-    el.innerHTML='<div class="ha-en-top"><b>Base de alunos ativos</b><span>'+n+' a fazer um programa</span></div>'+crm();
+    var S=(window.HA_AREA==='solutions');
+    el.innerHTML='<div class="ha-en-top"><b>'+(S?'Base de clientes ativos':'Base de alunos ativos')+'</b><span>'+n+(S?' com serviço ativo':' a fazer um programa')+'</span></div>'+crm();
     var q=document.getElementById('en-q'); if(q&&qv){ q.value=qv; document.getElementById('en-rows').innerHTML=linhas(); } if(q&&tinha){ q.focus(); q.setSelectionRange(qv.length,qv.length); }
   }
   // nova secção no menu, logo abaixo de Entrega
@@ -9346,7 +9346,7 @@ window.haEntCrm=(function(){
   var _nav=window.nav;
   window.nav=function(id,el){ if(id==='crm'){ id='alunos'; el=document.querySelector('.ni-alunos'); } return _nav.call(this,id,el); };
   var _ra=window.renderAll;
-  window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ if(window.haArea) haArea(draw); else draw(); }catch(e){ console.error('CRM Entrega:',e); } return r; };
+  window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ var S=(window.HA_AREA==='solutions'), lb=document.querySelector('.ni-alunos .ni-label'); if(lb) lb.textContent=S?'Base de clientes ativos':'Base de alunos ativos'; titles.alunos=S?'Base de clientes ativos':'Base de alunos ativos'; }catch(e){} try{ if(window.haArea) haArea(draw); else draw(); }catch(e){ console.error('CRM Entrega:',e); } return r; };
   return {
     tab:function(t){ tab=t; renderAll(); },
     filtrar:function(f){ filtro=f; renderAll(); },
