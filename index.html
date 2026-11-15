@@ -9084,7 +9084,7 @@ window.haEntrega=(function(){
     });
     (DB.mentorados||[]).forEach(function(m){                                      // alunas sem compra registada
       if(['Concluído','Inativo','Stand by'].indexOf(m.estado)>=0) return;
-      var p=haProdPorNome(m.produto), gr=get(p,m.produto||'Sem programa');
+      var p=haProdPorNome(m.produto); if(!p) return; var gr=get(p,m.produto||'Sem programa');
       var tem=gr.vs.concat(gr.fin).some(function(v){return v.mentoradoId===m.id||nk(v.cliente)===nk(m.nome);});
       if(!tem) gr.ms.push(m);
     });
