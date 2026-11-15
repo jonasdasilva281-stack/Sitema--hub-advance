@@ -9775,15 +9775,18 @@ window.haMktX=(function(){
 
 <!-- BLOCO 48 · Captação, Marketing e Prospeção trabalham juntos: um só item de menu, três separadores -->
 <style>
-.sb-nav .ni[onclick*="'marketing'"],.sb-nav .ni.ni-pros{display:none !important}
 </style>
 <script>
 (function(){
   var JUNTOS=['captacao','marketing','prospecao'];
+  function numerar(){
+    JUNTOS.forEach(function(id,i){ var n=document.querySelector('.sb-nav .ni[onclick*="\''+id+'\'"] .ni-label'); if(n&&!/^\d ·/.test(n.textContent)) n.textContent=(i+1)+' · '+n.textContent; });
+  }
+  numerar();
   var _nav=window.nav;
   window.nav=function(id,el){
     var r=_nav.call(this,id,el);
-    if(JUNTOS.indexOf(id)>=0){
+    if(false){
       var c=document.querySelector('.sb-nav .ni[onclick*="\'captacao\'"]');
       document.querySelectorAll('.ni').forEach(function(n){ n.classList.remove('on'); });
       if(c) c.classList.add('on');
