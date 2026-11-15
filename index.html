@@ -8993,34 +8993,10 @@ window.haResultado=(function(){
 #p-captacao #obm-box{display:none !important}
 </style>
 
-<!-- BLOCO 38 · Foco do dia: caixa onde escreve a prioridade de hoje (por área, guardada por dia) -->
-<script>
-window.haFoco=(function(){
-  var tmr=null;
-  function area(){ return (typeof HA_AREA!=='undefined'&&HA_AREA)||'geral'; }
-  function chave(){ return todayISO()+'|'+area(); }
-  function ler(){ return ((DB.focos||{})[chave()])||''; }
-  function gravar(v){
-    DB.focos=DB.focos||{}; DB.focos[chave()]=v;
-    var s=document.getElementById('foco-estado'); if(s) s.textContent='A guardar…';
-    clearTimeout(tmr);
-    tmr=setTimeout(function(){ try{ save(); var e=document.getElementById('foco-estado'); if(e) e.textContent='Guardado'; }catch(x){ console.error('Foco:',x); } },700);
-  }
-  function render(){
-    var box=document.getElementById('ov-home'); if(!box) return;
-    var old=document.getElementById('ov-foco'); if(old) old.remove();
-    var top=box.querySelector('.hm-top'); if(!top) return;
-    var el=document.createElement('div'); el.id='ov-foco'; el.className='hm-c'; el.style.marginBottom='14px';
-    el.innerHTML='<div class="hm-ch"><h3>Foco de hoje</h3><span id="foco-estado" style="font-size:11px;color:var(--g4)"></span></div>'+
-      '<textarea id="foco-txt" class="fi" rows="2" style="width:100%;resize:vertical" placeholder="Qual é a prioridade de hoje?" oninput="haFoco.gravar(this.value)">'+esc(ler())+'</textarea>';
-    top.insertAdjacentElement('afterend',el);
-  }
-  var _ro=window.renderOverview;
-  window.renderOverview=function(){ var r=_ro.apply(this,arguments); try{ render(); }catch(e){ console.error('Foco:',e); } return r; };
-  setTimeout(function(){ try{ render(); }catch(e){} },500);
-  return {gravar:gravar,render:render};
-})();
-</script>
+<!-- BLOCO 38 · Caixa por baixo do cabeçalho da Visão Geral (data, saudação e frase) -->
+<style>
+.hm-top{background:#fff;border:1px solid var(--g6);border-radius:12px;padding:16px 18px}
+</style>
 
 </body>
 </html>
