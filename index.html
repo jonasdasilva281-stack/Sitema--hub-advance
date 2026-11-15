@@ -8405,7 +8405,7 @@ window.haFM=(function(){
     var h='<div class="hm-top"><div><h2 style="margin:0 0 4px">Campanhas &amp; conteúdo</h2><div class="f" style="font-style:normal">Onde estão a vir os leads e o que está a ser publicado.</div></div><div style="display:flex;gap:10px;align-items:center"><div class="hm-sync"><i></i>'+(navigator.onLine?'Online — sincronizado':'Offline')+'</div><button class="btn bp" onclick="haMkt.novoPlano()">Nova campanha</button></div></div>';
     h+='<div class="hm-k" style="grid-template-columns:repeat(3,minmax(0,1fr))">'+kpi('Investido total',eur(inv))+kpi('Leads gerados',lg)+kpi('Custo por lead',lg&&inv?eur(inv/lg):'—')+'</div>';
     h+='<div class="hm-c" style="margin-bottom:14px"><div class="hm-ch"><h3>📊 Leads por canal de origem ('+L.length+' total)</h3></div>'+(linhas.length?linhas.map(function(x){ var p=Math.round(x.n/L.length*100); return '<div style="margin:9px 0"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px"><b>'+esc(x.c)+'</b><span style="color:var(--g4)">'+x.n+' lead'+(x.n>1?'s':'')+' · '+p+'%</span></div><div class="sbw" style="width:100%"><div class="sbb" style="width:'+p+'%;background:var(--g)"></div></div></div>'; }).join(''):'<div class="hm-e">Ainda não há leads com origem registada.</div>')+'</div>';
-    h+='<div style="display:flex;gap:8px;margin-bottom:12px">'+[['instagram','Instagram'],['hoje','Hoje'],['produto','Por produto'],['relatorio','Relatório'],['campanhas','Campanhas'],['sdr','SDR']].map(function(t){ return '<button class="rc-pill'+(aba===t[0]?' on':'')+'" onclick="haMktF.aba(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
+    h+='<div style="display:flex;gap:8px;margin-bottom:12px">'+[['instagram','Redes sociais'],['hoje','Hoje'],['produto','Por produto'],['relatorio','Relatório'],['campanhas','Campanhas'],['sdr','SDR']].map(function(t){ return '<button class="rc-pill'+(aba===t[0]?' on':'')+'" onclick="haMktF.aba(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
     if(aba!=='campanhas'&&aba!=='conteudo'&&window.haMktX&&haMktX[aba]){
       h+=haMktX[aba]();
     }else if(aba==='campanhas'){
@@ -10322,7 +10322,7 @@ window.haMktX=(function(){
 
 <!-- BLOCO 56 · Instagram: lista de posts com alcance e interações → alcance da semana, do mês e média por post -->
 <style>
-.ig-f{display:grid;grid-template-columns:130px 130px minmax(120px,1.4fr) 110px 110px auto;gap:8px;align-items:end;margin:6px 0 4px}
+.ig-f{display:grid;grid-template-columns:125px 120px 115px minmax(110px,1.3fr) 100px 100px auto;gap:8px;align-items:end;margin:6px 0 4px}
 .ig-f label{font-size:10.5px;color:var(--g4);display:block;margin-bottom:3px}
 .ig-t{width:100%;border-collapse:collapse;font-size:12.5px}.ig-t th{text-align:left;font-size:10.5px;color:var(--g4);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--g6)}
 .ig-t td{padding:6px 8px;border-top:1px solid var(--g6);vertical-align:middle}.ig-t input.n{width:84px;border:1px solid transparent;border-radius:6px;padding:4px 6px;font:inherit;background:transparent;text-align:right}
@@ -10333,7 +10333,10 @@ window.haMktX=(function(){
 (function(){
   function A(){ var g=window.HA_AREA; return (g==='mentorias'||g==='solutions')?g:null; }
   function D(){ DB.instaPosts=DB.instaPosts||[]; return DB.instaPosts; }
-  function meus(){ var a=A(); return D().filter(function(p){return !a||(p.area||'mentorias')===a;}); }
+  var REDES=['Instagram','TikTok','YouTube','Facebook','LinkedIn','Pinterest','X'], filtroRede='';
+  function rede(p){ return p.rede||'Instagram'; }
+  function meus(){ var a=A(); return D().filter(function(p){return (!a||(p.area||'mentorias')===a)&&(!filtroRede||rede(p)===filtroRede);}); }
+  function todasRedes(){ var a=A(); return D().filter(function(p){return !a||(p.area||'mentorias')===a;}); }
   function N(v){ return (+v||0).toLocaleString('pt-PT'); }
   function addD(iso,n){ var d=new Date(iso+'T12:00:00'); d.setDate(d.getDate()+n); return isoLocal(d); }
   function soma(L,k){ return L.reduce(function(s,p){return s+(+p[k]||0);},0); }
@@ -10350,28 +10353,32 @@ window.haMktX=(function(){
       sem=L.filter(function(p){return p.data>=seg;}), m=L.filter(function(p){return (p.data||'').slice(0,7)===mes;}), t30=L.filter(function(p){return p.data>=l30;}),
       ar=soma(m,'alcance'), ai=soma(m,'interacoes'), med=m.length?Math.round(ar/m.length):0, tx=ar?(ai/ar*100):0, top=m.slice().sort(function(a,b){return (+b.alcance||0)-(+a.alcance||0);})[0];
     var K=function(l,v,s){ return '<div class="hm-t" style="cursor:default"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>'; };
-    var h='<div class="hm-k" style="grid-template-columns:repeat(4,minmax(0,1fr))">'+K('Alcance esta semana',N(soma(sem,'alcance')),sem.length+' post'+(sem.length===1?'':'s'))+K('Alcance este mês',N(ar),m.length+' post'+(m.length===1?'':'s'))+K('Média por post',N(med),'no mês')+K('Interação',tx.toFixed(1).replace('.',',')+'%',N(ai)+' interações / alcance')+'</div>';
+    var TR=todasRedes(), usadas=REDES.filter(function(r){return TR.some(function(p){return rede(p)===r;});}), mm=TR.filter(function(p){return (p.data||'').slice(0,7)===mes;});
+    var pills='<div class="rp-bar"><button class="'+(filtroRede?'':'on')+'" onclick="haIg.rede(\'\')">Todas as redes</button>'+usadas.map(function(r){ return '<button class="'+(filtroRede===r?'on':'')+'" onclick="haIg.rede(\''+r+'\')">'+r+' · '+N(soma(mm.filter(function(p){return rede(p)===r;}),'alcance'))+'</button>'; }).join('')+'</div>';
+    var h=pills+'<div class="hm-k" style="grid-template-columns:repeat(4,minmax(0,1fr))">'+K('Alcance esta semana',N(soma(sem,'alcance')),sem.length+' post'+(sem.length===1?'':'s'))+K('Alcance este mês',N(ar),m.length+' post'+(m.length===1?'':'s'))+K('Média por post',N(med),'no mês')+K('Interação',tx.toFixed(1).replace('.',',')+'%',N(ai)+' interações / alcance')+'</div>';
     h+='<div class="hm-c" style="margin-bottom:12px"><div class="hm-ch"><h3>Adicionar post</h3></div><div class="ig-f">'
       +'<div><label>Data</label><input class="fi" type="date" id="ig-d" value="'+hoje+'"></div>'
+      +'<div><label>Rede social</label><select class="fi" id="ig-re">'+REDES.map(function(r){return '<option>'+r+'</option>';}).join('')+'</select></div>'
       +'<div><label>Tipo</label><select class="fi" id="ig-ti"><option>Reel</option><option>Carrossel</option><option>Imagem</option><option>Stories</option><option>Live</option></select></div>'
       +'<div><label>Tema</label><input class="fi" id="ig-te" placeholder="Ex.: 3 erros ao precificar"></div>'
       +'<div><label>Alcance</label><input class="fi" type="number" min="0" id="ig-a"></div>'
       +'<div><label>Interações</label><input class="fi" type="number" min="0" id="ig-i"></div>'
       +'<button class="btn bp" onclick="haIg.add()">+ Adicionar</button></div>'
-      +'<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:var(--g);font-weight:600">Colar vários de uma vez</summary><textarea class="fi" id="ig-bulk" rows="4" style="margin-top:6px" placeholder="Uma linha por post: data; tipo; tema; alcance; interações&#10;12/11; Reel; Lançamento do workshop; 4500; 210"></textarea><button class="btn bs bsm" style="margin-top:6px" onclick="haIg.bulk()">Importar linhas</button></details></div>';
+      +'<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:var(--g);font-weight:600">Colar vários de uma vez</summary><textarea class="fi" id="ig-bulk" rows="4" style="margin-top:6px" placeholder="Uma linha por post: data; rede; tipo; tema; alcance; interações&#10;12/11; Instagram; Reel; Workshop; 4500; 210"></textarea><button class="btn bs bsm" style="margin-top:6px" onclick="haIg.bulk()">Importar linhas</button></details></div>';
     h+='<div class="hm-g" style="grid-template-columns:minmax(0,1fr) minmax(0,1.4fr)"><div class="hm-c"><div class="hm-ch"><h3>Alcance por semana</h3></div>'+barras(semanas(L))+'<div style="font-size:11.5px;color:var(--g4)">Últimos 30 dias: <b>'+N(soma(t30,'alcance'))+'</b> de alcance em '+t30.length+' posts'+(top?' · melhor do mês: <b>'+esc(top.tema||top.tipo)+'</b> ('+N(top.alcance)+')':'')+'</div></div>'
-      +'<div class="hm-c" style="overflow:auto"><div class="hm-ch"><h3>Posts ('+L.length+')</h3></div>'+(L.length?'<table class="ig-t"><tr><th>Data</th><th>Tipo</th><th>Tema</th><th style="text-align:right">Alcance</th><th style="text-align:right">Interações</th><th></th></tr>'
-        +L.slice(0,60).map(function(p){ return '<tr><td>'+fmtDate(p.data)+'</td><td>'+esc(p.tipo||'')+'</td><td>'+esc(p.tema||'')+'</td><td style="text-align:right"><input class="n" type="number" min="0" value="'+(+p.alcance||0)+'" onchange="haIg.set('+p.id+',\'alcance\',this.value)"></td><td style="text-align:right"><input class="n" type="number" min="0" value="'+(+p.interacoes||0)+'" onchange="haIg.set('+p.id+',\'interacoes\',this.value)"></td><td><button class="btn bsm" onclick="haIg.del('+p.id+')" title="Apagar">✕</button></td></tr>'; }).join('')+'</table>':'<div class="hm-e">Ainda sem posts. Adicione o primeiro acima, com o alcance que vê nas estatísticas do Instagram.</div>')+'</div></div>';
+      +'<div class="hm-c" style="overflow:auto"><div class="hm-ch"><h3>Posts ('+L.length+')</h3></div>'+(L.length?'<table class="ig-t"><tr><th>Data</th><th>Rede</th><th>Tipo</th><th>Tema</th><th style="text-align:right">Alcance</th><th style="text-align:right">Interações</th><th></th></tr>'
+        +L.slice(0,60).map(function(p){ return '<tr><td>'+fmtDate(p.data)+'</td><td>'+esc(rede(p))+'</td><td>'+esc(p.tipo||'')+'</td><td>'+esc(p.tema||'')+'</td><td style="text-align:right"><input class="n" type="number" min="0" value="'+(+p.alcance||0)+'" onchange="haIg.set('+p.id+',\'alcance\',this.value)"></td><td style="text-align:right"><input class="n" type="number" min="0" value="'+(+p.interacoes||0)+'" onchange="haIg.set('+p.id+',\'interacoes\',this.value)"></td><td><button class="btn bsm" onclick="haIg.del('+p.id+')" title="Apagar">✕</button></td></tr>'; }).join('')+'</table>':'<div class="hm-e">Ainda sem posts. Adicione o primeiro acima, com o alcance que vê nas estatísticas do Instagram.</div>')+'</div></div>';
     return h;
   }
   window.haIg={
     add:function(){ var g=function(i){return document.getElementById(i).value;}, d=g('ig-d'); if(!d||g('ig-a')===''){ toast('Indique a data e o alcance','#C0392B'); return; }
-      D().push({id:uid(),data:d,tipo:g('ig-ti'),tema:g('ig-te').trim(),alcance:+g('ig-a')||0,interacoes:+g('ig-i')||0,area:A()||'mentorias'}); save(); renderAll(); toast('✓ Post adicionado'); },
+      D().push({id:uid(),data:d,rede:g('ig-re'),tipo:g('ig-ti'),tema:g('ig-te').trim(),alcance:+g('ig-a')||0,interacoes:+g('ig-i')||0,area:A()||'mentorias'}); save(); renderAll(); toast('✓ Post adicionado'); },
     bulk:function(){ var t=document.getElementById('ig-bulk').value, n=0;
       t.split('\n').forEach(function(ln){ var c=ln.split(/\t|;/).map(function(x){return x.trim();}); if(c.length<3) c=ln.split(',').map(function(x){return x.trim();}); var d=isoDe(c[0]); if(!d) return;
         var nums=c.slice(1).filter(function(x){return /^\d[\d\s.]*$/.test(x);}).map(function(x){return +x.replace(/[\s.]/g,'');}), txt=c.slice(1).filter(function(x){return !/^\d[\d\s.]*$/.test(x);});
-        if(!nums.length) return; D().push({id:uid(),data:d,tipo:txt[0]||'Reel',tema:txt[1]||'',alcance:nums[0]||0,interacoes:nums[1]||0,area:A()||'mentorias'}); n++; });
+        if(!nums.length) return; var rd=REDES.filter(function(r){return txt.some(function(x){return x.toLowerCase()===r.toLowerCase();});})[0]||'Instagram'; txt=txt.filter(function(x){return x.toLowerCase()!==rd.toLowerCase();}); D().push({id:uid(),data:d,rede:rd,tipo:txt[0]||'Reel',tema:txt[1]||'',alcance:nums[0]||0,interacoes:nums[1]||0,area:A()||'mentorias'}); n++; });
       if(!n){ toast('Nenhuma linha reconhecida. Use: data; tipo; tema; alcance; interações','#C0392B'); return; } save(); renderAll(); toast('✓ '+n+' post'+(n>1?'s':'')+' importado'+(n>1?'s':'')); },
+    rede:function(r){ filtroRede=r; renderAll(); },
     set:function(id,k,v){ var p=D().find(function(x){return x.id===id;}); if(!p) return; p[k]=+v||0; save(); renderAll(); },
     del:function(id){ if(!confirm('Apagar este post?')) return; DB.instaPosts=D().filter(function(x){return x.id!==id;}); save(); renderAll(); }
   };
