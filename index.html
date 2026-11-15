@@ -7851,7 +7851,7 @@ window.haCap=(function(){
 <!-- BLOCO 23 · Secção Captação organizada: 3 separadores + "Agora" -->
 <script>
 (function(){
-  var TABS=[['captacao','Captação','o que fazer'],['marketing','Marketing','como estamos'],['prospecao','Prospeção','quem abordar'],['metas','Metas','o que queremos']];
+  var TABS=[['marketing','Marketing','atrair e gerar leads'],['prospecao','Prospeção','SDR: abordar e marcar reuniões'],['captacao','Captação','o que fazer a seguir'],['metas','Metas','o que queremos']];
   function go(p){ return "nav('"+p+"',document.querySelector('.ni[onclick*=&quot;\\'"+p+"\\'&quot;]'))"; }
   function barra(at){
     return '<div class="cap-tabs" style="display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap">'+TABS.map(function(t,i){ var on=t[0]===at;
@@ -9778,11 +9778,38 @@ window.haMktX=(function(){
 </style>
 <script>
 (function(){
-  var JUNTOS=['captacao','marketing','prospecao'];
+  var JUNTOS=['marketing','prospecao','captacao'];
   function numerar(){
     JUNTOS.forEach(function(id,i){ var n=document.querySelector('.sb-nav .ni[onclick*="\''+id+'\'"] .ni-label'); if(n&&!/^\d ·/.test(n.textContent)) n.textContent=(i+1)+' · '+n.textContent; });
   }
   numerar();
+  (function(){ // ordem no menu: Marketing, Prospeção, Captação
+    var q=function(id){ return document.querySelector('.sb-nav .ni[onclick*="\''+id+'\'"]'); };
+    var m=q('marketing'), p=q('prospecao'), c=q('captacao');
+    if(m&&p&&c&&c.parentNode){ c.parentNode.insertBefore(m,c); c.parentNode.insertBefore(p,c); }
+  })();
+  var DEP={
+    marketing:['Departamento 01 — Marketing','Gerar atenção, autoridade, procura e leads.',
+      [['Estrategista','define público, posicionamento e ofertas'],['Content Creator','cria conteúdos'],['Gestor de tráfego','gere campanhas pagas'],['Copywriter','cria mensagens comerciais'],['Marketing Manager','analisa resultados']],
+      'Instagram e Facebook · TikTok e YouTube · Google e SEO · Anúncios pagos · Email marketing · Parcerias estratégicas',
+      'Alcance · visualizações · contactos gerados · custo por lead · conversões'],
+    prospecao:['Departamento 02 — Prospeção','Encontrar potenciais clientes e iniciar conversas comerciais. O SDR não fecha a venda: cria oportunidades qualificadas.',
+      [['1','identificar potenciais clientes'],['2','pesquisar empresas e decisores'],['3','abordar por telefone, email, WhatsApp e redes sociais'],['4','identificar necessidades'],['5','verificar se há potencial comercial'],['6','agendar reunião com o responsável pelas vendas']],
+      'Telefone · email · WhatsApp · redes sociais',
+      'Contactos realizados · respostas · conversas iniciadas · leads qualificados · reuniões agendadas']
+  };
+  function dep(){
+    ['marketing','prospecao'].forEach(function(k){
+      var P=document.getElementById('p-'+k), b=P&&P.querySelector('.cap-tabs'); if(!b||P.querySelector('.ha-dep')) return;
+      var d=DEP[k], e=function(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');};
+      b.insertAdjacentHTML('afterend','<details class="card ha-dep" style="margin-bottom:14px"><summary style="cursor:pointer;font-weight:600;font-size:13.5px">'+e(d[0])+' <span style="font-weight:400;color:var(--g4);font-size:12px">· '+e(d[1])+'</span></summary>'+
+        '<div style="margin-top:10px;font-size:12.5px;line-height:1.7"><b>Funções</b><br>'+d[2].map(function(f){return (/^\d$/.test(f[0])?f[0]+'. ':'<b>'+e(f[0])+'</b> — ')+e(f[1]);}).join('<br>')+
+        '<br><br><b>Canais:</b> '+e(d[3])+'<br><b>Indicadores:</b> '+e(d[4])+'</div></details>');
+    });
+  }
+  window.haDep=dep;
+  var _ra0=window.renderAll;
+  window.renderAll=function(){ var r=_ra0.apply(this,arguments); try{ dep(); }catch(e){ console.error('Dep:',e); } return r; };
   var _nav=window.nav;
   window.nav=function(id,el){
     var r=_nav.call(this,id,el);
@@ -9794,7 +9821,7 @@ window.haMktX=(function(){
     return r;
   };
   var _ra=window.renderAll;
-  window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ if(window.haCapDecorar) haCapDecorar(); }catch(e){ console.error('Captação junta:',e); } return r; };
+  window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ if(window.haCapDecorar) haCapDecorar(); if(window.haDep) haDep(); }catch(e){ console.error('Captação junta:',e); } return r; };
 })();
 </script>
 
