@@ -9150,6 +9150,11 @@ window.haEntrega=(function(){
 .en-d{padding:6px 16px 16px;background:#FAFAFB;border-top:1px solid var(--g6)}
 .en-d h4{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--g4);margin:12px 0 6px;font-weight:600}
 @media(max-width:800px){.en-th{display:none}.en-r{grid-template-columns:1fr;gap:6px;padding:14px}}
+
+.ha-en{display:grid !important;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;overflow:visible !important;padding-bottom:0}
+.ha-en-col{flex:none !important;max-width:none !important;width:auto;min-height:260px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.ha-en-h{padding-bottom:10px;border-bottom:2px solid #0B6E4F}
+.ha-en-h b{font-size:15px}
 </style>
 <script>
 window.haEntCrm=(function(){
@@ -9231,9 +9236,9 @@ window.haEntCrm=(function(){
   function crm(){
     var T=alunas(), nF=T.filter(function(a){return a.fazer;}).length;
     var seg=[['fazer','A fazer o programa'],['concluidas','Concluídas'],['todas','Todas']].map(function(x){ return '<button class="'+(filtro===x[0]?'on':'')+'" onclick="haEntCrm.filtrar(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('');
-    return '<div class="en-bar"><input id="en-q" placeholder="Procurar aluna por nome ou telemóvel…" oninput="haEntCrm.q()"><div class="en-seg">'+seg+'</div></div>'+
+    return '<div class="en-bar"><input id="en-q" placeholder="Procurar aluna por nome ou telemóvel…" oninput="haEntCrm.q()"></div>'+
       '<div class="card en-t"><div class="en-r en-th"><div>Aluna</div><div>Programa</div><div>Progresso</div><div>Sessões</div><div>Estado</div></div><div id="en-rows">'+linhas()+'</div></div>'+
-      '<div style="font-size:12px;color:var(--g4);margin-top:10px">Só entram aqui quem está num programa. Os leads ficam no Pipeline até comprarem.</div>';
+      '<div style="font-size:12px;color:var(--g4);margin-top:10px">Só entram aqui as alunas ativas. Os leads ficam no Pipeline até comprarem.</div>';
   }
   function barra(){
     var nF=alunas().filter(function(a){return a.fazer;}).length;
@@ -9243,8 +9248,10 @@ window.haEntCrm=(function(){
   function draw(){
     var el=document.getElementById('p-entrega'); if(!el||!el.classList.contains('on')) return;
     var qv=(document.getElementById('en-q')||{}).value||'', tinha=document.activeElement&&document.activeElement.id==='en-q';
-    el.innerHTML=barra()+(tab==='crm'?crm():el.innerHTML);
-    if(tab==='crm'){ var q=document.getElementById('en-q'); if(q&&qv){ q.value=qv; document.getElementById('en-rows').innerHTML=linhas(); } if(q&&tinha){ q.focus(); q.setSelectionRange(qv.length,qv.length); } }
+    var velho=el.querySelector('#en-base'); if(velho) velho.parentNode.removeChild(velho);
+    filtro='fazer';
+    el.insertAdjacentHTML('beforeend','<div id="en-base"><div class="ha-en-top" style="margin-top:26px"><b>Base de alunos ativos</b><span>'+alunas().filter(function(a){return a.fazer;}).length+' a fazer um programa</span></div>'+crm()+'</div>');
+    var q=document.getElementById('en-q'); if(q&&qv){ q.value=qv; document.getElementById('en-rows').innerHTML=linhas(); } if(q&&tinha){ q.focus(); q.setSelectionRange(qv.length,qv.length); }
   }
   var _nav=window.nav;
   window.nav=function(id,el){ if(id==='crm'){ tab='crm'; id='entrega'; el=document.querySelector('.ni-entrega'); } return _nav.call(this,id,el); };
