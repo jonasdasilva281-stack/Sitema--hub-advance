@@ -8404,7 +8404,7 @@ window.haFM=(function(){
     var h='<div class="hm-top"><div><h2 style="margin:0 0 4px">Campanhas &amp; conteúdo</h2><div class="f" style="font-style:normal">Onde estão a vir os leads e o que está a ser publicado.</div></div><div style="display:flex;gap:10px;align-items:center"><div class="hm-sync"><i></i>'+(navigator.onLine?'Online — sincronizado':'Offline')+'</div><button class="btn bp" onclick="haMkt.novoPlano()">Nova campanha</button></div></div>';
     h+='<div class="hm-k" style="grid-template-columns:repeat(3,minmax(0,1fr))">'+kpi('Investido total',eur(inv))+kpi('Leads gerados',lg)+kpi('Custo por lead',lg&&inv?eur(inv/lg):'—')+'</div>';
     h+='<div class="hm-c" style="margin-bottom:14px"><div class="hm-ch"><h3>📊 Leads por canal de origem ('+L.length+' total)</h3></div>'+(linhas.length?linhas.map(function(x){ var p=Math.round(x.n/L.length*100); return '<div style="margin:9px 0"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px"><b>'+esc(x.c)+'</b><span style="color:var(--g4)">'+x.n+' lead'+(x.n>1?'s':'')+' · '+p+'%</span></div><div class="sbw" style="width:100%"><div class="sbb" style="width:'+p+'%;background:var(--g)"></div></div></div>'; }).join(''):'<div class="hm-e">Ainda não há leads com origem registada.</div>')+'</div>';
-    h+='<div style="display:flex;gap:8px;margin-bottom:12px">'+[['funil','Funil'],['produto','Por produto'],['campanhas','Campanhas'],['conteudo','Conteúdo'],['sdr','SDR']].map(function(t){ return '<button class="rc-pill'+(aba===t[0]?' on':'')+'" onclick="haMktF.aba(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
+    h+='<div style="display:flex;gap:8px;margin-bottom:12px">'+[['funil','Funil'],['hoje','Hoje'],['produto','Por produto'],['relatorio','Relatório'],['campanhas','Campanhas'],['conteudo','Conteúdo'],['sdr','SDR']].map(function(t){ return '<button class="rc-pill'+(aba===t[0]?' on':'')+'" onclick="haMktF.aba(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
     if(aba!=='campanhas'&&aba!=='conteudo'&&window.haMktX&&haMktX[aba]){
       h+=haMktX[aba]();
     }else if(aba==='campanhas'){
@@ -9847,6 +9847,136 @@ window.haMktX=(function(){
   };
   var _ra=window.renderAll;
   window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ if(window.haCapDecorar) haCapDecorar(); if(window.haDep) haDep(); }catch(e){ console.error('Captação junta:',e); } return r; };
+})();
+</script>
+
+<!-- BLOCO 49 · Campanha pronta: datas + meta → rotina diária, "Hoje", relatório (dia/semana/quinzena/mês) e direção para atingir o objetivo -->
+<style>
+.rp-bar{display:flex;gap:6px;margin:0 0 12px;flex-wrap:wrap}
+.rp-bar button{border:1px solid var(--g6);background:#fff;border-radius:20px;padding:6px 14px;font:600 12px inherit;cursor:pointer}
+.rp-bar button.on{background:#0B6E4F;border-color:#0B6E4F;color:#fff}
+.rp-c{background:#fff;border:1px solid var(--g6);border-radius:12px;padding:15px 16px;margin-bottom:12px}
+.rp-h{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.rp-k{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0}
+.rp-k div b{display:block;font-size:19px}.rp-k div span{font-size:10.5px;color:var(--g4)}
+.rp-bw{height:8px;background:#EEF0F2;border-radius:6px;position:relative;overflow:hidden;margin:4px 0}
+.rp-bw i{display:block;height:100%;background:#0B6E4F;border-radius:6px}.rp-bw u{position:absolute;top:0;bottom:0;width:2px;background:#111}
+.rp-d{background:#F0FAF6;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.65}
+.rp-d.at{background:#FDF3E3}.rp-d.ba{background:#E9F2FF}
+.rp-t{display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--g6);font-size:13px;cursor:pointer}
+@media(max-width:700px){.rp-k{grid-template-columns:repeat(2,1fr)}}
+</style>
+<script>
+(function(){
+  var TIPOS={leads:'Leads',vendas:'Vendas',receita:'Receita (€)'};
+  var per='s';
+  function D(n){ var d=new Date(todayISO()+'T12:00:00'); d.setDate(d.getDate()+n); return isoLocal(d); }
+  function dias(a,b){ return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/864e5); }
+  function prodX(x){ return x.produtoId?(DB.produtos||[]).find(function(p){return p.id===x.produtoId;}):null; }
+  function nomeP(x){ var p=prodX(x); return p?(p.nomeC||p.nome):'o produto'; }
+  function dl(l){ return (l.createdAt||'').slice(0,10); }
+  function res(x,a,b){
+    var t=x.metaTipo||'leads', p=prodX(x), r=0;
+    if(t==='leads'){
+      r=(DB.leads||[]).filter(function(l){ var q=haProdPorNome(l.produto); var d=dl(l); return d>=a&&d<=b&&(p?(q&&q.id===p.id):l.origem===x.canal); }).length;
+    } else {
+      (DB.pagamentos||[]).forEach(function(g){ if(g.estado!=='Pago'||!g.data||g.data<a||g.data>b) return; var q=haProdPorNome(g.produto); if(p&&!(q&&q.id===p.id)) return; r+=(t==='receita'?(+g.valor||0):1); });
+    }
+    return Math.round(r*100)/100;
+  }
+  function gerar(x){
+    var n=nomeP(x), e=x.etapa||'Atração orgânica', R=[];
+    if(e==='Atração orgânica'){
+      R=[['d','Publicar 1 conteúdo (reel, carrossel ou stories) sobre '+n],['d','Stories com chamada para ação para '+n],['d','Responder a comentários e DMs no mesmo dia'],
+         ['s','Planear os conteúdos da semana para '+n,1],['s','Rever alcance e leads e ajustar o que não funcionou',5]];
+    } else if(e==='Tráfego pago'){
+      R=[['d','Verificar gasto e custo por lead dos anúncios de '+n],['d','Responder a todos os leads novos em menos de 1 hora'],
+         ['s','Subir criativos/copy novos de '+n,1],['s','Pausar anúncios acima do custo-alvo por lead',3],['s','Decidir o orçamento da semana seguinte',5]];
+    } else {
+      R=[['d','Abordar 10 potenciais clientes novos para '+n],['d','Fazer follow-up das conversas abertas'],['d','Marcar reunião com quem ficou qualificado'],
+         ['s','Rever taxa de resposta e afinar a mensagem de abordagem',5]];
+    }
+    return R.map(function(r){ return r[0]==='s'?{f:'s',t:r[1],dia:r[2]}:{f:'d',t:r[1]}; });
+  }
+  function garantir(x){ if(!x.rotina||!x.rotina.length||x.rotinaEtapa!==(x.etapa||'')){ x.rotina=gerar(x); x.rotinaEtapa=x.etapa||''; } if(!x.feitos) x.feitos={}; }
+  function ativaHoje(x){ var h=todayISO(); return (!x.ini||x.ini<=h)&&(!x.fim||x.fim>=h); }
+  function metaInfo(x){
+    var m=+x.metaN||0, h=todayISO(), ini=x.ini||h, fim=x.fim||h, total=Math.max(1,dias(ini,fim)+1), dec=Math.min(total,Math.max(0,dias(ini,h)+1)), rest=Math.max(1,dias(h,fim)+1);
+    var at=res(x,ini,fim<h?fim:h), esp=m*dec/total, falta=Math.max(0,m-at);
+    return {m:m,at:at,total:total,dec:dec,rest:rest,esp:esp,falta:falta,precisa:falta/rest,pctM:m?Math.min(100,at/m*100):0,pctT:dec/total*100,
+      estado:!m?'sem':at>=m?'ok':(at>=esp*0.95||dec<=2)?'ritmo':'atraso'};
+  }
+  function fmtN(x,v){ return (x.metaTipo==='receita')?Math.round(v).toLocaleString('pt-PT')+' €':(Math.round(v*10)/10).toLocaleString('pt-PT'); }
+  function hoje(){
+    var h=todayISO(), wd=((new Date(h+'T12:00:00').getDay()+6)%7)+1, ativas=(DB.mktPlanos||[]).filter(ativaHoje), out='';
+    if(!ativas.length) return '<div class="empty" style="padding:22px">Sem campanhas a decorrer hoje. Crie uma em <b>Por produto</b> com datas e meta: a rotina diária aparece aqui automaticamente.</div>';
+    ativas.forEach(function(x){
+      garantir(x);
+      var tarefas=[]; x.rotina.forEach(function(r,i){ if(r.f==='d'||(r.f==='s'&&(r.dia||5)===wd)) tarefas.push([r,i]); });
+      var f=tarefas.filter(function(t){return x.feitos[h+'|'+t[1]];}).length, mi=metaInfo(x);
+      out+='<div class="rp-c"><div class="rp-h"><div><b style="font-size:14px">'+esc(x.nome)+'</b><div style="font-size:11.5px;color:var(--g4)">'+esc(x.etapa||'')+' · até '+(x.fim?fmtDate(x.fim):'sem fim')+'</div></div><span class="tag '+(f===tarefas.length?'tg':'ty')+'">'+f+'/'+tarefas.length+' hoje</span></div>'
+        +(mi.m?'<div style="font-size:12px;color:var(--g3);margin:8px 0 4px">Meta: <b>'+fmtN(x,mi.at)+' / '+fmtN(x,mi.m)+'</b> '+TIPOS[x.metaTipo||'leads'].toLowerCase()+' · precisa de cerca de <b>'+fmtN(x,mi.precisa)+'</b> por dia</div>':'<div style="font-size:12px;color:#B7791F;margin:8px 0 4px">Sem meta numérica definida: edite a campanha para acompanhar o objetivo.</div>')
+        +tarefas.map(function(t){ var k=h+'|'+t[1], ok=!!x.feitos[k]; return '<label class="rp-t"><input type="checkbox" '+(ok?'checked ':'')+'onchange="haRel.tick('+x.id+',\''+k+'\')"><span'+(ok?' style="text-decoration:line-through;color:var(--g4)"':'')+'>'+esc(t[0].t)+(t[0].f==='s'?' <span class="tag tgr" style="font-size:9.5px">semanal</span>':'')+'</span></label>'; }).join('')+'</div>';
+    });
+    return '<div style="font-size:12.5px;color:var(--g4);margin-bottom:10px">O que fazer hoje, '+fmtDate(h)+', em cada campanha ativa.</div>'+out;
+  }
+  function direcao(x,mi,a,b){
+    var e=x.etapa||'Atração orgânica', t=x.metaTipo||'leads', L=[], n=nomeP(x), gasto=+x.gasto||0;
+    if(!mi.m) return {c:'',l:['Defina uma meta numérica para receber direção automática.']};
+    if(mi.estado==='ok'){ L.push('Meta atingida. Pode manter o ritmo e subir a meta, ou escalar o que funcionou.'); return {c:'',l:L}; }
+    var atr=mi.estado==='atraso', rit=Math.round(mi.precisa*10)/10;
+    L.push(atr?('Está atrás do ritmo: faltam '+fmtN(x,mi.falta)+' em '+mi.rest+' dia'+(mi.rest>1?'s':'')+'. Precisa de '+fmtN(x,rit)+' por dia (esperado até hoje: '+fmtN(x,mi.esp)+').'):('No ritmo para a meta. Mantenha a rotina diária e precisa de '+fmtN(x,rit)+' por dia até ao fim.'));
+    if(atr){
+      var leads=res(x,x.ini||a,b), pagos=t==='leads'?null:leads;
+      if(t==='leads'){
+        if(e==='Atração orgânica') L.push('Suba para 2 conteúdos por dia e repita os formatos que mais alcance deram. Termine sempre com chamada para ação para '+n+'.');
+        else if(e==='Tráfego pago'){ var cpl=mi.at&&gasto?gasto/mi.at:0; L.push('Troque os criativos que não convertem e suba o orçamento nos que funcionam.'+(cpl?' Custo por lead atual: '+Math.round(cpl*100)/100+' €.':'')); }
+        else L.push('Aumente as abordagens diárias e reduza o tempo entre mensagem e follow-up.');
+      } else {
+        var ls=(DB.leads||[]).filter(function(l){var q=haProdPorNome(l.produto);return q&&x.produtoId&&q.id===x.produtoId&&l.etapa!=='fechado'&&l.etapa!=='perdido';}).length;
+        if(ls>=Math.ceil(mi.falta)) L.push('Há '+ls+' leads em aberto para '+n+': o problema é o fecho. Reforce o follow-up, marque as reuniões e faça uma oferta com prazo.');
+        else L.push('Faltam leads para chegar à meta: reforce a atração (mais conteúdo e tráfego pago) e a prospeção do SDR.');
+      }
+      var fe=(x.passos||[]).filter(function(q){return !q.feito;}).length; if(fe) L.push('Ainda tem '+fe+' passo'+(fe>1?'s':'')+' do plano por fazer.');
+    }
+    return {c:atr?'at':'',l:L};
+  }
+  function relatorio(){
+    var h=todayISO(), N={d:1,s:7,q:14,m:30}[per], a=D(-(N-1)), b=h, A=(DB.mktPlanos||[]).filter(function(x){return (x.ini||'0')<=b&&(!x.fim||x.fim>=a);});
+    var bar='<div class="rp-bar">'+[['d','Diário'],['s','Semanal'],['q','Quinzenal'],['m','Mensal']].map(function(k){ return '<button class="'+(per===k[0]?'on':'')+'" onclick="haRel.per(\''+k[0]+'\')">'+k[1]+'</button>'; }).join('')+'</div>'
+      +'<div style="font-size:12px;color:var(--g4);margin-bottom:10px">'+(N===1?'Hoje, '+fmtDate(h):'Últimos '+N+' dias · '+fmtDate(a)+' a '+fmtDate(h))+'</div>';
+    if(!A.length) return bar+'<div class="empty" style="padding:22px">Sem campanhas neste período.</div>';
+    return bar+A.map(function(x){
+      garantir(x); var mi=metaInfo(x), per_=res(x,a,b), dr=direcao(x,mi,a,b), cor=mi.estado==='ok'?'tg':mi.estado==='ritmo'?'tg':mi.estado==='atraso'?'tr':'tgr', lbl={ok:'Meta atingida',ritmo:'No ritmo',atraso:'Atrasada',sem:'Sem meta'}[mi.estado];
+      var esp=0,fe=0; for(var i=0;i<N;i++){ var d=D(-i); if(d<(x.ini||'0')||(x.fim&&d>x.fim)) continue; var wd=((new Date(d+'T12:00:00').getDay()+6)%7)+1; x.rotina.forEach(function(r,j){ if(r.f==='d'||(r.f==='s'&&(r.dia||5)===wd)){ esp++; if(x.feitos[d+'|'+j]) fe++; } }); }
+      var t=x.metaTipo||'leads';
+      return '<div class="rp-c"><div class="rp-h"><div><b style="font-size:14px">'+esc(x.nome)+'</b><div style="font-size:11.5px;color:var(--g4)">'+esc(x.etapa||'')+' · '+(x.ini?fmtDate(x.ini):'')+' a '+(x.fim?fmtDate(x.fim):'sem fim')+'</div></div><span class="tag '+cor+'">'+lbl+'</span></div>'
+        +'<div class="rp-k"><div><b>'+fmtN(x,per_)+'</b><span>'+TIPOS[t].toLowerCase()+' no período</span></div><div><b>'+(mi.m?fmtN(x,mi.at)+' / '+fmtN(x,mi.m):'—')+'</b><span>acumulado / meta</span></div><div><b>'+(mi.m?fmtN(x,mi.precisa):'—')+'</b><span>necessário por dia</span></div><div><b>'+(esp?Math.round(fe/esp*100)+'%':'—')+'</b><span>rotina cumprida ('+fe+'/'+esp+')</span></div></div>'
+        +(mi.m?'<div style="font-size:10.5px;color:var(--g4)">Meta '+Math.round(mi.pctM)+'% · tempo decorrido '+Math.round(mi.pctT)+'% (traço preto)</div><div class="rp-bw"><i style="width:'+mi.pctM+'%"></i><u style="left:'+mi.pctT+'%"></u></div>':'')
+        +'<div class="rp-d '+dr.c+'" style="margin-top:10px"><b>Direção</b><br>'+dr.l.map(esc).join('<br>')+'</div></div>';
+    }).join('');
+  }
+  window.haRel={per:function(p){ per=p; renderAll(); },
+    tick:function(id,k){ var x=(DB.mktPlanos||[]).find(function(p){return p.id===id;}); if(!x) return; x.feitos=x.feitos||{}; x.feitos[k]=!x.feitos[k]; save(); renderAll(); },
+    gerar:gerar,garantir:garantir};
+  if(window.haMktX){ haMktX.hoje=hoje; haMktX.relatorio=relatorio; }
+
+  // campos Meta no formulário + rotina gerada ao guardar
+  var mod=document.getElementById('modal-mkp');
+  if(mod&&!document.getElementById('mkp-metan')){
+    var o=document.getElementById('mkp-obj').closest('.fg'), z=document.createElement('div');
+    z.className='fr fg'; z.innerHTML='<div><label class="fl">Meta (número)</label><input class="fi" type="number" min="0" id="mkp-metan" placeholder="Ex.: 30"></div><div><label class="fl">Meta de</label><select class="fi" id="mkp-metatipo"><option value="leads">Leads</option><option value="vendas">Vendas</option><option value="receita">Receita (€)</option></select></div>';
+    o.parentNode.insertBefore(z,o);
+  }
+  var _n=haMkt.novoPlano; haMkt.novoPlano=function(){ var r=_n.apply(this,arguments); document.getElementById('mkp-metan').value=''; document.getElementById('mkp-metatipo').value='leads'; return r; };
+  var _e=haMkt.editPlano; haMkt.editPlano=function(id){ var r=_e.apply(this,arguments); var x=(DB.mktPlanos||[]).find(function(p){return p.id===id;}); if(x){ document.getElementById('mkp-metan').value=x.metaN||''; document.getElementById('mkp-metatipo').value=x.metaTipo||'leads'; } return r; };
+  var _s=haMkt.savePlano; haMkt.savePlano=function(){
+    var mn=+document.getElementById('mkp-metan').value||0, mt=document.getElementById('mkp-metatipo').value, id=parseInt(document.getElementById('mkp-id').value,10)||0, antes=(DB.mktPlanos||[]).length;
+    var r=_s.apply(this,arguments);
+    var x=id?(DB.mktPlanos||[]).find(function(p){return p.id===id;}):((DB.mktPlanos||[]).length>antes?DB.mktPlanos[DB.mktPlanos.length-1]:null);
+    if(x){ x.metaN=mn; x.metaTipo=mt; garantir(x); save(); renderAll(); }
+    return r;
+  };
 })();
 </script>
 
