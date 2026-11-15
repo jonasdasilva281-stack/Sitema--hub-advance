@@ -10397,6 +10397,53 @@ window.haMktX=(function(){
 <!-- BLOCO 57 · O SDR passa do Marketing para a Prospeção -->
 <script>
 (function(){
+  function N(v){ return (+v||0).toLocaleString('pt-PT'); }
+  function area(){ var g=window.HA_AREA; return (g==='mentorias'||g==='solutions')?g:'mentorias'; }
+  function sm(){ DB.sdrMetas=DB.sdrMetas||{}; var a=area(); DB.sdrMetas[a]=DB.sdrMetas[a]||{}; return DB.sdrMetas[a]; }
+  function addD(iso,n){ var d=new Date(iso+'T12:00:00'); d.setDate(d.getDate()+n); return isoLocal(d); }
+  function placar(){
+    var a=area(), hoje=todayISO(), mes=hoje.slice(0,7), dia=+hoje.slice(8), dm=new Date(+hoje.slice(0,4),+hoje.slice(5,7),0).getDate(),
+      PL=((DB.prospecao&&DB.prospecao.lista)||[]).filter(function(p){return p.area===a;}),
+      metaDia=(DB.prospecao&&DB.prospecao.meta&&DB.prospecao.meta[a])||(a==='mentorias'?60:30),
+      metaReu=+sm().reunioes||(a==='mentorias'?10:6),
+      msgs=function(d1,d2){ return PL.reduce(function(s,p){ return s+(p.msgs||[]).filter(function(m){return typeof m.p==='number'&&m.d>=d1&&m.d<=d2;}).length; },0); },
+      hojeN=msgs(hoje,hoje), sete=msgs(addD(hoje,-6),hoje), mesN=msgs(mes+'-01',hoje),
+      resp=PL.filter(function(p){return ['respondeu','qualificado','pipeline'].indexOf(p.estado)>=0;}).length,
+      qual=PL.filter(function(p){return p.estado==='qualificado'||p.estado==='pipeline';}).length,
+      porResp=PL.filter(function(p){return p.estado==='respondeu';}).length,
+      porMarcar=PL.filter(function(p){return p.estado==='qualificado';}).length,
+      L=(DB.leads||[]), pass=L.filter(function(l){return l.passouVendas&&l.passouVendas.slice(0,7)===mes;}).length,
+      R=(DB.reunioes||[]).filter(function(r){return /sdr|closer/i.test(r.tipo||'')&&(r.data||'').slice(0,7)===mes;}),
+      hojeR=(DB.reunioes||[]).filter(function(r){return r.data===hoje&&(r.estado||'agendada')==='agendada';}).length,
+      due=L.filter(function(l){return (l.etapa==='novo'||l.etapa==='sdr')&&l.proxData&&l.proxData<=hoje;}).length,
+      esperado=metaReu*dia/dm, ritmoDia=sete/7, okR=R.length>=esperado*0.9||dia<=3, okA=ritmoDia>=metaDia*0.8,
+      txResp=mesN?Math.round(resp/Math.max(1,PL.filter(function(p){return p.estado!=='novo';}).length)*100):null,
+      st=(!okR||!okA)?'atraso':'ok';
+    var barra=function(v,m,cor){ var pc=m?Math.min(100,v/m*100):0; return '<div class="rp-bw"><i style="width:'+pc+'%;background:'+(cor||'#0B6E4F')+'"></i></div>'; };
+    var K=function(t,v,sub){ return '<div><b>'+v+'</b><span>'+t+(sub?' · '+sub:'')+'</span></div>'; };
+    var acoes=[];
+    if(hojeN<metaDia) acoes.push(['Abordar mais <b>'+(metaDia-hojeN)+'</b> pessoa'+(metaDia-hojeN>1?'s':'')+' hoje','faltam para a meta de '+metaDia+' abordagens por dia']);
+    if(porResp) acoes.push(['Responder a <b>'+porResp+'</b> pessoa'+(porResp>1?'s':'')+' que já respondeu'+(porResp>1?'ram':''),'responder no mesmo dia aumenta muito a taxa de marcação']);
+    if(porMarcar) acoes.push(['Marcar reunião com <b>'+porMarcar+'</b> pessoa'+(porMarcar>1?'s':'')+' qualificada'+(porMarcar>1?'s':''),'ao marcar, a lead passa para o Pipeline (Closer)']);
+    if(due) acoes.push(['Fazer o follow-up de <b>'+due+'</b> lead'+(due>1?'s':'')+' com contacto para hoje','leads em Lead Novo/SDR com próxima ação para hoje']);
+    if(hojeR) acoes.push(['Confirmar <b>'+hojeR+'</b> reunião'+(hojeR>1?'ões':'')+' marcada'+(hojeR>1?'s':'')+' para hoje','lembrar a pessoa de manhã reduz faltas']);
+    if(!acoes.length) acoes.push(['Tudo em dia: aborde novas pessoas para encher o dia seguinte','adicione pessoas à lista ICP mais abaixo']);
+    var falta=Math.max(0,metaReu-R.length), diasR=Math.max(1,dm-dia+1);
+    var dir=st==='ok'?'No ritmo. Mantenha as abordagens diárias e a resposta no mesmo dia.':
+      ((!okA?'Está a abordar '+Math.round(ritmoDia)+' por dia, abaixo da meta de '+metaDia+': reserve um bloco fixo só para abordar. ':'')+(!okR?'Faltam '+falta+' reuniões para a meta do mês ('+(Math.round(falta/diasR*10)/10).toString().replace('.',',')+' por dia): foque nas pessoas qualificadas e proponha dia e hora na primeira resposta.':''));
+    return '<div class="rp-c" style="border-color:#0B6E4F55">'
+      +'<div class="rp-h"><div><b style="font-size:15px">Painel do SDR</b><div style="font-size:11.5px;color:var(--g4)">metas, ações de hoje e como está o mês</div></div><span class="tag '+(st==='ok'?'tg':'tr')+'">'+(st==='ok'?'No ritmo':'Atrás do ritmo')+'</span></div>'
+      +'<div class="rp-k">'+K('abordadas hoje',hojeN+' / '+metaDia)+K('abordadas · 7 dias',N(sete),Math.round(ritmoDia)+'/dia')+K('reuniões no mês',R.length+' / '+metaReu)+K('passadas p/ vendas',pass,'este mês')+'</div>'
+      +'<div style="font-size:10.5px;color:var(--g4)">Abordagens de hoje</div>'+barra(hojeN,metaDia)
+      +'<div style="font-size:10.5px;color:var(--g4);margin-top:6px">Reuniões do mês (traço = onde devia estar)</div><div class="rp-bw"><i style="width:'+Math.min(100,R.length/metaReu*100)+'%"></i><u style="left:'+Math.min(100,esperado/metaReu*100)+'%"></u></div>'
+      +'<div class="rp-k" style="margin-top:10px">'+K('responderam',resp,txResp!=null?txResp+'% das abordadas':'')+K('qualificadas',qual)+K('por marcar',porMarcar)+K('reuniões hoje',hojeR)+'</div>'
+      +'<div class="pd-h" style="margin-top:6px">O que fazer hoje</div>'+acoes.map(function(x){ return '<div class="pd-o"><div class="t">'+x[0]+'<small>'+x[1]+'</small></div></div>'; }).join('')
+      +'<div class="rp-d '+(st==='ok'?'':'at')+'" style="margin-top:10px"><b>Direção</b><br>'+dir+'</div>'
+      +'<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--g6);font-size:11.5px;color:var(--g4)"><b style="color:inherit">Metas</b>'
+      +'<label>Abordagens por dia <input type="number" min="1" value="'+metaDia+'" style="width:64px;padding:3px 5px;border:1px solid #D1D5DB;border-radius:6px" onchange="haPros.meta(this.value)"></label>'
+      +'<label>Reuniões por mês <input type="number" min="1" value="'+metaReu+'" style="width:64px;padding:3px 5px;border:1px solid #D1D5DB;border-radius:6px" onchange="DB.sdrMetas=DB.sdrMetas||{};DB.sdrMetas[\''+a+'\']=DB.sdrMetas[\''+a+'\']||{};DB.sdrMetas[\''+a+'\'].reunioes=+this.value||0;save();renderAll()"></label>'
+      +(sm().reunioes?'':'<span>(meta de reuniões sugerida: ajuste ao seu objetivo)</span>')+'</div></div>';
+  }
   var _ra=window.renderAll;
   window.renderAll=function(){
     var r=_ra.apply(this,arguments);
@@ -10405,7 +10452,7 @@ window.haMktX=(function(){
       if(P&&P.classList.contains('on')&&P.querySelector('.cap-tabs')&&!P.querySelector('#ha-sdr-box')&&window.haMktX&&haMktX.sdr){
         var f=function(){
           var d=document.createElement('div'); d.id='ha-sdr-box'; d.style.marginBottom='14px';
-          d.innerHTML='<div class="pd-h" style="margin-top:4px">SDR · abordar e marcar reuniões</div>'+haMktX.sdr();
+          d.innerHTML=placar()+'<div class="pd-h" style="margin-top:4px">SDR · abordar e marcar reuniões</div>'+haMktX.sdr();
           var ref=P.querySelector('.ha-dep')||P.querySelector('.cap-tabs'); ref.parentNode.insertBefore(d,ref.nextSibling);
         };
         if(window.haArea) haArea(f); else f();
