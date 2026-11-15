@@ -9114,5 +9114,139 @@ window.haEntrega=(function(){
 })();
 </script>
 
+<!-- BLOCO 42 · CRM dentro da Entrega: só alunas (quem está a fazer um programa). Os leads ficam só no Pipeline. -->
+<style>
+.ni-crm,body.area-geral .ni-crm{display:none !important}
+.en-tabs{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
+.en-tabs button{flex:1;min-width:150px;text-align:left;padding:10px 14px;border-radius:10px;border:1.5px solid #E5E7EB;background:#fff;color:inherit;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600}
+.en-tabs button small{display:block;font-size:10.5px;font-weight:400;opacity:.75;margin-top:1px}
+.en-tabs button.on{background:#0B6E4F;border-color:#0B6E4F;color:#fff}
+.en-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.en-bar input{flex:1;min-width:200px;height:38px;border:1px solid var(--g6);border-radius:10px;padding:0 12px;font:500 13px inherit;background:#fff}
+.en-seg{display:inline-flex;background:#F3F4F6;border:1px solid var(--g6);border-radius:10px;padding:3px;gap:2px}
+.en-seg button{border:0;background:transparent;font:500 12px inherit;color:var(--g4);padding:7px 11px;border-radius:8px;cursor:pointer}
+.en-seg button.on{background:#fff;color:inherit;box-shadow:0 1px 2px rgba(15,23,42,.08)}
+.en-t{padding:0;overflow:hidden}
+.en-r{display:grid;grid-template-columns:minmax(190px,2fr) 1.4fr 1.2fr 1.3fr 90px;gap:14px;align-items:center;padding:12px 16px;border-top:1px solid var(--g6);cursor:pointer}
+.en-r:hover{background:#FAFAFB}
+.en-th{cursor:default;border-top:0;background:#FAFAFB;font-size:11.5px;color:var(--g4);font-weight:500;padding:10px 16px}
+.en-th:hover{background:#FAFAFB}
+.en-p{display:flex;align-items:center;gap:10px;min-width:0}
+.en-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;color:#fff;flex-shrink:0}
+.en-p b{display:block;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.en-p small{font-size:11.5px;color:var(--g4)}
+.en-s{font-size:12px;color:var(--g3)}
+.en-d{padding:6px 16px 16px;background:#FAFAFB;border-top:1px solid var(--g6)}
+.en-d h4{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--g4);margin:12px 0 6px;font-weight:600}
+@media(max-width:800px){.en-th{display:none}.en-r{grid-template-columns:1fr;gap:6px;padding:14px}}
+</style>
+<script>
+window.haEntCrm=(function(){
+  var tab='programas', filtro='fazer', aberto={}, vista=[];
+  var CORES=['#0B6E4F','#5B4FCF','#C05621','#0C447C','#B7791F','#1A9E75','#9B1C1C','#444'];
+  function nk(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+  function ini(n){ var p=String(n||'?').trim().split(/\s+/); return ((p[0]||'?')[0]+(p.length>1?p[p.length-1][0]:'')).toUpperCase(); }
+  function cor(n){ var h=0; String(n||'').split('').forEach(function(c){ h=(h*31+c.charCodeAt(0))%997; }); return CORES[h%CORES.length]; }
+  function digits(t){ var n=String(t||'').replace(/\D/g,''); if(n.length===9) n='351'+n; return n; }
+  function ativoM(m){ return ['Concluído','Inativo','Stand by'].indexOf(m.estado)<0; }
+  function alunas(){
+    var map={};
+    (DB.vendas||[]).forEach(function(v){
+      var m=v.mentoradoId?DB.mentorados.find(function(x){return x.id===v.mentoradoId;}):DB.mentorados.find(function(x){return nk(x.nome)===nk(v.cliente);});
+      var k=m?('m'+m.id):('c'+nk(v.cliente));
+      var a=map[k]||(map[k]={k:k,m:m||null,nome:m?m.nome:v.cliente,vs:[]}); a.vs.push(v);
+    });
+    (DB.mentorados||[]).forEach(function(m){ var k='m'+m.id; if(!map[k]) map[k]={k:k,m:m,nome:m.nome,vs:[]}; });
+    return Object.keys(map).map(function(k){
+      var a=map[k], cur=a.vs.some(function(v){return v.estado==='em_curso';});
+      a.fazer=a.vs.length?cur:(a.m?ativoM(a.m):false);
+      return a;
+    });
+  }
+  function progresso(a){
+    var tot=0, fe=0;
+    a.vs.filter(function(v){return v.estado==='em_curso';}).forEach(function(v){ (v.itens||[]).forEach(function(it,i){ if(it.u==='acesso'||it.mensal||!it.q) return; tot+=it.q; fe+=Math.min(it.q,itemFeito(v,i)); }); });
+    return tot?Math.round(fe/tot*100):null;
+  }
+  function programas(a){
+    var n=a.vs.filter(function(v){return a.fazer?v.estado==='em_curso':true;}).map(function(v){return prodNomeC(v);});
+    n=n.filter(function(x,i){return n.indexOf(x)===i;});
+    if(!n.length&&a.m&&a.m.produto) n=[a.m.produto];
+    return n;
+  }
+  function pago(a){ return a.vs.reduce(function(s,v){ return s+(v.oferta?0:vendaPago(v)); },0); }
+  function eur(n){ return Math.round(n).toLocaleString('pt-PT')+' €'; }
+  function sess(a){
+    if(!a.m) return '<span style="color:var(--g4)">—</span>';
+    var u=null, p=null; try{ u=ultimaSessao(a.m); p=proxSessao(a.m); }catch(e){}
+    return (p?'Próxima: <b>'+fmtDate(p.data)+'</b>':'<span style="color:var(--g4)">sem sessão marcada</span>')+(u?'<br><span style="color:var(--g4)">Última: '+fmtDate(u.data)+'</span>':'');
+  }
+  function estadoTag(a){
+    var e=a.m&&a.m.estado; if(!a.fazer) return '<span class="tag tgr" style="font-size:9.5px">Concluída</span>';
+    if(e==='Urgente') return '<span class="tag tr" style="font-size:9.5px">Urgente</span>';
+    if(e==='Atenção') return '<span class="tag ty" style="font-size:9.5px">Atenção</span>';
+    return '<span class="tag tg" style="font-size:9.5px">Em dia</span>';
+  }
+  function lista(){
+    var q=((document.getElementById('en-q')||{}).value||''), nq=nk(q), dq=q.replace(/\D/g,'');
+    return alunas().filter(function(a){
+      if(filtro==='fazer'&&!a.fazer) return false;
+      if(filtro==='concluidas'&&a.fazer) return false;
+      if(nq&&nk(a.nome).indexOf(nq)<0&&!(dq.length>=3&&String((a.m&&(a.m.tel||a.m.contacto))||'').indexOf(dq)>=0)) return false;
+      return true;
+    }).sort(function(a,b){ return a.nome.localeCompare(b.nome); });
+  }
+  function linhas(){
+    vista=lista();
+    return vista.length?vista.map(function(a,i){
+      var pg=progresso(a), tel=digits(a.m&&(a.m.tel||a.m.contacto||a.m.whatsapp)), ig=String((a.m&&(a.m.insta||a.m.instagram))||'').replace(/^@/,'').trim();
+      var det='';
+      if(aberto[a.k]){
+        det='<div class="en-d"><h4>Compras e entregas</h4>'+(a.vs.length?a.vs.map(function(v){
+          return '<div style="padding:6px 0;border-top:1px solid var(--g6)"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12.5px"><b>'+esc(prodNomeC(v))+'</b><span style="color:var(--g4)">'+fmtDate(v.data)+(v.oferta?' · oferta':' · pago '+eur(vendaPago(v)))+'</span></div>'+entregaBarras(v,false)+'</div>';
+        }).join(''):'<div style="font-size:12px;color:var(--g4)">Sem compras registadas.</div>');
+        var pend=a.m?(a.m.tarefas||[]).filter(function(t){return !t.done;}).length:0;
+        if(a.m&&a.m.notas) det+='<h4>Notas</h4><div style="font-size:12.5px">'+esc(a.m.notas)+'</div>';
+        det+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">'+(a.m?'<button class="btn bp bsm" onclick="event.stopPropagation();haProg.abrir('+a.m.id+')">Acompanhamento'+(pend?' ('+pend+' tarefas)':'')+'</button>':'')+
+          (tel?'<a class="btn bs bsm" target="_blank" href="https://wa.me/'+tel+'" onclick="event.stopPropagation()">WhatsApp</a>':'')+
+          (ig?'<a class="btn bs bsm" target="_blank" href="https://instagram.com/'+esc(ig)+'" onclick="event.stopPropagation()">Instagram</a>':'')+'</div></div>';
+      }
+      return '<div class="en-r" onclick="haEntCrm.abrir('+i+')"><div class="en-p"><div class="en-av" style="background:'+cor(a.nome)+'">'+esc(ini(a.nome))+'</div><div style="min-width:0"><b>'+esc(a.nome)+'</b><small>'+(tel?'+'+tel:'sem telemóvel')+'</small></div></div>'+
+        '<div class="en-s">'+(programas(a).map(esc).join('<br>')||'—')+'</div>'+
+        '<div class="en-s">'+(pg==null?'<span style="color:var(--g4)">—</span>':'<div class="sbw" style="width:90px;display:inline-block;vertical-align:middle"><div class="sbb" style="width:'+pg+'%;background:var(--g)"></div></div> '+pg+'%')+'</div>'+
+        '<div class="en-s">'+sess(a)+'</div><div>'+estadoTag(a)+'</div></div>'+det;
+    }).join(''):'<div class="empty" style="padding:18px">Nenhuma aluna encontrada.</div>';
+  }
+  function crm(){
+    var T=alunas(), nF=T.filter(function(a){return a.fazer;}).length;
+    var seg=[['fazer','A fazer o programa'],['concluidas','Concluídas'],['todas','Todas']].map(function(x){ return '<button class="'+(filtro===x[0]?'on':'')+'" onclick="haEntCrm.filtrar(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('');
+    return '<div class="en-bar"><input id="en-q" placeholder="Procurar aluna por nome ou telemóvel…" oninput="haEntCrm.q()"><div class="en-seg">'+seg+'</div></div>'+
+      '<div class="card en-t"><div class="en-r en-th"><div>Aluna</div><div>Programa</div><div>Progresso</div><div>Sessões</div><div>Estado</div></div><div id="en-rows">'+linhas()+'</div></div>'+
+      '<div style="font-size:12px;color:var(--g4);margin-top:10px">Só entram aqui quem está num programa. Os leads ficam no Pipeline até comprarem.</div>';
+  }
+  function barra(){
+    var nF=alunas().filter(function(a){return a.fazer;}).length;
+    return '<div class="en-tabs"><button class="'+(tab==='programas'?'on':'')+'" onclick="haEntCrm.tab(\'programas\')">Programas<small>lado a lado, com a estrutura de entrega</small></button>'+
+      '<button class="'+(tab==='crm'?'on':'')+'" onclick="haEntCrm.tab(\'crm\')">CRM · '+nF+' aluna'+(nF===1?'':'s')+'<small>todas as pessoas nos programas</small></button></div>';
+  }
+  function draw(){
+    var el=document.getElementById('p-entrega'); if(!el||!el.classList.contains('on')) return;
+    var qv=(document.getElementById('en-q')||{}).value||'', tinha=document.activeElement&&document.activeElement.id==='en-q';
+    el.innerHTML=barra()+(tab==='crm'?crm():el.innerHTML);
+    if(tab==='crm'){ var q=document.getElementById('en-q'); if(q&&qv){ q.value=qv; document.getElementById('en-rows').innerHTML=linhas(); } if(q&&tinha){ q.focus(); q.setSelectionRange(qv.length,qv.length); } }
+  }
+  var _nav=window.nav;
+  window.nav=function(id,el){ if(id==='crm'){ tab='crm'; id='entrega'; el=document.querySelector('.ni-entrega'); } return _nav.call(this,id,el); };
+  var _ra=window.renderAll;
+  window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ draw(); }catch(e){ console.error('CRM Entrega:',e); } return r; };
+  return {
+    tab:function(t){ tab=t; renderAll(); },
+    filtrar:function(f){ filtro=f; renderAll(); },
+    q:function(){ var r=document.getElementById('en-rows'); if(r) r.innerHTML=linhas(); },
+    abrir:function(i){ var a=vista[i]; if(!a) return; aberto[a.k]=!aberto[a.k]; var r=document.getElementById('en-rows'); if(r) r.innerHTML=linhas(); },
+    alunas:alunas
+  };
+})();
+</script>
+
 </body>
 </html>
