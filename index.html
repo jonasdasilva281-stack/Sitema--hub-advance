@@ -9763,7 +9763,7 @@ window.haMktX=(function(){
     var et=document.getElementById('mkp-etapa'); if(et) et.addEventListener('change',function(){ var t=document.getElementById('mkp-passos'); if(t&&!t.value.trim()) t.value=(MODELO[et.value]||[]).join('\n'); });
   }
   window.haMktX.modelo=function(){ var t=document.getElementById('mkp-passos'), et=document.getElementById('mkp-etapa'); if(t&&et) t.value=(MODELO[et.value]||[]).join('\n'); };
-  function opcoes(){ var e=document.getElementById('mkp-produto'); if(e) e.innerHTML='<option value="">— Sem produto —</option>'+(DB.produtos||[]).map(function(p){return '<option value="'+p.id+'">'+esc(p.nomeC||p.nome)+'</option>';}).join(''); }
+  function opcoes(){ var e=document.getElementById('mkp-produto'); if(e) e.innerHTML='<option value="">— Sem produto —</option>'+(DB.produtos||[]).filter(function(p){ var g=window.HA_AREA; return !(g==='mentorias'||g==='solutions')||(p.area||'mentorias')===g; }).map(function(p){return '<option value="'+p.id+'">'+esc(p.nomeC||p.nome)+'</option>';}).join(''); }
   var _n=haMkt.novoPlano; haMkt.novoPlano=function(){ var r=_n.apply(this,arguments); opcoes(); document.getElementById('mkp-produto').value=''; document.getElementById('mkp-etapa').value='Atração orgânica'; document.getElementById('mkp-estrategia').value=''; document.getElementById('mkp-passos').value=MODELO['Atração orgânica'].join('\n'); return r; };
   var _e=haMkt.editPlano; haMkt.editPlano=function(id){ var r=_e.apply(this,arguments); opcoes(); var x=(DB.mktPlanos||[]).find(function(p){return p.id===id;}); if(x){ document.getElementById('mkp-produto').value=x.produtoId||''; document.getElementById('mkp-etapa').value=x.etapa||'Atração orgânica'; document.getElementById('mkp-estrategia').value=x.estrategia||''; document.getElementById('mkp-passos').value=(x.passos||[]).map(function(q){return q.t;}).join('\n'); } return r; };
   var _s=haMkt.savePlano; haMkt.savePlano=function(){
@@ -9977,6 +9977,65 @@ window.haMktX=(function(){
     if(x){ x.metaN=mn; x.metaTipo=mt; garantir(x); save(); renderAll(); }
     return r;
   };
+})();
+</script>
+
+<!-- BLOCO 50 · Formulário de campanha enxuto: escolhe produto, datas e meta; o resto vem preenchido -->
+<style>
+#modal-mkp .mbox{max-height:92vh;overflow:auto}
+#modal-mkp details.mkp-mais{margin:6px 0 12px;border:1px solid var(--g6);border-radius:10px;padding:8px 12px}
+#modal-mkp details.mkp-mais summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--g3)}
+#modal-mkp .mkp-aviso{font-size:11.5px;color:var(--g4);margin:2px 0 10px}
+</style>
+<script>
+(function(){
+  var mod=document.getElementById('modal-mkp'); if(!mod||!document.getElementById('mkp-metan')||!document.getElementById('mkp-estrategia')) return;
+  var $=function(i){return document.getElementById(i);};
+  var row=function(i){return $(i).closest('.fr')||$(i).closest('.fg');};
+  var btn=mod.querySelector('button.bp[onclick*="savePlano"]');
+  // nova ordem: produto/etapa · datas · meta · estratégia · passos · (detalhes)
+  var aviso=document.createElement('div'); aviso.className='mkp-aviso'; aviso.id='mkp-aviso'; aviso.textContent='Escolha o produto, as datas e a meta: a estratégia, os passos e a rotina diária ficam prontos. Pode editar tudo.';
+  var det=document.createElement('details'); det.className='mkp-mais'; det.innerHTML='<summary>Mais detalhes · nome, canal, gasto, objetivo</summary>';
+  var ordem=[aviso,row('mkp-produto'),row('mkp-ini'),row('mkp-metan'),$('mkp-estrategia').closest('.fg'),$('mkp-passos').closest('.fg')];
+  var nomeFg=$('mkp-nome').closest('.fg'), canalRow=row('mkp-canal'), objFg=$('mkp-obj').closest('.fg');
+  [nomeFg,canalRow,objFg].forEach(function(e){ det.appendChild(e); });
+  ordem.forEach(function(e){ btn.parentNode.insertBefore(e,btn); }); btn.parentNode.insertBefore(det,btn);
+
+  var CANAL={'Atração orgânica':'Instagram','Tráfego pago':'Facebook','Prospeção SDR':'Outro'};
+  var PASSOS={
+    'Atração orgânica':['Definir o público e a oferta de {p}','Planear os conteúdos (3 a 5 posts por semana)','Criar e publicar os primeiros conteúdos','Responder a comentários e DMs no mesmo dia','Rever alcance e leads e ajustar o que não funcionou','Fecho: balanço do resultado face à meta'],
+    'Tráfego pago':['Escolher o conteúdo orgânico que já funciona para {p}','Definir público e orçamento diário','Criar anúncios: copy e criativo','Lançar e acompanhar o custo por lead','Otimizar: pausar o que não converte e escalar o que converte','Fecho: balanço do resultado face à meta'],
+    'Prospeção SDR':['Montar a lista de potenciais clientes (ICP) para {p}','Abordar por WhatsApp, DM ou email','Identificar necessidades e qualificar','Marcar reunião com quem tem potencial','Follow-up de todas as conversas abertas','Fecho: balanço do resultado face à meta']
+  };
+  var TIPO={leads:'leads',vendas:'vendas',receita:'€ de receita'};
+  var last={nome:'',obj:'',est:'',pas:'',canal:''}, ativo=false;
+  function addD(iso,n){ var d=new Date(iso+'T12:00:00'); d.setDate(d.getDate()+n); return isoLocal(d); }
+  function pnome(){ var id=parseInt($('mkp-produto').value,10)||0, p=(DB.produtos||[]).find(function(x){return x.id===id;}); return p?(p.nomeC||p.nome):''; }
+  function pobj(){ var id=parseInt($('mkp-produto').value,10)||0; return (DB.produtos||[]).find(function(x){return x.id===id;})||null; }
+  function livre(el,ult){ return !el.value.trim()||el.value===ult; }
+  function auto(){
+    if(!ativo) return;
+    var p=pnome()||'o produto', pr=pobj(), et=$('mkp-etapa').value, ini=$('mkp-ini').value, fim=$('mkp-fim').value, mn=$('mkp-metan').value, mt=$('mkp-metatipo').value;
+    var nome=(pnome()?pnome()+' · ':'')+et; if(livre($('mkp-nome'),last.nome)||/^Campanha · /.test($('mkp-nome').value)){ $('mkp-nome').value=nome; last.nome=nome; }
+    if(livre({value:$('mkp-canal').value},last.canal)||last.canal===''){ $('mkp-canal').value=CANAL[et]||'Outro'; last.canal=$('mkp-canal').value; }
+    var obj=mn?(mn+' '+TIPO[mt]+(pnome()?' de '+pnome():'')+(fim?' até '+fmtDate(fim):'')):''; if(livre($('mkp-obj'),last.obj)){ $('mkp-obj').value=obj; last.obj=obj; }
+    var preco=pr&&pr.valor?(' (€'+pr.valor+(pr.tipo==='recorrente'?'/mês':'')+')'):'';
+    var est={
+      'Atração orgânica':'Atrair o público ideal de '+p+preco+' com conteúdo orgânico'+(fim?' até '+fmtDate(fim):'')+(mn?', para chegar a '+mn+' '+TIPO[mt]:'')+'. Mostrar o problema que '+p+' resolve, provas e resultados, e terminar sempre com uma chamada para ação.',
+      'Tráfego pago':'Pagar para acelerar o que já tem resposta no orgânico para '+p+preco+(fim?', até '+fmtDate(fim):'')+(mn?', com meta de '+mn+' '+TIPO[mt]:'')+'. Testar 2 a 3 criativos, manter o que baixa o custo por lead e pausar o resto.',
+      'Prospeção SDR':'Encontrar e abordar potenciais clientes de '+p+preco+(fim?' até '+fmtDate(fim):'')+(mn?', para chegar a '+mn+' '+TIPO[mt]:'')+'. O SDR identifica necessidades, qualifica e marca reunião com quem tem potencial.'
+    }[et]||'';
+    if(livre($('mkp-estrategia'),last.est)){ $('mkp-estrategia').value=est; last.est=est; }
+    var L=(PASSOS[et]||[]).map(function(t){return t.replace('{p}',p);}), n=L.length;
+    if(ini&&fim&&fim>=ini){ var tot=Math.round((new Date(fim+'T12:00:00')-new Date(ini+'T12:00:00'))/864e5); L=L.map(function(t,i){ return fmtDate(addD(ini,n>1?Math.round(i*tot/(n-1)):0))+' · '+t; }); }
+    var pas=L.join('\n'); if(livre($('mkp-passos'),last.pas)){ $('mkp-passos').value=pas; last.pas=pas; }
+  }
+  ['mkp-produto','mkp-etapa','mkp-ini','mkp-fim','mkp-metan','mkp-metatipo'].forEach(function(i){ $(i).addEventListener('change',auto); $(i).addEventListener('input',auto); });
+  // novo: tudo pré-preenchido (14 dias a partir de hoje); editar: não mexe no que já existe
+  function novo(){ ativo=true; last={nome:'',obj:'',est:'',pas:'',canal:''}; var h=todayISO(); $('mkp-ini').value=h; $('mkp-fim').value=addD(h,13); $('mkp-nome').value=''; $('mkp-estrategia').value=''; $('mkp-passos').value=''; $('mkp-obj').value=''; auto(); }
+  var _n=haMkt.novoPlano; haMkt.novoPlano=function(){ var r=_n.apply(this,arguments); novo(); return r; };
+  var _e=haMkt.editPlano; haMkt.editPlano=function(){ var r=_e.apply(this,arguments); ativo=false; return r; };
+  var _x=haMktX.nova; haMktX.nova=function(){ var r=_x.apply(this,arguments); novo(); return r; };
 })();
 </script>
 
