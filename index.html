@@ -469,30 +469,8 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
   <!-- OVERVIEW -->
   <div class="panel on" id="p-overview">
 
-    <!-- Funil Hub Advance -->
-    <div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;align-items:stretch">
-      <div style="flex:1;min-width:110px;background:#0C0C12;border-radius:12px;padding:11px;text-align:center">
-        <div style="font-size:16px;margin-bottom:3px">📚</div>
-        <div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:2px">Curso</div>
-        <div style="font-size:14px;font-weight:700;color:#00B37A">€47</div>
-        <div style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px">Não preparado</div>
-      </div>
-      <div style="display:flex;align-items:center;color:var(--g4);font-size:16px;flex-shrink:0">›</div>
-      <div style="flex:1;min-width:110px;background:#0C0C12;border-radius:12px;padding:11px;text-align:center">
-        <div style="font-size:16px;margin-bottom:3px">👥</div>
-        <div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:2px">Comunidade</div>
-        <div style="font-size:14px;font-weight:700;color:#7C6FED">€30/mês</div>
-        <div style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px">Sem orçamento · 4ª feira</div>
-      </div>
-      <div style="display:flex;align-items:center;color:var(--g4);font-size:16px;flex-shrink:0">›</div>
-      <div style="flex:2;min-width:140px;background:linear-gradient(135deg,#0B6E4F,#009B6A);border-radius:12px;padding:11px;text-align:center;box-shadow:0 4px 16px rgba(0,179,122,.2)">
-        <div style="font-size:16px;margin-bottom:3px">🎯</div>
-        <div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:2px">Mentoria Individual</div>
-        <div style="font-size:15px;font-weight:700;color:#fff">€997</div>
-        <div style="font-size:9px;color:rgba(255,255,255,.65);margin-top:2px">12 encontros · 6 meses</div>
-        <div style="font-size:9px;color:rgba(255,255,255,.45)">Inclui Curso + Comunidade</div>
-      </div>
-    </div>
+    <!-- Escada de produtos (dinâmica, vem dos produtos de cada setor) -->
+    <div id="ov-escada" style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;align-items:stretch"></div>
 
     <!-- KPIs -->
     <div class="g4" style="margin-bottom:14px">
@@ -4908,7 +4886,6 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     b.id='area-chip'; b.type='button'; b.title='Trocar de área';
     b.onclick=showChooser;
     bar.insertBefore(b,bar.firstChild);
-    var funil=document.querySelector('#p-overview > div'); if(funil) funil.classList.add('ha-mentoria-only');
     var info=document.querySelector('#p-mentorados > .al'); if(info) info.classList.add('ha-mentoria-only');
     var logo=document.querySelector('.sb-logo img');
     if(logo){ logo.title='Voltar ao início'; logo.addEventListener('click',goHome); }
@@ -10460,6 +10437,29 @@ window.haMktX=(function(){
     }catch(e){ console.error('SDR na Prospeção:',e); }
     return r;
   };
+})();
+</script>
+
+
+<!-- BLOCO 58 · Escada de produtos na Visão Geral: vem dos produtos reais do setor (Entrada, Nutrição, Transformação) -->
+<script>
+(function(){
+  function eur(p){ return '€'+(+p.valor||0).toLocaleString('pt-PT')+(p.tipo==='recorrente'?'/mês':''); }
+  function fill(){
+    var el=document.getElementById('ov-escada'); if(!el||typeof HA_NIVEIS==='undefined') return;
+    var cols=HA_NIVEIS.map(function(n,i){
+      var ps=(DB.produtos||[]).filter(function(p){return haNivel(p)===n.k;}).sort(function(a,b){return (+a.valor||0)-(+b.valor||0);});
+      var topo=i===HA_NIVEIS.length-1;
+      return '<div style="flex:'+(topo?2:1)+';min-width:150px;background:'+(topo?'linear-gradient(135deg,#0B6E4F,#009B6A)':'#0C0C12')+';border-radius:12px;padding:11px 12px">'
+        +'<div style="font-size:11px;font-weight:700;color:'+(topo?'#fff':n.c)+';letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">'+esc(n.n)+'</div>'
+        +(ps.length?ps.slice(0,4).map(function(p){ return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:#fff;padding:2px 0"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(p.nomeC||p.nome)+'</span><b>'+eur(p)+'</b></div>'; }).join('')+(ps.length>4?'<div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:2px">+ '+(ps.length-4)+' produtos</div>':'')
+          :'<div style="font-size:11px;color:rgba(255,255,255,.5)">Sem produtos neste nível</div>')
+        +'</div>';
+    });
+    el.innerHTML=cols.join('<div style="display:flex;align-items:center;color:var(--g4);font-size:16px;flex-shrink:0">›</div>');
+  }
+  var _ra=window.renderAll;
+  window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ if(window.haArea) haArea(fill); else fill(); }catch(e){ console.error('Escada de produtos:',e); } return r; };
 })();
 </script>
 
