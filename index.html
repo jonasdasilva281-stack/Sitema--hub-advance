@@ -9436,14 +9436,38 @@ window.haFinX=(function(){
   }
   function meses(n){ var o=[], d=new Date(); d.setDate(1); for(var i=n-1;i>=0;i--){ var x=new Date(d.getFullYear(),d.getMonth()-i,1); o.push({k:x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2),l:MES[x.getMonth()]}); } return o; }
   function somaMes(arr,campo){ var m={}; arr.forEach(function(x){ var k=(x.data||'').slice(0,7); if(k) m[k]=(m[k]||0)+(+x.valor||0); }); return m; }
+  var vista='mes';
+  try{ vista=sessionStorage.getItem('fx_vista')||'mes'; }catch(e){}
+  function chaveAno(){ return new Date().getFullYear()+'|'+(ga()||'geral'); }
+  function objAno(){
+    var ano=new Date().getFullYear(), sv=(DB.finObjAno||{})[chaveAno()];
+    if(sv!=null&&sv!=='') return {v:+sv,def:false};
+    var soma=0,n=0; for(var m=1;m<=12;m++){ var mm=ano+'-'+('0'+m).slice(-2), f=DB.funil&&DB.funil.meses&&DB.funil.meses[mm]; if(f&&f.metas&&f.metas.faturado!=null){ soma+=+f.metas.faturado; n++; } }
+    return {v:n?soma+(12-n)*metaMes(todayISO().slice(0,7)):12*metaMes(todayISO().slice(0,7)),def:true};
+  }
+  function seg(){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px"><div class="fx-l">Metas e objetivos</div><div class="en-seg" style="display:inline-flex;background:#F3F4F6;border:1px solid var(--g6);border-radius:10px;padding:3px;gap:2px">'
+      +[['mes','Mês'],['ano','Ano '+new Date().getFullYear()]].map(function(x){return '<button style="border:0;background:'+(vista===x[0]?'#fff':'transparent')+';box-shadow:'+(vista===x[0]?'0 1px 2px rgba(15,23,42,.08)':'none')+';font:600 12px inherit;color:'+(vista===x[0]?'inherit':'var(--g4)')+';padding:7px 14px;border-radius:8px;cursor:pointer" onclick="haFinX.vista(\''+x[0]+'\')">'+x[1]+'</button>';}).join('')+'</div></div>';
+  }
   function metas(){
-    var hoje=todayISO(), mes=hoje.slice(0,7), pg=(DB.pagamentos||[]).filter(function(p){return p.estado==='Pago';}), rec=somaMes(pg)[mes]||0;
-    var obj=metaMes(mes), d=new Date(), dia=d.getDate(), dm=new Date(d.getFullYear(),d.getMonth()+1,0).getDate(), proj=dia?rec/dia*dm:0;
-    var pc=obj?Math.min(100,Math.round(rec/obj*100)):0, pc5=Math.min(100,Math.round(rec/5000*100));
-    var h='<div class="fx-m">';
-    h+='<div class="fx-c"><div class="fx-l">Objetivo do mês</div><div class="fx-v">'+eur(rec)+' <span style="font-size:14px;font-weight:500;color:var(--g4)">de '+eur(obj)+'</span></div><div class="fx-b"><i style="width:'+pc+'%"></i></div><div class="fx-s"><b>'+pc+'%</b> do objetivo · '+(obj>rec?'faltam <b>'+eur(obj-rec)+'</b>':'<b style="color:var(--g)">objetivo atingido</b>')+'</div></div>';
-    h+='<div class="fx-c"><div class="fx-l">Meta de faturação</div><div class="fx-v">'+eur(rec)+' <span style="font-size:14px;font-weight:500;color:var(--g4)">de 5.000 €</span></div><div class="fx-b"><i style="width:'+pc5+'%"></i></div><div class="fx-s"><b>'+pc5+'%</b> da meta mensal</div></div>';
-    h+='<div class="fx-c"><div class="fx-l">Ritmo do mês</div><div class="fx-v">'+eur(proj)+'</div><div class="fx-s">projeção para fechar o mês ao ritmo atual · dia '+dia+' de '+dm+'</div>'+(obj?'<div class="fx-s" style="margin-top:6px;color:'+(proj>=obj?'var(--g)':'#B7791F')+'"><b>'+(proj>=obj?'No caminho do objetivo':'Abaixo do objetivo em '+eur(obj-proj))+'</b></div>':'')+'</div>';
+    var hoje=todayISO(), mes=hoje.slice(0,7), ano=hoje.slice(0,4), pg=(DB.pagamentos||[]).filter(function(p){return p.estado==='Pago';});
+    var d=new Date(), h=seg();
+    if(vista==='ano'){
+      var rec=pg.filter(function(p){return (p.data||'').slice(0,4)===ano;}).reduce(function(s,p){return s+(+p.valor||0);},0), o=objAno(), obj=o.v;
+      var mesN=d.getMonth()+1, dia=d.getDate(), dm=new Date(d.getFullYear(),d.getMonth()+1,0).getDate(), decor=(mesN-1)+dia/dm, proj=decor?rec/decor*12:0;
+      var pc=obj?Math.min(100,Math.round(rec/obj*100)):0, falta=Math.max(0,obj-rec), mesesRest=Math.max(0.5,12-decor);
+      h+='<div class="fx-m">';
+      h+='<div class="fx-c"><div class="fx-l">Objetivo do ano</div><div class="fx-v">'+eur(rec)+' <span style="font-size:14px;font-weight:500;color:var(--g4)">de '+eur(obj)+'</span></div><div class="fx-b"><i style="width:'+pc+'%"></i></div><div class="fx-s"><b>'+pc+'%</b> do objetivo · '+(obj>rec?'faltam <b>'+eur(falta)+'</b>':'<b style="color:var(--g)">objetivo atingido</b>')+'</div><div class="fx-s" style="margin-top:6px"><a style="color:var(--g);cursor:pointer;font-weight:600" onclick="haFinX.definirAno()">'+(o.def?'Definir o objetivo do ano':'Alterar o objetivo do ano')+'</a>'+(o.def?' · calculado pelas metas mensais':'')+'</div></div>';
+      h+='<div class="fx-c"><div class="fx-l">Preciso de faturar por mês</div><div class="fx-v">'+eur(falta/mesesRest)+'</div><div class="fx-s">em média, nos '+Math.round(mesesRest*10)/10+' meses que faltam, para chegar ao objetivo</div></div>';
+      h+='<div class="fx-c"><div class="fx-l">Ritmo do ano</div><div class="fx-v">'+eur(proj)+'</div><div class="fx-s">projeção para fechar o ano ao ritmo atual</div>'+(obj?'<div class="fx-s" style="margin-top:6px;color:'+(proj>=obj?'var(--g)':'#B7791F')+'"><b>'+(proj>=obj?'No caminho do objetivo':'Abaixo do objetivo em '+eur(obj-proj))+'</b></div>':'')+'</div>';
+      return h+'</div>';
+    }
+    var rec2=somaMes(pg)[mes]||0, obj2=metaMes(mes), dia2=d.getDate(), dm2=new Date(d.getFullYear(),d.getMonth()+1,0).getDate(), proj2=dia2?rec2/dia2*dm2:0;
+    var pc2=obj2?Math.min(100,Math.round(rec2/obj2*100)):0, pc5=Math.min(100,Math.round(rec2/5000*100));
+    h+='<div class="fx-m">';
+    h+='<div class="fx-c"><div class="fx-l">Objetivo do mês</div><div class="fx-v">'+eur(rec2)+' <span style="font-size:14px;font-weight:500;color:var(--g4)">de '+eur(obj2)+'</span></div><div class="fx-b"><i style="width:'+pc2+'%"></i></div><div class="fx-s"><b>'+pc2+'%</b> do objetivo · '+(obj2>rec2?'faltam <b>'+eur(obj2-rec2)+'</b>':'<b style="color:var(--g)">objetivo atingido</b>')+'</div></div>';
+    h+='<div class="fx-c"><div class="fx-l">Meta de faturação</div><div class="fx-v">'+eur(rec2)+' <span style="font-size:14px;font-weight:500;color:var(--g4)">de 5.000 €</span></div><div class="fx-b"><i style="width:'+pc5+'%"></i></div><div class="fx-s"><b>'+pc5+'%</b> da meta mensal</div></div>';
+    h+='<div class="fx-c"><div class="fx-l">Ritmo do mês</div><div class="fx-v">'+eur(proj2)+'</div><div class="fx-s">projeção para fechar o mês ao ritmo atual · dia '+dia2+' de '+dm2+'</div>'+(obj2?'<div class="fx-s" style="margin-top:6px;color:'+(proj2>=obj2?'var(--g)':'#B7791F')+'"><b>'+(proj2>=obj2?'No caminho do objetivo':'Abaixo do objetivo em '+eur(obj2-proj2))+'</b></div>':'')+'</div>';
     return h+'</div>';
   }
   function barras(){
@@ -9499,7 +9523,14 @@ window.haFinX=(function(){
     rotinaParaAgenda();
   }
   var _r=window.renderFinanceiro; window.renderFinanceiro=function(){ var r=_r.apply(this,arguments); try{ render(); }catch(e){ console.error('Financeiro gráficos:',e); } return r; };
-  return {render:render};
+  return {render:render,
+    vista:function(v){ vista=v; try{ sessionStorage.setItem('fx_vista',v); }catch(e){} render(); },
+    definirAno:function(){
+      var atual=objAno().v, r=prompt('Objetivo de faturação para '+new Date().getFullYear()+' (em €):',Math.round(atual)); if(r===null) return;
+      var n=parseFloat(String(r).replace(/\s/g,'').replace(',','.')); if(!isFinite(n)||n<0){ toast('Valor inválido','#C0392B'); return; }
+      DB.finObjAno=DB.finObjAno||{}; DB.finObjAno[chaveAno()]=n; save(); render(); toast('✓ Objetivo do ano guardado');
+    }
+  };
 })();
 </script>
 
