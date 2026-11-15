@@ -9111,6 +9111,7 @@ window.haEntrega=(function(){
     return '<div class="ha-en-p"><div class="n"><b>'+esc(v.cliente)+'</b><span>desde '+fmtDate(v.data)+'</span></div>'+entregaBarras(v,false)+
       (v.mentoradoId?'<div style="margin-top:6px"><button class="btn bs bsm" onclick="haProg.abrir('+v.mentoradoId+')">Acompanhamento</button></div>':'')+'</div>';
   }
+  function ed(p){ return p?'<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--g6)"><button class="btn bs bsm" onclick="editProduto('+p.id+')">✏️ Editar produto</button></div>':''; }
   function coluna(g){
     var p=g.p, fm=window.haFormato(p), its=p?entregaveisDe(p):[], fs=p?(p.cronograma||[]):[];
     var todos=g.vs.concat(g.fin);
@@ -9120,7 +9121,7 @@ window.haEntrega=(function(){
       h+='<div style="margin-top:8px"><span class="tag '+(ev?'tp':'tg')+'" style="font-size:9.5px">'+(ev?'Evento de 1 dia':'Produto · acesso imediato')+'</span>'+(ev&&d?' <span style="font-size:11.5px;color:var(--g3)">'+(fez?'realizado em ':'')+fmtDate(d)+'</span>':'')+'</div>';
       if(ev&&fs.length) h+='<details><summary>Programa do dia ('+fs.length+')</summary><ol>'+fs.map(fase).join('')+'</ol></details>';
       h+='<div class="ha-en-sec">'+(ev?'Inscritos':'Compradores')+'</div>'+(todos.length?todos.map(simples).join(''):'<div style="font-size:12px;color:var(--g4)">Ainda sem '+(ev?'inscritos':'compradores')+'.</div>');
-      return h+'</div>';
+      return h+ed(p)+'</div>';
     }
     var h='<div class="ha-en-col"><div class="ha-en-h"><b>'+esc(p?(p.nomeC||p.nome):g.nome)+'</b><span>'+plural(g.vs.length+g.ms.length,'pessoa','pessoas')+'</span></div>';
     h+='<div class="ha-en-sec">Estrutura de entrega</div>';
@@ -9128,7 +9129,7 @@ window.haEntrega=(function(){
     if(fs.length) h+='<details><summary>Fases ('+fs.length+')</summary><ol>'+fs.map(fase).join('')+'</ol></details>';
     h+='<div class="ha-en-sec">Pessoas dentro</div>'+((g.vs.length||g.ms.length)?g.vs.map(pessoa).join('')+g.ms.map(pessoaM).join(''):'<div style="font-size:12px;color:var(--g4)">Ainda sem pessoas neste programa.</div>');
     if(g.fin.length) h+='<details><summary>Concluídas ('+g.fin.length+')</summary><div style="font-size:12px;color:var(--g3);padding-top:4px">'+g.fin.map(function(v){return esc(v.cliente);}).join(' · ')+'</div></details>';
-    return h+'</div>';
+    return h+ed(p)+'</div>';
   }
   function badge(){
     var b=document.getElementById('nb-entrega'); if(!b) return;
@@ -9138,7 +9139,7 @@ window.haEntrega=(function(){
   function render(){
     var el=document.getElementById('p-entrega'); badge(); if(!el||!el.classList.contains('on')) return;
     var gs=grupos(), pes=gs.reduce(function(s,g){return s+g.vs.length+g.ms.length;},0);
-    var h='<div class="ha-en-top"><b>Entrega</b><span>'+plural(gs.length,'programa','programas')+' · '+plural(pes,'pessoa dentro','pessoas dentro')+'</span></div>';
+    var h='<div class="ha-en-top"><b>Entrega</b><span>'+plural(gs.length,'programa','programas')+' · '+plural(pes,'pessoa dentro','pessoas dentro')+'</span><button class="btn bp bsm" style="margin-left:auto" onclick="novoProduto()">+ Novo produto</button></div>';
     h+=gs.length?'<div class="ha-en">'+gs.map(coluna).join('')+'</div>':'<div class="card"><div class="empty">Ainda não há pessoas em programas. Quando registar uma compra, ela aparece aqui, dentro do programa.</div></div>';
     el.innerHTML=h;
   }
