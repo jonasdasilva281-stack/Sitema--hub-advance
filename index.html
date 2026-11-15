@@ -7850,11 +7850,11 @@ window.haCap=(function(){
 <!-- BLOCO 23 · Secção Captação organizada: 3 separadores + "Agora" -->
 <script>
 (function(){
-  var TABS=[['marketing','Marketing','atrair e gerar leads'],['prospecao','Prospeção','SDR: abordar e marcar reuniões'],['captacao','Captação','o que fazer a seguir'],['metas','Metas','o que queremos']];
+  var TABS=[['captacao','Painel','hoje e funil'],['marketing','Marketing','atrair e gerar leads'],['prospecao','Prospeção','SDR: abordar e marcar reuniões'],['metas','Metas','o que queremos']];
   function go(p){ return "nav('"+p+"',document.querySelector('.ni[onclick*=&quot;\\'"+p+"\\'&quot;]'))"; }
   function barra(at){
     return '<div class="cap-tabs" style="display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap">'+TABS.map(function(t,i){ var on=t[0]===at;
-      return '<button type="button" onclick="'+go(t[0])+'" style="flex:1;min-width:150px;text-align:left;padding:10px 14px;border-radius:10px;border:1.5px solid '+(on?'#0B6E4F':'#E5E7EB')+';background:'+(on?'#0B6E4F':'#fff')+';color:'+(on?'#fff':'inherit')+';cursor:pointer;font-family:inherit"><div style="font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.05em">'+(i+1)+'</div><div style="font-size:13.5px;font-weight:700">'+t[1]+'</div><div style="font-size:11px;opacity:.8">'+t[2]+'</div></button>'; }).join('')+'</div>';
+      return '<button type="button" onclick="'+go(t[0])+'" style="flex:1;min-width:150px;text-align:left;padding:10px 14px;border-radius:10px;border:1.5px solid '+(on?'#0B6E4F':'#E5E7EB')+';background:'+(on?'#0B6E4F':'#fff')+';color:'+(on?'#fff':'inherit')+';cursor:pointer;font-family:inherit"><div style="font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.05em">'+(i===0?'início':i)+'</div><div style="font-size:13.5px;font-weight:700">'+t[1]+'</div><div style="font-size:11px;opacity:.8">'+t[2]+'</div></button>'; }).join('')+'</div>';
   }
   function ga(){ return (typeof HA_AREA!=='undefined'&&HA_AREA)||null; }
   function at(x){ var g=ga(); if(g==='mentorias'||g==='solutions') return ''; return ' <span class="tag tgr" style="font-size:9.5px">'+((x.area||'mentorias')==='solutions'?'Solutions':'Mentorias')+'</span>'; }
@@ -9802,7 +9802,7 @@ window.haMktX=(function(){
 </style>
 <script>
 (function(){
-  var JUNTOS=['marketing','prospecao','captacao'];
+  var JUNTOS=['marketing','prospecao'];
   function numerar(){
     JUNTOS.forEach(function(id,i){ var n=document.querySelector('.sb-nav .ni[onclick*="\''+id+'\'"] .ni-label'); if(n&&!/^\d ·/.test(n.textContent)) n.textContent=(i+1)+' · '+n.textContent; });
   }
@@ -9810,7 +9810,7 @@ window.haMktX=(function(){
   (function(){ // ordem no menu: Marketing, Prospeção, Captação
     var q=function(id){ return document.querySelector('.sb-nav .ni[onclick*="\''+id+'\'"]'); };
     var m=q('marketing'), p=q('prospecao'), c=q('captacao');
-    if(m&&p&&c&&c.parentNode){ c.parentNode.insertBefore(m,c); c.parentNode.insertBefore(p,c); }
+    if(m&&p&&c&&m.parentNode){ m.parentNode.insertBefore(p,m.nextSibling); var lc=c.querySelector('.ni-label'); if(lc) lc.textContent='Painel da captação'; }
   })();
   var DEP={
     marketing:['Departamento 01 — Marketing','Gerar atenção, autoridade, procura e leads.',
