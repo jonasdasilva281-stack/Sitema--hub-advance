@@ -9246,15 +9246,25 @@ window.haEntCrm=(function(){
       '<button class="'+(tab==='crm'?'on':'')+'" onclick="haEntCrm.tab(\'crm\')">Base de clientes · '+nF+' aluna'+(nF===1?'':'s')+'<small>todas as pessoas nos programas</small></button></div>';
   }
   function draw(){
-    var el=document.getElementById('p-entrega'); if(!el||!el.classList.contains('on')) return;
+    var el=document.getElementById('p-alunos'); if(!el||!el.classList.contains('on')) return;
     var qv=(document.getElementById('en-q')||{}).value||'', tinha=document.activeElement&&document.activeElement.id==='en-q';
-    var velho=el.querySelector('#en-base'); if(velho) velho.parentNode.removeChild(velho);
     filtro='fazer';
-    el.insertAdjacentHTML('beforeend','<div id="en-base"><div class="ha-en-top" style="margin-top:26px"><b>Base de alunos ativos</b><span>'+alunas().filter(function(a){return a.fazer;}).length+' a fazer um programa</span></div>'+crm()+'</div>');
+    var n=alunas().filter(function(a){return a.fazer;}).length;
+    el.innerHTML='<div class="ha-en-top"><b>Base de alunos ativos</b><span>'+n+' a fazer um programa</span></div>'+crm();
     var q=document.getElementById('en-q'); if(q&&qv){ q.value=qv; document.getElementById('en-rows').innerHTML=linhas(); } if(q&&tinha){ q.focus(); q.setSelectionRange(qv.length,qv.length); }
   }
+  // nova secção no menu, logo abaixo de Entrega
+  var C=document.getElementById('content');
+  if(C&&!document.getElementById('p-alunos')){ var d=document.createElement('div'); d.className='panel'; d.id='p-alunos'; C.appendChild(d); }
+  if(typeof titles==='object') titles.alunos='Base de alunos ativos';
+  var ent=document.querySelector('.ni-entrega');
+  if(ent&&!document.querySelector('.ni-alunos')){
+    var ni=document.createElement('div'); ni.className='ni ni-alunos'; ni.setAttribute('onclick',"nav('alunos',this)");
+    var ic=ent.querySelector('.ni-icon'); ni.innerHTML=(ic?ic.outerHTML:'')+'<span class="ni-label">Base de alunos ativos</span>';
+    ent.parentNode.insertBefore(ni,ent.nextSibling);
+  }
   var _nav=window.nav;
-  window.nav=function(id,el){ if(id==='crm'){ tab='crm'; id='entrega'; el=document.querySelector('.ni-entrega'); } return _nav.call(this,id,el); };
+  window.nav=function(id,el){ if(id==='crm'){ id='alunos'; el=document.querySelector('.ni-alunos'); } return _nav.call(this,id,el); };
   var _ra=window.renderAll;
   window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ draw(); }catch(e){ console.error('CRM Entrega:',e); } return r; };
   return {
