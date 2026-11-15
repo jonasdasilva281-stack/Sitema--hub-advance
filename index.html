@@ -9078,12 +9078,12 @@ window.haEntrega=(function(){
     function get(p,nome){ var k=p?('p'+p.id):('n:'+nk(nome)); if(!g[k]){ g[k]={p:p||null,nome:nome,vs:[],ms:[],fin:[]}; ordem.push(k); } return g[k]; }
     (DB.produtos||[]).forEach(function(p){ get(p,p.nomeC||p.nome); });          // todos os produtos, sempre
     (DB.vendas||[]).forEach(function(v){
-      var p=DB.produtos.find(function(x){return x.id===v.produtoId;})||DB.produtos.find(function(x){return x.nome===v.produto;});
+      var p=DB.produtos.find(function(x){return x.id===v.produtoId;})||haProdPorNome(v.produto);
       var gr=get(p,v.produto||'Sem programa'); (v.estado==='em_curso'?gr.vs:gr.fin).push(v);
     });
     (DB.mentorados||[]).forEach(function(m){                                      // alunas sem compra registada
       if(['Concluído','Inativo','Stand by'].indexOf(m.estado)>=0) return;
-      var p=DB.produtos.find(function(x){return x.nome===m.produto;}), gr=get(p,m.produto||'Sem programa');
+      var p=haProdPorNome(m.produto), gr=get(p,m.produto||'Sem programa');
       var tem=gr.vs.concat(gr.fin).some(function(v){return v.mentoradoId===m.id||nk(v.cliente)===nk(m.nome);});
       if(!tem) gr.ms.push(m);
     });
@@ -9100,6 +9100,18 @@ window.haEntrega=(function(){
     if(p.digital) return 'produto';
     if(/workshop|imers|evento|masterclass/i.test(p.nome||'')) return 'evento';
     return 'sessoes';
+  };
+  function _nk(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); }
+  function _lev(a,b){ var m=a.length,n=b.length,d=[],i,j; if(Math.abs(m-n)>3) return 9; for(i=0;i<=m;i++){d[i]=[i];} for(j=1;j<=n;j++) d[0][j]=j;
+    for(i=1;i<=m;i++) for(j=1;j<=n;j++) d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1)); return d[m][n]; }
+  // acha o produto mesmo com pequenas diferenças no nome (ex.: "Intelligente" vs "Inteligente")
+  window.haProdPorNome=function(nome){
+    var ps=DB.produtos||[], x=_nk(nome); if(!x) return null;
+    var e=ps.find(function(p){return p.nome===nome;}); if(e) return e;
+    var cands=function(p){ return [_nk(p.nome),_nk(p.nomeC)].filter(Boolean); };
+    e=ps.find(function(p){return cands(p).indexOf(x)>=0;}); if(e) return e;
+    var best=null,bd=99; ps.forEach(function(p){ cands(p).forEach(function(c){ var d=_lev(x,c); if(d<bd){bd=d;best=p;} }); });
+    return bd<=Math.max(2,Math.round(x.length*0.08))?best:null;
   };
   window.haFormatoV=function(v){
     var p=(DB.produtos||[]).find(function(x){return x.id===v.produtoId;})||(DB.produtos||[]).find(function(x){return x.nome===v.produto;});
@@ -9125,13 +9137,13 @@ window.haEntrega=(function(){
   }
   function coluna(g){
     var p=g.p, fm=window.haFormato(p), its=p?entregaveisDe(p):[], fs=p?(p.cronograma||[]):[];
-    var todos=g.vs.concat(g.fin);
+    var todos=g.vs.concat(g.fin), semC=g.ms;
     if(fm!=='sessoes'){
       var ev=fm==='evento', d=p?evData(p):'', fez=ev&&d&&d<todayISO();
-      var h='<div class="ha-en-col"><div class="ha-en-h"><b>'+esc(p?(p.nomeC||p.nome):g.nome)+'</b><span>'+plural(todos.length,ev?'inscrito':'comprador',ev?'inscritos':'compradores')+'</span></div>';
+      var h='<div class="ha-en-col"><div class="ha-en-h"><b>'+esc(p?(p.nomeC||p.nome):g.nome)+'</b><span>'+plural(todos.length+semC.length,ev?'inscrito':'comprador',ev?'inscritos':'compradores')+'</span></div>';
       h+='<div style="margin-top:8px"><span class="tag '+(ev?'tp':'tg')+'" style="font-size:9.5px">'+(ev?'Evento de 1 dia':'Produto · acesso imediato')+'</span>'+(ev&&d?' <span style="font-size:11.5px;color:var(--g3)">'+(fez?'realizado em ':'')+fmtDate(d)+'</span>':'')+'</div>';
       if(ev&&fs.length) h+='<details><summary>Programa do dia ('+fs.length+')</summary><ol>'+fs.map(fase).join('')+'</ol></details>';
-      h+='<div class="ha-en-sec">'+(ev?'Inscritos':'Compradores')+'</div>'+(todos.length?todos.map(simples).join(''):'<div style="font-size:12px;color:var(--g4)">Ainda sem '+(ev?'inscritos':'compradores')+'.</div>');
+      h+='<div class="ha-en-sec">'+(ev?'Inscritos':'Compradores')+'</div>'+((todos.length||semC.length)?todos.map(simples).join('')+semC.map(function(m){return '<div class="ha-en-p" style="padding:7px 0"><div class="n" style="margin:0"><b>'+esc(m.nome)+'</b><span style="color:#B7791F">sem compra registada</span></div></div>';}).join(''):'<div style="font-size:12px;color:var(--g4)">Ainda sem '+(ev?'inscritos':'compradores')+'.</div>');
       return h+ed(p,g)+'</div>';
     }
     var h='<div class="ha-en-col"><div class="ha-en-h"><b>'+esc(p?(p.nomeC||p.nome):g.nome)+'</b><span>'+plural(g.vs.length+g.ms.length,'pessoa','pessoas')+'</span></div>';
@@ -9213,7 +9225,7 @@ window.haEntCrm=(function(){
     (DB.mentorados||[]).forEach(function(m){ var k='m'+m.id; if(!map[k]) map[k]={k:k,m:m,nome:m.nome,vs:[]}; });
     return Object.keys(map).map(function(k){
       var a=map[k], cur=a.vs.some(function(v){return v.estado==='em_curso'&&haFormatoV(v)==='sessoes';});
-      a.fazer=a.vs.length?cur:(a.m?ativoM(a.m):false);
+      a.fazer=a.vs.length?cur:(a.m?(ativoM(a.m)&&haFormato(haProdPorNome(a.m.produto))==='sessoes'):false);
       return a;
     });
   }
