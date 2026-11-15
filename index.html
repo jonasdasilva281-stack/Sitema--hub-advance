@@ -8405,7 +8405,7 @@ window.haFM=(function(){
     var h='<div class="hm-top"><div><h2 style="margin:0 0 4px">Campanhas &amp; conteúdo</h2><div class="f" style="font-style:normal">Onde estão a vir os leads e o que está a ser publicado.</div></div><div style="display:flex;gap:10px;align-items:center"><div class="hm-sync"><i></i>'+(navigator.onLine?'Online — sincronizado':'Offline')+'</div><button class="btn bp" onclick="haMkt.novoPlano()">Nova campanha</button></div></div>';
     h+='<div class="hm-k" style="grid-template-columns:repeat(3,minmax(0,1fr))">'+kpi('Investido total',eur(inv))+kpi('Leads gerados',lg)+kpi('Custo por lead',lg&&inv?eur(inv/lg):'—')+'</div>';
     h+='<div class="hm-c" style="margin-bottom:14px"><div class="hm-ch"><h3>📊 Leads por canal de origem ('+L.length+' total)</h3></div>'+(linhas.length?linhas.map(function(x){ var p=Math.round(x.n/L.length*100); return '<div style="margin:9px 0"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px"><b>'+esc(x.c)+'</b><span style="color:var(--g4)">'+x.n+' lead'+(x.n>1?'s':'')+' · '+p+'%</span></div><div class="sbw" style="width:100%"><div class="sbb" style="width:'+p+'%;background:var(--g)"></div></div></div>'; }).join(''):'<div class="hm-e">Ainda não há leads com origem registada.</div>')+'</div>';
-    h+='<div style="display:flex;gap:8px;margin-bottom:12px">'+[['instagram','Redes sociais'],['hoje','Hoje'],['produto','Por produto'],['relatorio','Relatório'],['campanhas','Campanhas'],['sdr','SDR']].map(function(t){ return '<button class="rc-pill'+(aba===t[0]?' on':'')+'" onclick="haMktF.aba(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
+    h+='<div style="display:flex;gap:8px;margin-bottom:12px">'+[['instagram','Redes sociais'],['hoje','Hoje'],['produto','Por produto'],['relatorio','Relatório'],['campanhas','Campanhas']].map(function(t){ return '<button class="rc-pill'+(aba===t[0]?' on':'')+'" onclick="haMktF.aba(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
     if(aba!=='campanhas'&&aba!=='conteudo'&&window.haMktX&&haMktX[aba]){
       h+=haMktX[aba]();
     }else if(aba==='campanhas'){
@@ -10383,6 +10383,29 @@ window.haMktX=(function(){
     del:function(id){ if(!confirm('Apagar este post?')) return; DB.instaPosts=D().filter(function(x){return x.id!==id;}); save(); renderAll(); }
   };
   if(window.haMktX) haMktX.instagram=instagram;
+})();
+</script>
+
+
+<!-- BLOCO 57 · O SDR passa do Marketing para a Prospeção -->
+<script>
+(function(){
+  var _ra=window.renderAll;
+  window.renderAll=function(){
+    var r=_ra.apply(this,arguments);
+    try{
+      var P=document.getElementById('p-prospecao');
+      if(P&&P.classList.contains('on')&&P.querySelector('.cap-tabs')&&!P.querySelector('#ha-sdr-box')&&window.haMktX&&haMktX.sdr){
+        var f=function(){
+          var d=document.createElement('div'); d.id='ha-sdr-box'; d.style.marginBottom='14px';
+          d.innerHTML='<div class="pd-h" style="margin-top:4px">SDR · abordar e marcar reuniões</div>'+haMktX.sdr();
+          var ref=P.querySelector('.ha-dep')||P.querySelector('.cap-tabs'); ref.parentNode.insertBefore(d,ref.nextSibling);
+        };
+        if(window.haArea) haArea(f); else f();
+      }
+    }catch(e){ console.error('SDR na Prospeção:',e); }
+    return r;
+  };
 })();
 </script>
 
