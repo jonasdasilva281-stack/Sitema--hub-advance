@@ -1031,7 +1031,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div id="pg-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:300;background:#fff;border:1px solid var(--g6);border-radius:10px;box-shadow:var(--shadow-lg);max-height:220px;overflow-y:auto;margin-top:4px"></div>
   </div>
   <div class="fr fg"><div><label class="fl">Produto</label><select class="fi" id="pg-produto" onchange="autoValor()"></select></div><div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pg-valor" oninput="calcParcela()"></div></div>
-  <div class="fg"><label class="fl">Forma de pagamento</label><select class="fi" id="pg-forma"><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>Transferência Bancária</option><option>MB Way</option><option>PayPal</option><option>Dinheiro</option><option>Outro</option></select></div>
+  <div class="fg"><label class="fl">Forma de pagamento</label><select class="fi" id="pg-forma"><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>Transferência Bancária</option><option>MB Way</option><option>PayPal</option><option>Stripe</option><option>Dinheiro</option><option>Outro</option></select></div>
   <div class="fr fg"><div><label class="fl">Parcelas</label><select class="fi" id="pg-parcelas" onchange="calcParcela()"></select></div><div><label class="fl">Data 1ª parcela</label><input type="date" class="fi" id="pg-data" onchange="calcParcela()"></div></div>
   <div id="pg-info" style="display:none" class="al alg"></div>
   <div class="fg"><label class="fl">Estado</label><select class="fi" id="pg-estado"><option value="Pago">Pago</option><option value="Pendente">Pendente</option></select></div>
@@ -9091,7 +9091,7 @@ window.haEntrega=(function(){
       .sort(function(a,b){ return (b.vs.length+b.ms.length)-(a.vs.length+a.ms.length)||a.i-b.i; });
   }
   function pessoaM(m){
-    return '<div class="ha-en-p"><div class="n"><b>'+esc(m.nome)+'</b><span>sem compra registada</span></div><div><button class="btn bs bsm" onclick="haProg.abrir('+m.id+')">Acompanhamento</button></div></div>';
+    return '<div class="ha-en-p"><div class="n"><b>'+esc(m.nome)+'</b><span>sem compra registada</span></div><div><button class="btn bp bsm" onclick="haEntrega.pagar('+m.id+')">Registar pagamento</button> <button class="btn bs bsm" onclick="haProg.abrir('+m.id+')">Acompanhamento</button></div></div>';
   }
   // formato do produto: 'sessoes' (programa com sessões) · 'evento' (1 dia) · 'produto' (ebook, ferramenta…)
   window.haFormato=function(p){
@@ -9143,7 +9143,7 @@ window.haEntrega=(function(){
       var h='<div class="ha-en-col"><div class="ha-en-h"><b>'+esc(p?(p.nomeC||p.nome):g.nome)+'</b><span>'+plural(todos.length+semC.length,ev?'inscrito':'comprador',ev?'inscritos':'compradores')+'</span></div>';
       h+='<div style="margin-top:8px"><span class="tag '+(ev?'tp':'tg')+'" style="font-size:9.5px">'+(ev?'Evento de 1 dia':'Produto · acesso imediato')+'</span>'+(ev&&d?' <span style="font-size:11.5px;color:var(--g3)">'+(fez?'realizado em ':'')+fmtDate(d)+'</span>':'')+'</div>';
       if(ev&&fs.length) h+='<details><summary>Programa do dia ('+fs.length+')</summary><ol>'+fs.map(fase).join('')+'</ol></details>';
-      h+='<div class="ha-en-sec">'+(ev?'Inscritos':'Compradores')+'</div>'+((todos.length||semC.length)?todos.map(simples).join('')+semC.map(function(m){return '<div class="ha-en-p" style="padding:7px 0"><div class="n" style="margin:0"><b>'+esc(m.nome)+'</b><span style="color:#B7791F">sem compra registada</span></div></div>';}).join(''):'<div style="font-size:12px;color:var(--g4)">Ainda sem '+(ev?'inscritos':'compradores')+'.</div>');
+      h+='<div class="ha-en-sec">'+(ev?'Inscritos':'Compradores')+'</div>'+((todos.length||semC.length)?todos.map(simples).join('')+semC.map(function(m){return '<div class="ha-en-p" style="padding:7px 0"><div class="n" style="margin:0"><b>'+esc(m.nome)+'</b><span style="color:#B7791F">sem compra registada</span></div><div style="margin-top:5px"><button class="btn bp bsm" onclick="haEntrega.pagar('+m.id+')">Registar pagamento</button></div></div>';}).join(''):'<div style="font-size:12px;color:var(--g4)">Ainda sem '+(ev?'inscritos':'compradores')+'.</div>');
       return h+ed(p,g)+'</div>';
     }
     var h='<div class="ha-en-col"><div class="ha-en-h"><b>'+esc(p?(p.nomeC||p.nome):g.nome)+'</b><span>'+plural(g.vs.length+g.ms.length,'pessoa','pessoas')+'</span></div>';
@@ -9170,6 +9170,16 @@ window.haEntrega=(function(){
   window.renderAll=function(){ var r=_ra.apply(this,arguments); try{ render(); }catch(e){ console.error('Entrega:',e); } return r; };
   try{ badge(); }catch(e){}
   return {render:render,
+    pagar:function(mid){
+      var m=DB.mentorados.find(function(x){return x.id===mid;}); if(!m) return;
+      var p=haProdPorNome(m.produto); om('pagamento');
+      document.getElementById('pg-cliente').value=m.nome;
+      if(p){ document.getElementById('pg-produto').value=p.nome; if(typeof autoValor==='function') try{ autoValor(); }catch(e){} document.getElementById('pg-valor').value=p.valor; }
+      var f=document.getElementById('pg-forma'); if(f) f.value='Stripe';
+      document.getElementById('pg-estado').value='Pago';
+      document.getElementById('pg-data').value=todayISO();
+      try{ calcParcela(); }catch(e){}
+    },
     formato:function(id,f){ var p=DB.produtos.find(function(x){return x.id===id;}); if(!p) return; p.formato=f; p.digital=(f==='produto'); save(); renderAll(); toast('✓ Formato alterado'); },
     criar:function(nome){ novoProduto(); document.getElementById('pd-nome').value=nome; document.getElementById('pd-nomec').value=nome; }
   };
