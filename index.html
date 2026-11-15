@@ -9093,12 +9093,35 @@ window.haEntrega=(function(){
   function pessoaM(m){
     return '<div class="ha-en-p"><div class="n"><b>'+esc(m.nome)+'</b><span>sem compra registada</span></div><div><button class="btn bs bsm" onclick="haProg.abrir('+m.id+')">Acompanhamento</button></div></div>';
   }
+  // formato do produto: 'sessoes' (programa com sessões) · 'evento' (1 dia) · 'produto' (ebook, ferramenta…)
+  window.haFormato=function(p){
+    if(!p) return 'sessoes';
+    if(p.formato) return p.formato;
+    if(p.digital) return 'produto';
+    if(/workshop|imers|evento|masterclass/i.test(p.nome||'')) return 'evento';
+    return 'sessoes';
+  };
+  window.haFormatoV=function(v){
+    var p=(DB.produtos||[]).find(function(x){return x.id===v.produtoId;})||(DB.produtos||[]).find(function(x){return x.nome===v.produto;});
+    return window.haFormato(p);
+  };
+  function evData(p){ if(p.dataFim) return p.dataFim; var c=(p.cronograma||[]).find(function(f){return f.data;}); return c?c.data:''; }
+  function simples(v){ return '<div class="ha-en-p" style="padding:7px 0"><div class="n" style="margin:0"><b>'+esc(v.cliente)+'</b><span>'+fmtDate(v.data)+'</span></div></div>'; }
   function pessoa(v){
     return '<div class="ha-en-p"><div class="n"><b>'+esc(v.cliente)+'</b><span>desde '+fmtDate(v.data)+'</span></div>'+entregaBarras(v,false)+
       (v.mentoradoId?'<div style="margin-top:6px"><button class="btn bs bsm" onclick="haProg.abrir('+v.mentoradoId+')">Acompanhamento</button></div>':'')+'</div>';
   }
   function coluna(g){
-    var p=g.p, its=p?entregaveisDe(p):[], fs=p?(p.cronograma||[]):[];
+    var p=g.p, fm=window.haFormato(p), its=p?entregaveisDe(p):[], fs=p?(p.cronograma||[]):[];
+    var todos=g.vs.concat(g.fin);
+    if(fm!=='sessoes'){
+      var ev=fm==='evento', d=p?evData(p):'', fez=ev&&d&&d<todayISO();
+      var h='<div class="ha-en-col"><div class="ha-en-h"><b>'+esc(p?(p.nomeC||p.nome):g.nome)+'</b><span>'+plural(todos.length,ev?'inscrito':'comprador',ev?'inscritos':'compradores')+'</span></div>';
+      h+='<div style="margin-top:8px"><span class="tag '+(ev?'tp':'tg')+'" style="font-size:9.5px">'+(ev?'Evento de 1 dia':'Produto · acesso imediato')+'</span>'+(ev&&d?' <span style="font-size:11.5px;color:var(--g3)">'+(fez?'realizado em ':'')+fmtDate(d)+'</span>':'')+'</div>';
+      if(ev&&fs.length) h+='<details><summary>Programa do dia ('+fs.length+')</summary><ol>'+fs.map(fase).join('')+'</ol></details>';
+      h+='<div class="ha-en-sec">'+(ev?'Inscritos':'Compradores')+'</div>'+(todos.length?todos.map(simples).join(''):'<div style="font-size:12px;color:var(--g4)">Ainda sem '+(ev?'inscritos':'compradores')+'.</div>');
+      return h+'</div>';
+    }
     var h='<div class="ha-en-col"><div class="ha-en-h"><b>'+esc(p?(p.nomeC||p.nome):g.nome)+'</b><span>'+plural(g.vs.length+g.ms.length,'pessoa','pessoas')+'</span></div>';
     h+='<div class="ha-en-sec">Estrutura de entrega</div>';
     h+=its.length?'<ul>'+its.map(item).join('')+'</ul>':'<div style="font-size:12px;color:var(--g4)">Escolha o produto na compra para ver a estrutura.</div>';
@@ -9174,7 +9197,7 @@ window.haEntCrm=(function(){
     });
     (DB.mentorados||[]).forEach(function(m){ var k='m'+m.id; if(!map[k]) map[k]={k:k,m:m,nome:m.nome,vs:[]}; });
     return Object.keys(map).map(function(k){
-      var a=map[k], cur=a.vs.some(function(v){return v.estado==='em_curso';});
+      var a=map[k], cur=a.vs.some(function(v){return v.estado==='em_curso'&&haFormatoV(v)==='sessoes';});
       a.fazer=a.vs.length?cur:(a.m?ativoM(a.m):false);
       return a;
     });
@@ -9274,6 +9297,36 @@ window.haEntCrm=(function(){
     abrir:function(i){ var a=vista[i]; if(!a) return; aberto[a.k]=!aberto[a.k]; var r=document.getElementById('en-rows'); if(r) r.innerHTML=linhas(); },
     alunas:alunas
   };
+})();
+</script>
+
+<!-- BLOCO 43 · Formato do produto: programa com sessões · evento de 1 dia · produto que se compra (ebook, ferramenta) -->
+<script>
+window.haFormatoUI=(function(){
+  var OP=[['sessoes','Programa com sessões (mentoria, acompanhamento)'],['evento','Evento de 1 dia (workshop, imersão)'],['produto','Produto que a pessoa compra (ebook, ferramenta)']];
+  var cron=document.getElementById('pd-cron'), alvo=cron&&cron.closest('.fg');
+  if(alvo&&!document.getElementById('pd-formato')){
+    var d=document.createElement('div'); d.className='fg';
+    d.innerHTML='<label class="fl">Formato <span style="font-size:9.5px;color:var(--g4);font-weight:400">decide como aparece na Entrega</span></label><select class="fi" id="pd-formato">'+OP.map(function(o){return '<option value="'+o[0]+'">'+o[1]+'</option>';}).join('')+'</select>';
+    alvo.parentNode.insertBefore(d,alvo);
+    d.querySelector('select').addEventListener('change',function(){ var dg=document.getElementById('pd-digital'); if(dg) dg.checked=(this.value==='produto'); });
+  }
+  function set(v){ var e=document.getElementById('pd-formato'); if(e) e.value=v; }
+  var _novo=window.novoProduto;
+  window.novoProduto=function(){ var r=_novo.apply(this,arguments); set('sessoes'); return r; };
+  var _edit=window.editProduto;
+  window.editProduto=function(id){ var r=_edit.apply(this,arguments); var p=DB.produtos.find(function(x){return x.id===id;}); if(p) set(haFormato(p)); return r; };
+  var _save=window.saveProduto;
+  window.saveProduto=function(){
+    var e=document.getElementById('pd-formato'), fm=e?e.value:'sessoes', dg=document.getElementById('pd-digital');
+    if(dg) dg.checked=(fm==='produto');
+    var nome=(document.getElementById('pd-nome').value||'').trim(), id=parseInt(document.getElementById('pd-id').value)||0;
+    var r=_save.apply(this,arguments);
+    var p=id?DB.produtos.find(function(x){return x.id===id;}):DB.produtos.filter(function(x){return x.nome===nome;}).pop();
+    if(p){ p.formato=fm; if(fm==='produto') p.digital=true; else if(p.digital&&fm!=='produto') p.digital=false; try{ save(); renderAll(); }catch(er){} }
+    return r;
+  };
+  return {};
 })();
 </script>
 
