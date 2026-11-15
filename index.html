@@ -8405,7 +8405,7 @@ window.haFM=(function(){
     var h='<div class="hm-top"><div><h2 style="margin:0 0 4px">Campanhas &amp; conteúdo</h2><div class="f" style="font-style:normal">Onde estão a vir os leads e o que está a ser publicado.</div></div><div style="display:flex;gap:10px;align-items:center"><div class="hm-sync"><i></i>'+(navigator.onLine?'Online — sincronizado':'Offline')+'</div><button class="btn bp" onclick="haMkt.novoPlano()">Nova campanha</button></div></div>';
     h+='<div class="hm-k" style="grid-template-columns:repeat(3,minmax(0,1fr))">'+kpi('Investido total',eur(inv))+kpi('Leads gerados',lg)+kpi('Custo por lead',lg&&inv?eur(inv/lg):'—')+'</div>';
     h+='<div class="hm-c" style="margin-bottom:14px"><div class="hm-ch"><h3>📊 Leads por canal de origem ('+L.length+' total)</h3></div>'+(linhas.length?linhas.map(function(x){ var p=Math.round(x.n/L.length*100); return '<div style="margin:9px 0"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px"><b>'+esc(x.c)+'</b><span style="color:var(--g4)">'+x.n+' lead'+(x.n>1?'s':'')+' · '+p+'%</span></div><div class="sbw" style="width:100%"><div class="sbb" style="width:'+p+'%;background:var(--g)"></div></div></div>'; }).join(''):'<div class="hm-e">Ainda não há leads com origem registada.</div>')+'</div>';
-    h+='<div style="display:flex;gap:8px;margin-bottom:12px">'+[['instagram','Redes sociais'],['hoje','Hoje'],['produto','Por produto'],['relatorio','Relatório'],['campanhas','Campanhas']].map(function(t){ return '<button class="rc-pill'+(aba===t[0]?' on':'')+'" onclick="haMktF.aba(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
+    h+='<div style="display:flex;gap:8px;margin-bottom:12px">'+[['instagram','Redes sociais'],['hoje','Hoje'],['produto','Por produto'],['relatorio','Relatório']].map(function(t){ return '<button class="rc-pill'+(aba===t[0]?' on':'')+'" onclick="haMktF.aba(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
     if(aba!=='campanhas'&&aba!=='conteudo'&&window.haMktX&&haMktX[aba]){
       h+=haMktX[aba]();
     }else if(aba==='campanhas'){
@@ -9960,7 +9960,10 @@ window.haMktX=(function(){
   }
   function vigor(){
     var h=todayISO(), A=(DB.mktPlanos||[]).filter(function(x){return doSetor(x)&&(!x.fim||x.fim>=h);});
-    if(!A.length) return '<div class="empty" style="padding:22px">Sem campanhas em vigor. Crie uma em Marketing → Por produto.</div>';
+    var nova='<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn bp" onclick="haMkt.novoPlano();om(\'mkp\')">+ Nova campanha</button></div>';
+    var fim=(DB.mktPlanos||[]).filter(function(x){return doSetor(x)&&x.fim&&x.fim<h;}).sort(function(a,b){return (b.fim||'').localeCompare(a.fim||'');});
+    var enc=fim.length?'<div class="pd-h">Terminadas · '+fim.length+'</div>'+fim.map(function(x){ var p=prodX(x), L=res(x,x.ini||h,x.fim,'leads'), V=res(x,x.ini||h,x.fim,'vendas'), R=res(x,x.ini||h,x.fim,'receita'); return '<div class="pd-o" style="cursor:pointer" onclick="haMkt.editPlano('+x.id+')"><span class="tag tgr" style="font-size:9.5px">Terminada</span><div class="t"><b>'+esc(x.nome)+'</b> <span style="color:var(--g4)">'+esc(p?(p.nomeC||p.nome):'Sem produto')+' · até '+fmtDate(x.fim)+'</span><small>'+L+' leads · '+V+' vendas · '+Math.round(R).toLocaleString('pt-PT')+' € de receita'+((+x.gasto)?' · '+Math.round(+x.gasto).toLocaleString('pt-PT')+' € investidos':'')+'</small></div></div>'; }).join(''):'';
+    if(!A.length) return nova+'<div class="empty" style="padding:22px">Sem campanhas em vigor. Crie uma com o botão acima: escolha o produto, as datas e a meta.</div>'+enc;
     var tot={g:0,l:0,v:0,r:0};
     var cards=A.map(function(x){
       garantir(x); var ini=x.ini||h, fim=(x.fim&&x.fim<h)?x.fim:h, mi=metaInfo(x), dr=direcao(x,mi,ini,fim), p=prodX(x),
@@ -9974,7 +9977,7 @@ window.haMktX=(function(){
         +'<div class="rp-d '+dr.c+'" style="margin-top:10px"><b>Direção</b><br>'+dr.l.map(esc).join('<br>')+'</div>'
         +(ps.length?'<div style="font-size:11.5px;color:var(--g4);margin-top:8px">Passos do plano: '+pf+'/'+ps.length+' feitos</div>':'')+'</div>';
     }).join('');
-    return '<div class="rp-k" style="margin-top:0"><div><b>'+A.length+'</b><span>campanha'+(A.length===1?'':'s')+' em vigor</span></div><div><b>'+tot.l+'</b><span>leads (todas)</span></div><div><b>'+tot.v+'</b><span>vendas (todas)</span></div><div><b>'+Math.round(tot.r).toLocaleString('pt-PT')+' €</b><span>receita · '+Math.round(tot.g).toLocaleString('pt-PT')+' € investidos</span></div></div>'+cards;
+    return '<div class="rp-k" style="margin-top:0"><div><b>'+A.length+'</b><span>campanha'+(A.length===1?'':'s')+' em vigor</span></div><div><b>'+tot.l+'</b><span>leads (todas)</span></div><div><b>'+tot.v+'</b><span>vendas (todas)</span></div><div><b>'+Math.round(tot.r).toLocaleString('pt-PT')+' €</b><span>receita · '+Math.round(tot.g).toLocaleString('pt-PT')+' € investidos</span></div></div>'+nova+cards+enc;
   }
   window.haRel={per:function(p){ per=p; renderAll(); },
     tick:function(id,k){ var x=(DB.mktPlanos||[]).find(function(p){return p.id===id;}); if(!x) return; x.feitos=x.feitos||{}; x.feitos[k]=!x.feitos[k]; save(); renderAll(); },
