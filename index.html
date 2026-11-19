@@ -1458,18 +1458,6 @@ function renderPipeline(){
     ${perdidosCards||`<div style="font-size:11px;color:var(--g4);text-align:center;padding:20px 0">—</div>`}
   </div>`);
 
-  // Fechados column
-  const fechadosCards=(leadFiltro==='todos'?fechados:[]).slice().reverse().map(l=>`
-    <div class="pl-card" style="border-left-color:#0B6E4F" onclick="editLead(${l.id})">
-      <div class="pl-card-name">${l.nome}</div>
-      <div class="pl-card-sub">${l.produto||'—'} · ${l.origem||'—'}</div>
-      <span class="tag tg" style="font-size:9.5px">✓ Fechado</span>
-    </div>`).join('');
-  cols.push(`<div class="pl-col">
-    <div class="pl-col-header"><span class="pl-col-title" style="color:#0B6E4F">Fechados</span><span class="pl-col-count" style="background:#0B6E4F18;color:#0B6E4F">${fechados.length}</span></div>
-    ${fechadosCards||`<div style="font-size:11px;color:var(--g4);text-align:center;padding:20px 0">—</div>`}
-  </div>`);
-
   document.getElementById('pipeline-kanban').innerHTML=cols.join('');
 
   // Fechados
