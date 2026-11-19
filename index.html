@@ -387,7 +387,6 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div class="ni" onclick="nav('pipeline',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="4" height="18" rx="1.5"/><rect x="10" y="7" width="4" height="14" rx="1.5"/><rect x="17" y="11" width="4" height="10" rx="1.5"/></svg></span><span class="ni-label">Pipeline</span><span class="nb" id="nb-leads">0</span></div>
     <div class="nav-sec">Negócio</div>
     <div class="ni" onclick="nav('mentorados',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span><span class="ni-label">Mentorados</span><span class="nb" id="nb-ment">0</span></div>
-    <div class="ni" onclick="nav('solutions',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span><span class="ni-label">Solutions</span><span class="nb" id="nb-sol">0</span></div>
     <div class="ni" onclick="nav('financeiro',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/><circle cx="12" cy="12" r="5"/></svg></span><span class="ni-label">Financeiro</span></div>
     <div class="ni" onclick="nav('produtos',this)"><span class="ni-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="ni-label">Produtos</span></div>
     <div class="nav-sec">Operação</div>
@@ -681,11 +680,6 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
   </div>
 
   <!-- PRODUTOS -->
-  <div class="panel" id="p-solutions">
-    <div class="card" style="margin-bottom:12px"><div style="font-size:13px;font-weight:600">Clientes Hub Advance Solutions</div><div style="font-size:11px;color:var(--g4)">Serviços done-for-you — separados da mentoria.</div></div>
-    <div id="solutions-list"></div>
-  </div>
-
   <div class="panel" id="p-produtos">
     <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn bp" onclick="om('produto')">+ Produto</button></div>
     <div class="g3" id="produtos-grid"></div>
@@ -1116,7 +1110,7 @@ const PROB_ETAPA={novo:0.1,sdr:0.25,closer:0.5,followup:0.35,standby:0.15};
 const PRODCLS={'Curso €47':'tg','Comunidade €30/mês':'tp','Acompanhamento €697':'to'};
 const avatarColors=['#0B6E4F','#5B4FCF','#C05621','#1A9E75','#C0392B','#B7791F','#2C2C2C','#0B6E4F','#5B4FCF','#C05621'];
 
-let DB={mentorados:[],clientesSolutions:[],leads:[],pagamentos:[],despesas:[],reunioes:[],tarefas:[],conteudo:[],
+let DB={mentorados:[],leads:[],pagamentos:[],despesas:[],reunioes:[],tarefas:[],conteudo:[],
   produtos:[
     {id:1,nome:'Curso €47',nomeC:'Curso — O Meu Primeiro Negócio',valor:47,tipo:'unico',desc:'Formação base para quem não está preparado para a mentoria individual.'},
     {id:2,nome:'Comunidade €30/mês',nomeC:'Comunidade Advance',valor:30,tipo:'recorrente',duracao:'',desc:'Mentoria em grupo · Aula ao vivo todas as quartas-feiras.'},
@@ -1145,18 +1139,10 @@ function weekDays(offset){ const days=[],now=new Date(),start=new Date(now); sta
 function dayLabel(iso){ return new Date(iso+'T12:00:00').toLocaleDateString('pt-PT',{weekday:'short',day:'2-digit',month:'short'}); }
 function produtoValor(nome){ const p=DB.produtos.find(x=>x.nome===nome); return p?p.valor:0; }
 function save(){ try{ localStorage.setItem('hub_advance_v3_db', JSON.stringify(DB)); }catch(e){} }
-function isSolutions(n){ return /solutions/i.test(n||''); }
-function ensureSolutions(){
-  if(!DB.clientesSolutions) DB.clientesSolutions=[];
-  if(!DB.produtos.find(function(p){return isSolutions(p.nome);})) DB.produtos.push({id:uid(),nome:'Hub Advance Solutions',nomeC:'Hub Advance Solutions',valor:0,tipo:'unico',desc:'Serviços done-for-you (sites, posts, vídeo, automações). Não é mentoria.'});
-  // mover para Solutions quem foi criado como mentorado com produto Solutions
-  var mv=DB.mentorados.filter(function(m){return isSolutions(m.produto);});
-  if(mv.length){ mv.forEach(function(m){ DB.clientesSolutions.push({id:m.id,nome:m.nome,tel:m.tel||m.contacto||'',produto:m.produto,nicho:m.nicho||'',estado:'Ativo',notas:m.notas||'',origemLeadId:m.origemLeadId}); }); DB.mentorados=DB.mentorados.filter(function(m){return !isSolutions(m.produto);}); save(); }
-}
 function load(){ try{ const d=localStorage.getItem('hub_advance_v3_db'); if(d) DB=JSON.parse(d); }catch(e){} }
 function toast(msg,color){ const t=document.getElementById('toast'); t.textContent=msg; t.style.background=color||'#0B6E4F'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
 
-const titles={overview:'Visão Geral',pipeline:'Pipeline de Vendas',mentorados:'Mentorados',solutions:'Clientes Solutions',financeiro:'Financeiro',produtos:'Produtos',agenda:'Agenda',marketing:'Marketing',equipa:'Equipa'};
+const titles={overview:'Visão Geral',pipeline:'Pipeline de Vendas',mentorados:'Mentorados',financeiro:'Financeiro',produtos:'Produtos',agenda:'Agenda',marketing:'Marketing',equipa:'Equipa'};
 function nav(id,el){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
@@ -1190,7 +1176,7 @@ function fillSelects(){
     ambitoFiltro.value=curAmbito;
   }
   const rnList=document.getElementById('rn-list'); if(rnList) rnList.innerHTML=allNames.map(n=>`<option value="${n}">`).join('');
-  const pgNames=[...DB.mentorados.map(m=>m.nome),...(DB.clientesSolutions||[]).map(m=>m.nome),...DB.leads.filter(l=>l.etapa==='fechado').map(l=>l.nome)];
+  const pgNames=[...DB.mentorados.map(m=>m.nome),...DB.leads.filter(l=>l.etapa==='fechado').map(l=>l.nome)];
   const pgList=document.getElementById('pg-list'); if(pgList) pgList.innerHTML=pgNames.map(n=>`<option value="${n}">`).join('');
 }
 
@@ -1472,15 +1458,12 @@ function renderPipeline(){
     ${perdidosCards||`<div style="font-size:11px;color:var(--g4);text-align:center;padding:20px 0">—</div>`}
   </div>`);
 
-  // Fechados column (so a closed sale never vanishes from the board)
+  // Fechados column
   const fechadosCards=(leadFiltro==='todos'?fechados:[]).slice().reverse().map(l=>`
     <div class="pl-card" style="border-left-color:#0B6E4F" onclick="editLead(${l.id})">
       <div class="pl-card-name">${l.nome}</div>
       <div class="pl-card-sub">${l.produto||'—'} · ${l.origem||'—'}</div>
       <span class="tag tg" style="font-size:9.5px">✓ Fechado</span>
-      <div class="pl-card-actions" onclick="event.stopPropagation()">
-        <button class="etapa-btn" style="background:#0B6E4F18;color:#0B6E4F" onclick="openVendaRapida(${l.id})">💰 Pagamento</button>
-      </div>
     </div>`).join('');
   cols.push(`<div class="pl-col">
     <div class="pl-col-header"><span class="pl-col-title" style="color:#0B6E4F">Fechados</span><span class="pl-col-count" style="background:#0B6E4F18;color:#0B6E4F">${fechados.length}</span></div>
@@ -1629,17 +1612,6 @@ function moverSemana(dir){
   m.semana=nova;
   save();renderAll();renderProcesso();
   toast(dir>0?'✓ Semana '+nova+': '+(SEMANAS[nova]?SEMANAS[nova].l:''):'← Semana '+nova);
-}
-function renderSolutions(){
-  var el=document.getElementById('solutions-list'); if(!el) return;
-  var L=DB.clientesSolutions||[];
-  document.getElementById('nb-sol').textContent=L.length;
-  el.innerHTML=L.length?L.map(function(c,i){
-    var pago=DB.pagamentos.filter(function(p){return p.cliente===c.nome&&p.estado==='Pago';}).reduce(function(a,p){return a+parseFloat(p.valor||0);},0);
-    var pend=DB.pagamentos.filter(function(p){return p.cliente===c.nome&&p.estado==='Pendente';}).reduce(function(a,p){return a+parseFloat(p.valor||0);},0);
-    var tel=normalizeTel(c.tel||'');
-    return '<div class="card" style="margin-bottom:10px;border-left:3px solid var(--g)"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><div style="display:flex;gap:10px;align-items:center"><div class="av" style="background:'+avatarColors[i%avatarColors.length]+'">'+initials(c.nome)+'</div><div><div style="font-size:13px;font-weight:600">'+c.nome+'</div><div style="font-size:11px;color:var(--g4)">'+(c.produto||'Hub Advance Solutions')+(tel?' · <a href="https://wa.me/'+tel+'" target="_blank" style="color:#25D366;text-decoration:none">📱 '+tel+'</a>':'')+'</div></div></div><div style="text-align:right;font-size:11px"><span class="tag tg">'+(c.estado||'Ativo')+'</span><div style="margin-top:4px;color:var(--g4)">€'+pago.toFixed(0)+' recebido'+(pend>0?' · €'+pend.toFixed(0)+' pendente':'')+'</div></div></div>'+(c.notas?'<div style="font-size:10.5px;color:var(--g4);margin-top:8px">'+c.notas+'</div>':'')+'</div>';
-  }).join(''):'<div class="empty">Ainda sem clientes Solutions</div>';
 }
 function renderMentorados(){
   document.getElementById('nb-ment').textContent=DB.mentorados.length;
@@ -3026,7 +2998,6 @@ function renderAll(){
   renderOverview();
   renderPipeline();
   renderMentorados();
-  renderSolutions();
   renderFinanceiro();
   renderProdutos();
   renderAgenda();
@@ -3070,7 +3041,7 @@ function openVendaRapida(leadId){
   document.getElementById('vr-sub').textContent=l.nome+' — '+( l.produto||'—');
   // Update modal title to show flow
   document.getElementById('vr-modal-title').textContent='💰 Registar pagamento';
-  document.getElementById('vr-modal-desc').textContent='Preenche como vai ser pago. Ao guardar, '+l.nome+' passa automaticamente para '+(isSolutions(l.produto)?'Clientes Solutions':'Mentorados')+'.';
+  document.getElementById('vr-modal-desc').textContent='Preenche como vai ser pago. Ao guardar, '+l.nome+' passa automaticamente para Mentorados.';
   document.getElementById('vr-data').value=todayISO();
   const parcSel=document.getElementById('vr-parcelas');
   if(parcSel) parcSel.innerHTML=Array.from({length:12},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'x'+(i===0?' (à vista)':'')+'</option>').join('');
@@ -3103,15 +3074,10 @@ function saveVendaRapida(){
   const datas=gerarDatas(dataInicio,parcelas);
   const grupoId=uid();
   datas.forEach(function(data,i){ DB.pagamentos.push({id:uid(),grupoId:grupoId,cliente:cliente,data:data,produto:produto,valor:vlParcela,valorTotal:valor,parcela:i+1,totalParcelas:parcelas,estado:i===0?estado:'Pendente',formaPagamento:forma}); });
-  var novoMentorado=false, novoSolutions=false;
+  var novoMentorado=false;
   if(leadId){
     var lead2=DB.leads.find(function(l){return l.id===leadId;});
-    if(lead2 && isSolutions(produto||lead2.produto)){
-      if(!DB.clientesSolutions.find(function(c){return c.nome===lead2.nome;})){
-        DB.clientesSolutions.push({id:uid(),nome:lead2.nome,tel:normalizeTel(lead2.contacto||''),produto:produto||lead2.produto||'',nicho:lead2.nicho||'',estado:'Ativo',notas:'Convertido do pipeline em '+todayISO()+' · Origem: '+(lead2.origem||'—'),origemLeadId:lead2.id});
-        novoSolutions=true;
-      }
-    } else if(lead2 && !DB.mentorados.find(function(m){return m.nome===lead2.nome;})){
+    if(lead2 && !DB.mentorados.find(function(m){return m.nome===lead2.nome;})){
       DB.mentorados.push({
         id:uid(),nome:lead2.nome,
         tel:normalizeTel(lead2.contacto||''),
@@ -3127,10 +3093,7 @@ function saveVendaRapida(){
     }
   }
   save();cm('venda-rapida');renderAll();
-  if(novoSolutions){
-    toast('🎉 Pagamento registado · '+cliente+' é agora cliente Solutions!');
-    setTimeout(function(){ var el=document.querySelector('.ni[onclick*="solutions"]'); if(el) el.click(); },500);
-  } else if(novoMentorado){
+  if(novoMentorado){
     toast('🎉 Pagamento registado · '+cliente+' é agora mentorado!');
     setTimeout(function(){
       var el=document.querySelector('.ni[onclick*="mentorados"]');
@@ -3249,10 +3212,6 @@ function pgBuildClientes(){
     var totalPend=DB.pagamentos.filter(function(p){return p.cliente===m.nome&&p.estado==='Pendente';}).reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
     var tel=m.tel||m.contacto||'';
     list.push({nome:m.nome,tel:tel,produto:m.produto||'',sub:'Mentorado · '+(m.produto||'—')+(tel?' · 📱'+tel:'')+(totalPago>0?' · €'+totalPago.toFixed(0)+' recebido':'')+(totalPend>0?' · €'+totalPend.toFixed(0)+' pendente':''),badge:'Mentorado',badgeCls:'tg',tipo:'mentorado'});
-  });
-  (DB.clientesSolutions||[]).forEach(function(c){
-    if(!list.find(function(x){return x.nome===c.nome;}))
-      list.push({nome:c.nome,tel:c.tel||'',produto:c.produto||'',sub:'Solutions · '+(c.produto||'—'),badge:'Solutions',badgeCls:'tb',tipo:'solutions'});
   });
   DB.leads.filter(function(l){return l.etapa==='fechado';}).forEach(function(l){
     if(!list.find(function(x){return x.nome===l.nome;}))
@@ -3444,7 +3403,6 @@ function load(){ /* handled by initApp */ }
 async function initApp(){
   updateDbStatus();
   await dbLoad();
-  ensureSolutions();
   rnRenderTipos('Sessão de acompanhamento');
   rnUpdateSugestoes('Sessão de acompanhamento');
   rnRenderFormatos('Google Meet');
