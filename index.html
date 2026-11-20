@@ -7769,8 +7769,8 @@ window.haFunnel=(function(){
 <!-- BLOCO 22 · Captação: funil de captação, próximos passos e objetivos -->
 <script>
 window.haCap=(function(){
-  var ET=[{k:'alcance',n:'Alcance',d:'pessoas que viram'},{k:'interacoes',n:'Interações',d:'gostos, partilhas, guardados'},{k:'conversas',n:'Conversas',d:'comentários e DMs'},{k:'leads',n:'Leads',d:'entraram no pipeline'}];
-  var SUG={alcance:['Publicar 1 reel com o tema do mês','Collab com a Rafa','Publicar carrossel de autoridade'],interacoes:['4 stories com caixa de perguntas','Responder a todos os comentários','Story com enquete'],conversas:['Pedir "Comente MENTORIA" no post','Enviar DM a quem interagiu','Responder a todas as DMs hoje'],leads:['Contactar 10 pessoas novas','Passar as conversas quentes para o Pipeline','Convidar quem interagiu para o workshop']};
+  var ET=[{k:'visualizacoes',n:'Visualizações',d:'vezes que o conteúdo foi visto'},{k:'alcance',n:'Alcance',d:'pessoas que viram'},{k:'interacoes',n:'Interações',d:'gostos, partilhas, guardados'},{k:'conversas',n:'Conversas',d:'comentários e DMs'},{k:'leads',n:'Leads',d:'entraram no pipeline'}];
+  var SUG={visualizacoes:['Publicar 1 reel por semana','Usar gancho forte nos 3 primeiros segundos','Repetir o formato do reel que mais viu'],alcance:['Publicar 1 reel com o tema do mês','Collab com a Rafa','Publicar carrossel de autoridade'],interacoes:['4 stories com caixa de perguntas','Responder a todos os comentários','Story com enquete'],conversas:['Pedir "Comente MENTORIA" no post','Enviar DM a quem interagiu','Responder a todas as DMs hoje'],leads:['Contactar 10 pessoas novas','Passar as conversas quentes para o Pipeline','Convidar quem interagiu para o workshop']};
   var P=document.getElementById('content');
   if(P&&!document.getElementById('p-captacao')){ var d=document.createElement('div'); d.className='panel'; d.id='p-captacao'; P.appendChild(d); }
   if(typeof titles==='object') titles.captacao='Captação';
@@ -7780,10 +7780,10 @@ window.haCap=(function(){
   function mes(){ return todayISO().slice(0,7); }
   function nums(){
     var m=mes(), CP=(DB.conteudo||[]).filter(function(c){return c.estado==='Publicado'&&(c.data||'').slice(0,7)===m;});
-    var r={alcance:0,interacoes:0,conversas:0,leads:(DB.leads||[]).filter(function(l){return (l.createdAt||'').slice(0,7)===m;}).length};
-    CP.forEach(function(c){ r.alcance+=+c.alcance||0; r.interacoes+=+c.interacoes||0; r.conversas+=+c.dms||0; });
-    (DB.instaPosts||[]).filter(function(p){ var g=ga(); return (p.data||'').slice(0,7)===m&&(!g||g==='geral'||(p.area||'mentorias')===g); }).forEach(function(p){ r.alcance+=+p.alcance||0; r.interacoes+=+p.interacoes||0; });
-    var extra={alcance:0,interacoes:0,conversas:0,leads:0}, feitos={}, pend={};
+    var r={visualizacoes:0,alcance:0,interacoes:0,conversas:0,leads:(DB.leads||[]).filter(function(l){return (l.createdAt||'').slice(0,7)===m;}).length};
+    CP.forEach(function(c){ r.visualizacoes+=+c.visualizacoes||0; r.alcance+=+c.alcance||0; r.interacoes+=+c.interacoes||0; r.conversas+=+c.dms||0; });
+    (DB.instaPosts||[]).filter(function(p){ var g=ga(); return (p.data||'').slice(0,7)===m&&(!g||g==='geral'||(p.area||'mentorias')===g); }).forEach(function(p){ r.visualizacoes+=+p.visualizacoes||0; r.alcance+=+p.alcance||0; r.interacoes+=+p.interacoes||0; });
+    var extra={visualizacoes:0,alcance:0,interacoes:0,conversas:0,leads:0}, feitos={}, pend={};
     meus().forEach(function(x){ if(x.feito&&(x.feitoEm||'').slice(0,7)===m){ extra[x.etapa]+=+x.resultado||0; feitos[x.etapa]=(feitos[x.etapa]||0)+1; } else if(!x.feito) pend[x.etapa]=(pend[x.etapa]||0)+1; });
     ET.forEach(function(e){ r[e.k]+=extra[e.k]; });
     return {v:r,extra:extra,feitos:feitos,pend:pend};
@@ -7794,7 +7794,7 @@ window.haCap=(function(){
     var n=nums(), mt=C().metas[mes()]||{}, hoje=todayISO(), v=n.v;
     // gargalo: etapa com menor conversão para a seguinte (ou menor % da meta)
     var gar=null, pior=1e9;
-    ET.forEach(function(e,i){ var m=mt[e.k]; var sc=m?v[e.k]/m:(i<3&&v[e.k]?v[ET[i+1].k]/v[e.k]:null); if(sc!=null&&sc<pior){pior=sc;gar=e;} });
+    ET.forEach(function(e,i){ var m=mt[e.k]; var sc=e.k==='visualizacoes'?null:(m?v[e.k]/m:(i<ET.length-1&&v[e.k]?v[ET[i+1].k]/v[e.k]:null)); if(sc!=null&&sc<pior){pior=sc;gar=e;} });
     var h='<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div class="ct">Funil de captação · este mês</div><div style="font-size:11.5px;color:var(--g4);margin-top:2px">Muda sozinho com o conteúdo publicado, os leads novos e os passos que marcar como feitos</div></div></div>';
     h+=haFunnel.draw(ET.map(function(e,i){ return {n:e.n,d:e.d,val:v[e.k],meta:+mt[e.k]||0,warn:!!(gar&&gar.k===e.k)}; }));
     h+='<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--g6);font-size:11.5px;color:var(--g4)"><b style="color:inherit">Metas do mês</b>'+ET.map(function(e){ return '<label style="display:flex;gap:5px;align-items:center">'+e.n+' <input type="number" min="0" value="'+(+mt[e.k]||'')+'" placeholder="meta" style="width:64px;padding:3px 5px;border:1px solid #D1D5DB;border-radius:6px;font-size:11.5px" onchange="haCap.meta(\''+e.k+'\',this.value)"></label>'; }).join('')+'</div>';
