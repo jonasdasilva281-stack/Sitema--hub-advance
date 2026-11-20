@@ -8479,7 +8479,9 @@ window.haPros=(function(){
 
   function D(){ var d=DB.prospecao=DB.prospecao||{}; d.lista=d.lista||[]; d.meta=d.meta||{}; d.icp=d.icp||{}; return d; }
   function A(){ var g=window.HA_AREA; return (g==='mentorias'||g==='solutions')?g:geralSel; }
-  function lista(a){ return D().lista.filter(function(p){return p.area===a;}); }
+  function lista(a){ return D().lista.filter(function(p){return p.area===a&&p.estado!=='contador';}); }
+  function todos(a){ return D().lista.filter(function(p){return p.area===a;}); }
+  function cont(a){ var c=D().lista.find(function(p){return p.area===a&&p.estado==='contador';}); if(!c){ c={id:uid(),area:a,nome:'Contador diário',insta:'',tel:'',origem:'Perfil encontrado',estado:'contador',passo:0,crit:[],msgs:[],criado:todayISO()}; D().lista.push(c); } return c; }
   function find(id){ return D().lista.find(function(p){return p.id===id;}); }
   function meta(a){ var m=D().meta[a]; return m>0?m:CFG[a].meta; }
   function icp(a){ return D().icp[a]||CFG[a].icp; }
@@ -8490,8 +8492,8 @@ window.haPros=(function(){
   function nivel(p){ if(!(p.crit||[]).length) return ''; var s=score(p); return s>=70?'quente':s>=40?'morno':'frio'; }
   function tagNv(p){ var n=nivel(p); if(!n) return ''; var k=n==='quente'?'q':n==='morno'?'m':'f'; return '<span class="pr-nv '+k+'">'+n+' · '+score(p)+'</span>'; }
   function interage(p){ return QUENTES.indexOf(p.origem)>=0; }
-  function hojeN(a){ var h=todayISO(); return lista(a).reduce(function(n,p){ return n+(p.msgs||[]).filter(function(m){return m.d===h&&typeof m.p==='number';}).length; },0); }
-  function ontemN(a){ var o=addD(todayISO(),-1); return lista(a).reduce(function(n,p){ return n+(p.msgs||[]).filter(function(m){return m.d===o&&typeof m.p==='number';}).length; },0); }
+  function hojeN(a){ var h=todayISO(); return todos(a).reduce(function(n,p){ return n+(p.msgs||[]).filter(function(m){return m.d===h&&typeof m.p==='number';}).length; },0); }
+  function ontemN(a){ var o=addD(todayISO(),-1); return todos(a).reduce(function(n,p){ return n+(p.msgs||[]).filter(function(m){return m.d===o&&typeof m.p==='number';}).length; },0); }
 
   function fila(a){
     var h=todayISO(), out=[];
@@ -8527,13 +8529,13 @@ window.haPros=(function(){
       h+='<div class="pr-tabs">'+['mentorias','solutions'].map(function(k){ return '<button type="button" class="pr-tab'+(a===k?' on':'')+'" onclick="haPros.area(\''+k+'\')">'+CFG[k].nome+'</button>'; }).join('')+'</div>';
     }
     var hn=hojeN(a), mt=meta(a), pc=Math.min(100,Math.round(hn/mt*100)), on=ontemN(a);
-    var sete=addD(todayISO(),-6), L=lista(a).filter(function(p){return p.primeiroEm&&p.primeiroEm>=sete;});
+    var sete=addD(todayISO(),-6), L=lista(a).filter(function(p){return p.primeiroEm&&p.primeiroEm>=sete;}), n7=todos(a).reduce(function(n,p){ return n+(p.msgs||[]).filter(function(m){return m.d>=sete&&typeof m.p==='number';}).length; },0);
     var resp=L.filter(function(p){return ['respondeu','qualificado','pipeline'].indexOf(p.estado)>=0;}).length;
     var q=lista(a).filter(function(p){return nivel(p)==='quente'&&p.estado!=='descartado';}).length;
     var pip=lista(a).filter(function(p){return p.estado==='pipeline';}).length;
     h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><div class="ct">Prospeção · '+c.nome+'</div><div style="font-size:11.5px;color:var(--g4)">Ontem: '+on+' abordadas</div></div>'+
       '<div style="display:flex;align-items:baseline;gap:6px;margin-top:8px"><b style="font:700 30px \'Space Grotesk\',\'Inter\',sans-serif">'+hn+'</b><span style="color:var(--g4);font-size:13px">/ '+mt+' abordadas hoje</span></div><div class="pr-bar"><i style="width:'+pc+'%"></i></div>'+
-      '<div class="pr-kpis" style="margin-top:12px"><div class="pr-k"><b>'+L.length+'</b><span>abordadas · 7 dias</span></div><div class="pr-k"><b>'+(L.length?Math.round(resp/L.length*100)+'%':'—')+'</b><span>responderam ('+resp+')</span></div><div class="pr-k"><b>'+q+'</b><span>quentes</span></div><div class="pr-k"><b>'+pip+'</b><span>passaram ao pipeline</span></div></div></div>';
+      '<div class="pr-kpis" style="margin-top:12px"><div class="pr-k"><b>'+n7+'</b><span>abordadas · 7 dias</span></div><div class="pr-k"><b>'+(n7?Math.round(resp/n7*100)+'%':'—')+'</b><span>responderam ('+resp+')</span></div><div class="pr-k"><b>'+q+'</b><span>quentes</span></div><div class="pr-k"><b>'+pip+'</b><span>passaram ao pipeline</span></div></div></div>';
     h+='<div class="pr-tabs">'+[['hoje','Hoje'],['lista','Lista'],['icp','ICP & meta']].map(function(t){ return '<button type="button" class="pr-tab'+(tab===t[0]?' on':'')+'" onclick="haPros.tab(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
     h+=tab==='hoje'?vHoje(a):tab==='lista'?vLista(a):vIcp(a);
     el.innerHTML=h+'</div>';
@@ -8545,11 +8547,10 @@ window.haPros=(function(){
   }
   function vHoje(a){
     var f=fila(a), h='';
-    h+='<div class="card"><div class="ct" style="margin-bottom:4px">Adicionar pessoas</div><div style="font-size:11.5px;color:var(--g4);margin-bottom:8px">Uma a uma, ou cole uma lista (uma por linha: nome, @instagram, origem).</div>'+
-      '<div class="pr-add"><input class="fi" id="pr-nome" placeholder="Nome"><input class="fi" id="pr-insta" placeholder="@instagram"><select class="fi" id="pr-orig">'+ORIG.map(function(o){return '<option>'+o+'</option>';}).join('')+'</select><button type="button" class="btn bp bsm" onclick="haPros.add()">+ Adicionar</button></div>'+
-      '<details style="margin-top:8px"><summary style="font-size:12px;color:var(--g3);cursor:pointer">Colar lista</summary><textarea class="fi" id="pr-bulk" rows="5" style="margin-top:6px" placeholder="Ana Silva, @ana.nails, Comentou palavra-chave&#10;@lash.marta&#10;Joana Reis, @joana.estetica"></textarea><button type="button" class="btn bs bsm" style="margin-top:6px" onclick="haPros.bulk()">Importar lista</button></details></div>';
-    var n=verTodas?f.length:20;
-    h+='<div class="card"><div class="ct">Para fazer hoje · '+f.length+'</div>'+(f.length?f.slice(0,n).map(function(x){ return linha(x.p,x.tipo); }).join('')+(f.length>n?'<div style="padding-top:10px"><button type="button" class="btn bs bsm" onclick="haPros.todas()">Mostrar as '+f.length+'</button></div>':''):'<div class="empty" style="padding:14px">Nada pendente. Adicione pessoas acima.</div>')+'</div>';
+    var rh=todos(a).filter(function(p){return p.respondeuEm===todayISO();}).length;
+    h+='<div class="card"><div class="ct" style="margin-bottom:4px">Abordagens de hoje</div><div style="font-size:11.5px;color:var(--g4);margin-bottom:10px">Só o número. Vá somando as pessoas que abordar; não precisa de nomes.</div>'+
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input class="fi" id="pr-dia" type="number" min="0" inputmode="numeric" value="'+hojeN(a)+'" style="max-width:110px"><button type="button" class="btn bp bsm" onclick="haPros.diaSet()">Guardar total</button><button type="button" class="btn bs bsm" onclick="haPros.dia(1)">+1</button><button type="button" class="btn bs bsm" onclick="haPros.dia(5)">+5</button><button type="button" class="btn bs bsm" onclick="haPros.dia(10)">+10</button></div></div>'+
+      '<div class="card"><div class="ct" style="margin-bottom:4px">Responderam · '+rh+' hoje</div><div style="font-size:11.5px;color:var(--g4);margin-bottom:10px">Quando alguém responder, carregue aqui: a lead entra no Pipeline, sem nome. Abra-a no Pipeline e acrescente os dados quando falar com a pessoa.</div><button type="button" class="btn bp bsm" onclick="haPros.respondeu()">+ Respondeu</button></div>';
     return h;
   }
   function vLista(a){
@@ -8616,6 +8617,18 @@ window.haPros=(function(){
     area:function(k){ geralSel=k; render(); },
     tab:function(t){ tab=t; render(); },
     todas:function(){ verTodas=true; render(); },
+    dia:function(n){ var a=A(), c=cont(a), h=todayISO(); for(var i=0;i<n;i++) c.msgs.push({d:h,p:1}); save(); render(); },
+    diaSet:function(){ var a=A(), el=document.getElementById('pr-dia'), v=parseInt(el&&el.value,10); if(isNaN(v)||v<0){ toast('Escreva um número','#C0392B'); return; } var c=cont(a), h=todayISO(), atual=hojeN(a); if(v>=atual){ for(var i=atual;i<v;i++) c.msgs.push({d:h,p:1}); } else { var r=atual-v; for(var j=c.msgs.length-1;j>=0&&r>0;j--){ if(c.msgs[j].d===h&&typeof c.msgs[j].p==='number'){ c.msgs.splice(j,1); r--; } } if(r>0) toast('Só consegui retirar '+(atual-v-r)+' (as outras vêm de pessoas da Lista)','#C0392B'); } save(); render(); },
+    respondeu:function(){
+      var a=A(), h=todayISO(), d=new Date(), dd=('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2);
+      var n=todos(a).filter(function(p){return p.anonimo&&p.respondeuEm===h;}).length+1, nome='Resposta '+dd+' · #'+n;
+      var ps=(DB.produtos||[]).filter(function(x){return (x.area||'mentorias')===a;}), pr=ps.find(function(x){return CFG[a].prod.test(x.nome);})||ps[0];
+      var nota='Prospeção · respondeu à abordagem (sem nome registado)';
+      DB.leads=DB.leads||[];
+      DB.leads.push({id:uid(),nome:nome,contacto:'',insta:'',origem:'Instagram',produto:pr?pr.nome:'',etapa:'novo',proxQuem:'Jonas',proxAcao:'Responder e qualificar',proxData:h,proxTipo:'Instagram',motivo:'',notas:nota,area:a,createdAt:new Date().toISOString(),interacoes:[{id:Date.now(),tipo:'Prospeção',nota:nota,data:new Date().toISOString()}]});
+      D().lista.push({id:uid(),area:a,nome:nome,insta:'',tel:'',origem:'Perfil encontrado',estado:'pipeline',passo:1,crit:[],msgs:[],criado:h,primeiroEm:h,respondeuEm:h,pipelineEm:h,anonimo:true});
+      save(); renderAll(); toast('✓ Entrou no Pipeline');
+    },
     filtrar:function(v){ filtro=v; render(); },
     fechar:function(){ var m=document.getElementById('modal-prosp'); if(m) m.classList.remove('open'); cur=null; render(); },
     add:function(){
