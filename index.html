@@ -8620,13 +8620,27 @@ window.haPros=(function(){
     dia:function(n){ var a=A(), c=cont(a), h=todayISO(); for(var i=0;i<n;i++) c.msgs.push({d:h,p:1}); save(); render(); },
     diaSet:function(){ var a=A(), el=document.getElementById('pr-dia'), v=parseInt(el&&el.value,10); if(isNaN(v)||v<0){ toast('Escreva um número','#C0392B'); return; } var c=cont(a), h=todayISO(), atual=hojeN(a); if(v>=atual){ for(var i=atual;i<v;i++) c.msgs.push({d:h,p:1}); } else { var r=atual-v; for(var j=c.msgs.length-1;j>=0&&r>0;j--){ if(c.msgs[j].d===h&&typeof c.msgs[j].p==='number'){ c.msgs.splice(j,1); r--; } } if(r>0) toast('Só consegui retirar '+(atual-v-r)+' (as outras vêm de pessoas da Lista)','#C0392B'); } save(); render(); },
     respondeu:function(){
-      var a=A(), h=todayISO(), d=new Date(), dd=('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2);
-      var n=todos(a).filter(function(p){return p.anonimo&&p.respondeuEm===h;}).length+1, nome='Resposta '+dd+' · #'+n;
+      var m=document.getElementById('modal-resp');
+      if(!m){ m=document.createElement('div'); m.className='mo'; m.id='modal-resp'; document.body.appendChild(m); m.addEventListener('click',function(e){ if(e.target===m) m.classList.remove('open'); }); }
+      var fx="document.getElementById('modal-resp').classList.remove('open')";
+      m.innerHTML='<div class="mbox"><div class="mh"><div class="mt">Respondeu · dados da lead</div><span class="mx" onclick="'+fx+'">✕</span></div>'+
+        '<div class="fg"><label class="fl">Nome</label><input class="fi" id="rs-nome"></div>'+
+        '<div class="fr fg"><div><label class="fl">Instagram</label><input class="fi" id="rs-insta" placeholder="@utilizador"></div><div><label class="fl">Telemóvel</label><input class="fi" id="rs-tel" type="tel" placeholder="351912345678"></div></div>'+
+        '<div class="fg"><label class="fl">O que respondeu (opcional)</label><textarea class="fi" id="rs-nota" rows="3"></textarea></div>'+
+        '<div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn bs" onclick="'+fx+'">Cancelar</button><button type="button" class="btn bp" onclick="haPros.respSalvar()">Entrar no Pipeline</button></div></div>';
+      m.classList.add('open'); setTimeout(function(){ var e=document.getElementById('rs-nome'); if(e) e.focus(); },50);
+    },
+    respSalvar:function(){
+      var a=A(), h=todayISO(), nome=document.getElementById('rs-nome').value.trim(), insta=clean(document.getElementById('rs-insta').value), tl=document.getElementById('rs-tel').value.trim(), nt=document.getElementById('rs-nota').value.trim();
+      if(!nome){ toast('Escreva o nome','#C0392B'); return; }
+      if(!insta&&!tel(tl)){ toast('Falta o Instagram ou o telemóvel','#C0392B'); return; }
+      if(insta&&dup(a,insta)){ toast('⚠ Essa pessoa já está na lista ou no pipeline','#C0392B'); return; }
       var ps=(DB.produtos||[]).filter(function(x){return (x.area||'mentorias')===a;}), pr=ps.find(function(x){return CFG[a].prod.test(x.nome);})||ps[0];
-      var nota='Prospeção · respondeu à abordagem (sem nome registado)';
+      var nota='Prospeção · respondeu à abordagem'+(nt?' · '+nt:'');
       DB.leads=DB.leads||[];
-      DB.leads.push({id:uid(),nome:nome,contacto:'',insta:'',origem:'Instagram',produto:pr?pr.nome:'',etapa:'novo',proxQuem:'Jonas',proxAcao:'Responder e qualificar',proxData:h,proxTipo:'Instagram',motivo:'',notas:nota,area:a,createdAt:new Date().toISOString(),interacoes:[{id:Date.now(),tipo:'Prospeção',nota:nota,data:new Date().toISOString()}]});
-      D().lista.push({id:uid(),area:a,nome:nome,insta:'',tel:'',origem:'Perfil encontrado',estado:'pipeline',passo:1,crit:[],msgs:[],criado:h,primeiroEm:h,respondeuEm:h,pipelineEm:h,anonimo:true});
+      DB.leads.push({id:uid(),nome:nome,contacto:tel(tl),insta:insta?'@'+insta:'',origem:'Instagram',produto:pr?pr.nome:'',etapa:'novo',proxQuem:'Jonas',proxAcao:'Responder e qualificar',proxData:h,proxTipo:tel(tl)?'WhatsApp':'Instagram',motivo:'',notas:nota,area:a,createdAt:new Date().toISOString(),interacoes:[{id:Date.now(),tipo:'Prospeção',nota:nota,data:new Date().toISOString()}]});
+      D().lista.push({id:uid(),area:a,nome:nome,insta:insta,tel:tl,origem:'Perfil encontrado',estado:'pipeline',passo:1,crit:[],msgs:[],criado:h,primeiroEm:h,respondeuEm:h,pipelineEm:h});
+      var m=document.getElementById('modal-resp'); if(m) m.classList.remove('open');
       save(); renderAll(); toast('✓ Entrou no Pipeline');
     },
     filtrar:function(v){ filtro=v; render(); },
