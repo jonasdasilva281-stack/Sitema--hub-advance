@@ -9292,7 +9292,7 @@ window.haEntCrm=(function(){
   function digits(t){ var n=String(t||'').replace(/\D/g,''); if(n.length===9) n='351'+n; return n; }
   function ativoM(m){ return ['Concluído','Inativo','Stand by'].indexOf(m.estado)<0; }
   function alunas(){
-    var map={}, sol=(window.HA_AREA==='solutions');
+    var map={}, sol=(window.HA_AREA==='solutions'), edu=function(f){ return f==='sessoes'||f==='evento'; };
     (DB.vendas||[]).forEach(function(v){
       var m=v.mentoradoId?DB.mentorados.find(function(x){return x.id===v.mentoradoId;}):DB.mentorados.find(function(x){return nk(x.nome)===nk(v.cliente);});
       var k=m?('m'+m.id):('c'+nk(v.cliente));
@@ -9300,8 +9300,8 @@ window.haEntCrm=(function(){
     });
     (DB.mentorados||[]).forEach(function(m){ var k='m'+m.id; if(!map[k]) map[k]={k:k,m:m,nome:m.nome,vs:[]}; });
     return Object.keys(map).map(function(k){
-      var a=map[k], cur=a.vs.some(function(v){return v.estado==='em_curso'&&(sol||haFormatoV(v)==='sessoes');});
-      a.fazer=a.vs.length?cur:(a.m?(ativoM(a.m)&&(sol||haFormato(haProdPorNome(a.m.produto))==='sessoes')):false);
+      var a=map[k], cur=a.vs.some(function(v){return v.estado==='em_curso'&&(sol||edu(haFormatoV(v)));});
+      a.fazer=a.vs.length?cur:(a.m?(ativoM(a.m)&&(sol||edu(haFormato(haProdPorNome(a.m.produto))))):false);
       return a;
     });
   }
@@ -9397,8 +9397,8 @@ window.haEntCrm=(function(){
   return {
     tab:function(t){ tab=t; renderAll(); },
     filtrar:function(f){ filtro=f; renderAll(); },
-    q:function(){ var r=document.getElementById('en-rows'); if(r) r.innerHTML=linhas(); },
-    abrir:function(i){ var a=vista[i]; if(!a) return; aberto[a.k]=!aberto[a.k]; var r=document.getElementById('en-rows'); if(r) r.innerHTML=linhas(); },
+    q:function(){ var r=document.getElementById('en-rows'); if(r) r.innerHTML=(window.haArea?haArea(linhas):linhas()); },
+    abrir:function(i){ var a=vista[i]; if(!a) return; aberto[a.k]=!aberto[a.k]; var r=document.getElementById('en-rows'); if(r) r.innerHTML=(window.haArea?haArea(linhas):linhas()); },
     alunas:alunas
   };
 })();
