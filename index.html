@@ -1564,7 +1564,7 @@ function renderPipeline(){
   try{ if(window.haRecup) haRecup.render(); }catch(e){ console.error('Recuperar:',e); }
 
   // Fechados
-  document.getElementById('leads-fechados').innerHTML = fechados.length ? fechados.map(l=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--g6);font-size:12px"><span style="font-weight:500">${l.nome}</span><span class="tag tg">Fechado</span></div>`).join('') : '<div class="empty">Nenhum fechado ainda</div>';
+  document.getElementById('leads-fechados').innerHTML = fechados.length ? fechados.map(l=>window.haFech?haFech.linha(l):`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--g6);font-size:12px"><span style="font-weight:500">${l.nome}</span><span class="tag tg">Fechado</span></div>`).join('') : '<div class="empty">Nenhum fechado ainda</div>';
 
   // Motivos perda
   const porMotivo={};
@@ -9013,6 +9013,35 @@ window.haResultado=(function(){
 .cap-tabs button[onclick*="'metas'"]{display:none !important}
 </style>
 
+<!-- BLOCO 40b · Fechados: cada linha mostra se já está na Entrega e permite Pôr na Entrega / Recuperar / Apagar -->
+<script>
+window.haFech=(function(){
+  function nk(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+  function lead(id){ return (DB.leads||[]).find(function(x){return x.id===id;}); }
+  function naEntrega(l){
+    var n=nk(l.nome);
+    return (DB.vendas||[]).some(function(v){return nk(v.cliente)===n;})||(DB.mentorados||[]).some(function(m){return m.origemLeadId===l.id||nk(m.nome)===n;});
+  }
+  return {
+    naEntrega:naEntrega,
+    linha:function(l){
+      var ok=naEntrega(l);
+      return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--g6);font-size:12px;flex-wrap:wrap"><span style="font-weight:500">'+esc(l.nome)+'</span><span style="color:var(--g4);font-size:11px">'+esc(l.produto||'')+'</span><span style="flex:1"></span>'
+        +(ok?'<span class="tag tg">Na Entrega</span>':'<span class="tag" style="background:#B7791F18;color:#B7791F">Aguarda pagamento</span><button class="btn bp bsm" onclick="haFech.pagar('+l.id+')">Pôr na Entrega</button>')
+        +'<button class="btn bs bsm" onclick="haFech.recuperar('+l.id+')">Recuperar</button><button class="btn bd bsm" onclick="haFech.apagar('+l.id+')">Apagar</button></div>';
+    },
+    pagar:function(id){ if(lead(id)) openVendaRapida(id); },
+    recuperar:function(id){ if(lead(id)) mudarEtapa(id,'perdido'); },
+    apagar:function(id){
+      var l=lead(id); if(!l) return;
+      if(!confirm('Apagar "'+l.nome+'" de Fechados? Só remove esta lead; vendas e pagamentos não são apagados.')) return;
+      DB.leads=DB.leads.filter(function(x){return x.id!==id;});
+      save(); renderAll(); toast('Lead removida','#C0392B');
+    }
+  };
+})();
+</script>
+
 <!-- BLOCO 41 · Entrega numa só secção: programas lado a lado, com a estrutura de entrega e as pessoas dentro. Produtos saem das Vendas. -->
 <style>
 .sb-nav .ni[onclick*="'mentorados'"],.sb-nav .ni[onclick*="'entregas'"],.sb-nav .ni[onclick*="'produtos'"]{display:none !important}
@@ -9060,7 +9089,7 @@ window.haEntrega=(function(){
   function nk(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
   function grupos(){
     var g={}, ordem=[];
-    function get(p,nome){ var k=p?('p'+p.id):('n:'+nk(nome)); if(!g[k]){ g[k]={p:p||null,nome:nome,vs:[],ms:[],fin:[]}; ordem.push(k); } return g[k]; }
+    function get(p,nome){ var k=p?('p'+p.id):('n:'+nk(nome)); if(!g[k]){ g[k]={p:p||null,nome:nome,vs:[],ms:[],fin:[],ls:[]}; ordem.push(k); } return g[k]; }
     (DB.produtos||[]).forEach(function(p){ get(p,p.nomeC||p.nome); });          // todos os produtos, sempre
     (DB.vendas||[]).forEach(function(v){
       var p=DB.produtos.find(function(x){return x.id===v.produtoId;})||haProdPorNome(v.produto);
@@ -9072,11 +9101,19 @@ window.haEntrega=(function(){
       var tem=gr.vs.concat(gr.fin).some(function(v){return v.mentoradoId===m.id||nk(v.cliente)===nk(m.nome);});
       if(!tem) gr.ms.push(m);
     });
+    (DB.leads||[]).forEach(function(l){                                           // vendas fechadas ainda sem entrada na Entrega
+      if(l.etapa!=='fechado'||!window.haFech||haFech.naEntrega(l)) return;
+      var p=haProdPorNome(l.produto); if(!p) return; var gr=get(p,l.produto);
+      if(!gr.ls.some(function(x){return nk(x.nome)===nk(l.nome);})) gr.ls.push(l);
+    });
     return ordem.map(function(k,i){ g[k].i=i; return g[k]; }).filter(function(x){return x.p||x.vs.length||x.ms.length||x.fin.length;})
       .sort(function(a,b){ return (b.vs.length+b.ms.length)-(a.vs.length+a.ms.length)||a.i-b.i; });
   }
   function pessoaM(m){
     return '<div class="ha-en-p"><div class="n"><b>'+esc(m.nome)+'</b><span>sem compra registada</span></div><div><button class="btn bp bsm" onclick="haEntrega.pagar('+m.id+')">Registar pagamento</button> <button class="btn bs bsm" onclick="haProg.abrir('+m.id+')">Acompanhamento</button></div></div>';
+  }
+  function pessoaL(l){
+    return '<div class="ha-en-p"><div class="n"><b>'+esc(l.nome)+'</b><span style="color:#B7791F">aguarda pagamento</span></div><div><button class="btn bp bsm" onclick="haFech.pagar('+l.id+')">Pôr na Entrega</button> <button class="btn bs bsm" onclick="haFech.recuperar('+l.id+')">Recuperar</button></div></div>';
   }
   // níveis da escada de valor
   window.HA_NIVEIS=[
@@ -9150,6 +9187,7 @@ window.haEntrega=(function(){
     h+=its.length?'<ul>'+its.map(item).join('')+'</ul>':'<div style="font-size:12px;color:var(--g4)">Escolha o produto na compra para ver a estrutura.</div>';
     if(fs.length) h+='<details><summary>Fases ('+fs.length+')</summary><ol>'+fs.map(fase).join('')+'</ol></details>';
     h+='<div class="ha-en-sec">Pessoas dentro</div>'+((g.vs.length||g.ms.length)?g.vs.map(pessoa).join('')+g.ms.map(pessoaM).join(''):'<div style="font-size:12px;color:var(--g4)">Ainda sem pessoas neste programa.</div>');
+    if(g.ls.length) h+='<div class="ha-en-sec">Aguarda pagamento</div>'+g.ls.map(pessoaL).join('');
     if(g.fin.length) h+='<details><summary>Concluídas ('+g.fin.length+')</summary><div style="font-size:12px;color:var(--g3);padding-top:4px">'+g.fin.map(function(v){return esc(v.cliente);}).join(' · ')+'</div></details>';
     return h+ed(p,g)+'</div>';
   }
