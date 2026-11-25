@@ -4621,6 +4621,7 @@ body.area-solutions .ha-mentoria-only{display:none!important}
     <div class="as-head">
       <div class="as-eyebrow" id="as-date"></div>
       <h1 class="as-h1" id="as-hello">Olá</h1>
+      <div class="as-verse" id="as-verse" aria-label="Versículo do dia"></div>
     </div>
     <div class="as-grid">
       <div class="as-card" data-a="solutions" tabindex="0" onclick="haSetArea('solutions')">
@@ -10535,5 +10536,148 @@ window.haMktX=(function(){
 </script>
 
 <style>/* tema do dashboard por setor */:root{--acc0D:#0B6E4F0D}body.area-solutions{--acc0D:#1D4ED80D}:root{--acc12:#0B6E4F12}body.area-solutions{--acc12:#1D4ED812}:root{--acc18:#0B6E4F18}body.area-solutions{--acc18:#1D4ED818}:root{--acc44:#0B6E4F44}body.area-solutions{--acc44:#1D4ED844}:root{--acc55:#0B6E4F55}body.area-solutions{--acc55:#1D4ED855}:root{--acc:#0B6E4F;--acc2:#009B6A;--accl:#F0FAF6;--accb:#0B6E4F55}body.area-solutions{--acc:#1D4ED8;--acc2:#3B82F6;--accl:#EFF6FF;--accb:#1D4ED855}</style>
+
+<!-- ═══ VERSÍCULOS — empresa consagrada ao Senhor ═══ -->
+<style>
+.as-verse{max-width:660px;margin-top:18px;padding-left:14px;border-left:2px solid rgba(255,255,255,.28)}
+.as-verse q{display:block;quotes:none;font-size:15px;line-height:1.55;font-weight:400;color:rgba(255,255,255,.86)}
+.as-verse cite{display:block;margin-top:6px;font-style:normal;font-size:12px;font-weight:600;letter-spacing:.04em;color:rgba(255,255,255,.55)}
+#hv-card{position:fixed;left:50%;bottom:28px;transform:translate(-50%,24px);width:min(520px,calc(100vw - 32px));z-index:100000;
+  background:rgba(12,14,22,.96);color:#fff;border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:20px 22px 18px;
+  box-shadow:0 24px 60px -20px rgba(0,0,0,.7);font-family:'Inter',sans-serif;opacity:0;pointer-events:none;transition:opacity .35s,transform .35s}
+#hv-card.on{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+#hv-card .hv-t{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:8px}
+#hv-card .hv-v{font-size:16px;line-height:1.55;color:rgba(255,255,255,.95)}
+#hv-card .hv-r{margin-top:8px;font-size:12.5px;font-weight:600;color:rgba(255,255,255,.6)}
+#hv-card .hv-x{position:absolute;top:10px;right:14px;background:none;border:0;color:rgba(255,255,255,.5);font-size:16px;cursor:pointer}
+#hv-card .hv-x:hover{color:#fff}
+#hv-conf{position:fixed;inset:0;width:100vw;height:100vh;z-index:99999;pointer-events:none}
+</style>
+<script>
+(function(){
+  var DIARIO=[
+    ["Confia ao Senhor as tuas obras, e os teus pensamentos serão estabelecidos.","Provérbios 16:3"],
+    ["Entrega o teu caminho ao Senhor; confia nele, e ele o fará.","Salmos 37:5"],
+    ["Não to mandei eu? Esforça-te e tem bom ânimo; não pasmes, nem te espantes, porque o Senhor teu Deus é contigo, por onde quer que andares.","Josué 1:9"],
+    ["Posso todas as coisas naquele que me fortalece.","Filipenses 4:13"],
+    ["Porque eu bem sei os pensamentos que penso de vós, diz o Senhor; pensamentos de paz, e não de mal, para vos dar o fim que esperais.","Jeremias 29:11"],
+    ["Confia no Senhor de todo o teu coração, e não te estribes no teu próprio entendimento. Reconhece-o em todos os teus caminhos, e ele endireitará as tuas veredas.","Provérbios 3:5-6"],
+    ["Se o Senhor não edificar a casa, em vão trabalham os que a edificam.","Salmos 127:1"],
+    ["E tudo quanto fizerdes, fazei-o de todo o coração, como ao Senhor, e não aos homens.","Colossenses 3:23"],
+    ["Não temas, porque eu sou contigo; não te assombres, porque eu sou o teu Deus; eu te fortaleço, e te ajudo.","Isaías 41:10"],
+    ["Instruir-te-ei, e ensinar-te-ei o caminho que deves seguir; guiar-te-ei com os meus olhos.","Salmos 32:8"],
+    ["Viste um homem diligente na sua obra? Perante reis será posto.","Provérbios 22:29"],
+    ["Mas buscai primeiro o reino de Deus, e a sua justiça, e todas estas coisas vos serão acrescentadas.","Mateus 6:33"],
+    ["O Senhor é o meu pastor, nada me faltará.","Salmos 23:1"],
+    ["E sabemos que todas as coisas contribuem juntamente para o bem daqueles que amam a Deus, daqueles que são chamados segundo o seu propósito.","Romanos 8:28"],
+    ["Mas os que esperam no Senhor renovarão as forças, subirão com asas como águias; correrão, e não se cansarão; caminharão, e não se fatigarão.","Isaías 40:31"],
+    ["Lâmpada para os meus pés é a tua palavra, e luz para o meu caminho.","Salmos 119:105"],
+    ["O coração do homem planeja o seu caminho, mas o Senhor lhe dirige os passos.","Provérbios 16:9"],
+    ["E não nos cansemos de fazer o bem, porque a seu tempo ceifaremos, se não desfalecermos.","Gálatas 6:9"],
+    ["Porque Deus não nos deu o espírito de temor, mas de fortaleza, e de amor, e de moderação.","2 Timóteo 1:7"],
+    ["O meu socorro vem do Senhor, que fez o céu e a terra.","Salmos 121:2"],
+    ["Tudo tem o seu tempo determinado, e há tempo para todo o propósito debaixo do céu.","Eclesiastes 3:1"],
+    ["Deus é o nosso refúgio e fortaleza, socorro bem presente na angústia.","Salmos 46:1"],
+    ["A bênção do Senhor enriquece, e não traz consigo desgosto.","Provérbios 10:22"],
+    ["Antes te lembrarás do Senhor teu Deus, porque é ele que te dá força para adquirires riqueza.","Deuteronómio 8:18"],
+    ["Ora, àquele que é poderoso para fazer tudo muito mais abundantemente além daquilo que pedimos ou pensamos, segundo o poder que em nós opera.","Efésios 3:20"],
+    ["Seja sobre nós a graça do Senhor nosso Deus, e confirma sobre nós a obra das nossas mãos.","Salmos 90:17"],
+    ["As misericórdias do Senhor renovam-se cada manhã; grande é a tua fidelidade.","Lamentações 3:22-23"],
+    ["Sede firmes e constantes, sempre abundantes na obra do Senhor, sabendo que o vosso trabalho não é vão no Senhor.","1 Coríntios 15:58"],
+    ["Aquele que em vós começou a boa obra a aperfeiçoará até ao dia de Jesus Cristo.","Filipenses 1:6"],
+    ["Pedi, e dar-se-vos-á; buscai, e encontrareis; batei, e abrir-se-vos-á.","Mateus 7:7"],
+    ["Os pensamentos do diligente tendem só à abundância.","Provérbios 21:5"]
+  ];
+  var DIRECAO=[
+    ["Confia no Senhor de todo o teu coração, e não te estribes no teu próprio entendimento. Reconhece-o em todos os teus caminhos, e ele endireitará as tuas veredas.","Provérbios 3:5-6"],
+    ["O coração do homem planeja o seu caminho, mas o Senhor lhe dirige os passos.","Provérbios 16:9"],
+    ["Lança o teu cuidado sobre o Senhor, e ele te sustentará.","Salmos 55:22"],
+    ["Não temas, porque eu sou contigo; não te assombres, porque eu sou o teu Deus; eu te fortaleço, e te ajudo.","Isaías 41:10"],
+    ["E sabemos que todas as coisas contribuem juntamente para o bem daqueles que amam a Deus.","Romanos 8:28"],
+    ["Esforça-te e tem bom ânimo; o Senhor teu Deus é contigo, por onde quer que andares.","Josué 1:9"],
+    ["Entrega o teu caminho ao Senhor; confia nele, e ele o fará.","Salmos 37:5"],
+    ["Estando em tudo atribulados, mas não angustiados; perplexos, mas não desanimados; abatidos, mas não destruídos.","2 Coríntios 4:8-9"],
+    ["Porque sete vezes cairá o justo, e se levantará.","Provérbios 24:16"],
+    ["E não nos cansemos de fazer o bem, porque a seu tempo ceifaremos, se não desfalecermos.","Gálatas 6:9"],
+    ["Instruir-te-ei, e ensinar-te-ei o caminho que deves seguir; guiar-te-ei com os meus olhos.","Salmos 32:8"],
+    ["Mas os que esperam no Senhor renovarão as forças, subirão com asas como águias.","Isaías 40:31"]
+  ];
+  var GRATIDAO=[
+    ["Louvai ao Senhor, porque ele é bom, porque a sua benignidade dura para sempre.","Salmos 107:1"],
+    ["Bendize, ó minha alma, ao Senhor, e não te esqueças de nenhum de seus benefícios.","Salmos 103:2"],
+    ["Em tudo dai graças, porque esta é a vontade de Deus em Cristo Jesus para convosco.","1 Tessalonicenses 5:18"],
+    ["Grandes coisas fez o Senhor por nós, e por isso estamos alegres.","Salmos 126:3"],
+    ["Toda a boa dádiva e todo o dom perfeito vem do alto, descendo do Pai das luzes.","Tiago 1:17"],
+    ["Não a nós, Senhor, não a nós, mas ao teu nome dá glória.","Salmos 115:1"],
+    ["A bênção do Senhor enriquece, e não traz consigo desgosto.","Provérbios 10:22"],
+    ["Este é o dia que fez o Senhor; regozijemo-nos e alegremo-nos nele.","Salmos 118:24"]
+  ];
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function diaDoAno(d){ return Math.floor((new Date(d.getFullYear(),d.getMonth(),d.getDate())-new Date(d.getFullYear(),0,0))/864e5); }
+  function aleat(l){ return l[Math.floor(Math.random()*l.length)]; }
+
+  // versículo do dia (muda todos os dias, igual para toda a equipa)
+  function versoDoDia(){
+    var el=document.getElementById('as-verse'); if(!el) return;
+    var d=new Date(), v=DIARIO[(diaDoAno(d)+d.getFullYear())%DIARIO.length];
+    var k=d.toDateString(); if(el.dataset.k===k) return; el.dataset.k=k;
+    el.innerHTML='<q>“'+esc(v[0])+'”</q><cite>'+esc(v[1])+'</cite>';
+  }
+
+  var card=null, tmr=null;
+  function mostrar(titulo,v,ms){
+    if(!card){
+      card=document.createElement('div'); card.id='hv-card'; card.setAttribute('role','status');
+      card.innerHTML='<button class="hv-x" aria-label="Fechar">✕</button><div class="hv-t"></div><div class="hv-v"></div><div class="hv-r"></div>';
+      document.body.appendChild(card);
+      card.querySelector('.hv-x').onclick=function(){ card.classList.remove('on'); };
+    }
+    card.querySelector('.hv-t').textContent=titulo;
+    card.querySelector('.hv-v').textContent='“'+v[0]+'”';
+    card.querySelector('.hv-r').textContent=v[1];
+    void card.offsetWidth; card.classList.add('on');
+    clearTimeout(tmr); tmr=setTimeout(function(){ card.classList.remove('on'); },ms||10000);
+  }
+
+  function confetti(){
+    if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var c=document.createElement('canvas'); c.id='hv-conf'; document.body.appendChild(c);
+    var W=c.width=innerWidth, H=c.height=innerHeight, x=c.getContext('2d');
+    var cores=['#34D399','#3B82F6','#F5C84B','#FFFFFF','#93C5FD'];
+    var p=[]; for(var i=0;i<140;i++){ p.push({x:W/2+(Math.random()-.5)*W*.25,y:H*.62,vx:(Math.random()-.5)*15,vy:-Math.random()*17-6,w:5+Math.random()*6,h:3+Math.random()*5,r:Math.random()*6.28,vr:(Math.random()-.5)*.35,c:cores[i%cores.length]}); }
+    var t0=null;
+    (function f(t){
+      if(!t0) t0=t; var k=(t-t0)/3800; x.clearRect(0,0,W,H);
+      p.forEach(function(q){ q.vy+=.38; q.vx*=.992; q.x+=q.vx; q.y+=q.vy; q.r+=q.vr;
+        x.save(); x.globalAlpha=Math.max(0,1-k*k); x.translate(q.x,q.y); x.rotate(q.r); x.fillStyle=q.c; x.fillRect(-q.w/2,-q.h/2,q.w,q.h); x.restore(); });
+      if(k<1) requestAnimationFrame(f); else c.remove();
+    })(performance.now());
+  }
+
+  window.haVerso={
+    dia:versoDoDia,
+    direcao:function(){ mostrar('Uma palavra para este momento',aleat(DIRECAO),12000); },
+    gratidao:function(){ confetti(); mostrar('Glória a Deus',aleat(GRATIDAO),12000); }
+  };
+
+  // cliente cancelou / lead perdido → versículo de direção
+  if(window.haPerda&&haPerda.confirmar){
+    var c0=haPerda.confirmar;
+    haPerda.confirmar=function(){ var r=c0.apply(haPerda,arguments); setTimeout(haVerso.direcao,350); return r; };
+  }
+  // venda fechada → celebração + gratidão
+  if(typeof window.saveVendaRapida==='function'){
+    var s0=window.saveVendaRapida;
+    window.saveVendaRapida=function(){
+      var n=(DB&&DB.pagamentos)?DB.pagamentos.length:0, r=s0.apply(this,arguments);
+      if(DB&&DB.pagamentos&&DB.pagamentos.length>n) haVerso.gratidao();
+      return r;
+    };
+  }
+  versoDoDia(); setInterval(versoDoDia,60000);
+  document.addEventListener('visibilitychange',versoDoDia);
+})();
+</script>
+
 </body>
 </html>
