@@ -8087,7 +8087,8 @@ window.haPV=(function(){
     if(vs.length) return vs[0];
     var mt=/em (\d{4}-\d{2}-\d{2})/.exec(m.notas||''); return mt?mt[1]:todayISO();
   }
-  function atual(m){ var f=(m.pv&&m.pv.feitos)||[]; for(var i=0;i<PASSOS.length;i++) if(f.indexOf(i)<0) return i; return PASSOS.length; }
+  var GRACE=2; // dias de atraso aceites: passos mais atrasados do que isto caducam e deixam de aparecer
+  function atual(m){ var f=(m.pv&&m.pv.feitos)||[], lim=addD(todayISO(),-GRACE); for(var i=0;i<PASSOS.length;i++){ if(f.indexOf(i)>=0) continue; if(data(m,i)<lim) continue; return i; } return PASSOS.length; }
   function data(m,i){ return addD(inicio(m),PASSOS[i].d); }
   function ativos(){ return (DB.mentorados||[]).filter(function(m){ return !m.estado||m.estado==='Ativo'; }); }
   function wa(m,t){ var n=normalizeTel(m.tel||m.contacto||''); return n&&n.length>=6?'https://wa.me/'+n+'?text='+encodeURIComponent(t):''; }
