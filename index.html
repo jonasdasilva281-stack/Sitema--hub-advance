@@ -1009,7 +1009,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div id="pg-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:300;background:#fff;border:1px solid var(--g6);border-radius:10px;box-shadow:var(--shadow-lg);max-height:220px;overflow-y:auto;margin-top:4px"></div>
   </div>
   <div class="fr fg"><div><label class="fl">Produto</label><select class="fi" id="pg-produto" onchange="autoValor()"></select></div><div><label class="fl">Valor (€)</label><input type="number" class="fi" id="pg-valor" oninput="calcParcela()"></div></div>
-  <div class="fg"><label class="fl">Forma de pagamento</label><select class="fi" id="pg-forma"><option>Stripe</option><option>Revolut</option><option>Transferência Bancária</option><option>PayPal</option><option>Dinheiro</option><option>Outro</option></select></div>
+  <div class="fg"><label class="fl">Forma de pagamento</label><select class="fi" id="pg-forma"><option>Stripe</option><option>Dinheiro</option><option>Revolut</option><option>Hotmart</option></select></div>
   <div class="fr fg"><div><label class="fl">Parcelas</label><select class="fi" id="pg-parcelas" onchange="calcParcela()"></select></div><div><label class="fl">Data 1ª parcela</label><input type="date" class="fi" id="pg-data" onchange="calcParcela()"></div></div>
   <div id="pg-info" style="display:none" class="al alg"></div>
   <div class="fg"><label class="fl">Estado</label><select class="fi" id="pg-estado"><option value="Pago">Pago</option><option value="Pendente">Pendente</option></select></div>
@@ -1027,7 +1027,7 @@ body { -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
     <div><label class="fl">Data</label><input type="date" class="fi" id="ep-data"></div>
   </div>
   <div class="fr fg">
-    <div><label class="fl">Forma</label><select class="fi" id="ep-forma"><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>Transferência Bancária</option><option>MB Way</option><option>PayPal</option><option>Dinheiro</option><option>Outro</option></select></div>
+    <div><label class="fl">Forma</label><select class="fi" id="ep-forma"><option>Stripe</option><option>Dinheiro</option><option>Revolut</option><option>Hotmart</option></select></div>
     <div><label class="fl">Estado</label><select class="fi" id="ep-estado"><option value="Pago">Pago</option><option value="Pendente">Pendente</option></select></div>
   </div>
   <div style="display:flex;gap:8px;margin-top:4px">
@@ -2268,7 +2268,9 @@ function openEditarPag(id){
   document.getElementById('ep-data').value=p.data||'';
   document.getElementById('ep-valor').value=p.valor||'';
   document.getElementById('ep-estado').value=p.estado||'Pendente';
-  document.getElementById('ep-forma').value=p.formaPagamento||'MB Way';
+  (function(){var ef=document.getElementById('ep-forma'),fv=p.formaPagamento||'Stripe';
+  if(!Array.prototype.some.call(ef.options,function(o){return o.value===fv;})){var op=document.createElement('option');op.textContent=fv;ef.appendChild(op);}
+  ef.value=fv;})();
   var ps=document.getElementById('ep-produto');
   ps.innerHTML=DB.produtos.map(function(pr){return '<option value="'+pr.nome+'">'+pr.nome+'</option>';}).join('');
   ps.value=p.produto||'';
@@ -4391,7 +4393,7 @@ window.addEventListener('appinstalled',function(){ pwaDismiss(); toast('✓ App 
     <div><label class="fl">Valor (€)</label><input type="number" class="fi" id="vr-valor" oninput="vrCalc()"></div>
   </div>
   <div class="fr fg">
-    <div><label class="fl">Forma de pagamento</label><select class="fi" id="vr-forma"><option>MB Way</option><option>Transferência Bancária</option><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>Dinheiro</option></select></div>
+    <div><label class="fl">Forma de pagamento</label><select class="fi" id="vr-forma"><option>Stripe</option><option>Dinheiro</option><option>Revolut</option><option>Hotmart</option></select></div>
     <div><label class="fl">Parcelas</label><select class="fi" id="vr-parcelas" onchange="vrCalc()"></select></div>
   </div>
   <div class="fr fg">
@@ -5954,8 +5956,8 @@ mark.cb-hl{background:#FEF3C7;color:inherit;border-radius:3px;padding:0 1px}
 
 <script>
 (function(){
-  var FORMAS=['MB Way','Transferência Bancária','Cartão de Crédito','Cartão de Débito','PayPal','Dinheiro'];
-  var PADRAO=['MB Way','Transferência Bancária'];
+  var FORMAS=['Stripe','Dinheiro','Revolut','Hotmart'];
+  var PADRAO=['Stripe'];
   var REC=(typeof PRECO_REGRA==='object'&&PRECO_REGRA.rec)||45;
   var ICO='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>';
   var ICO2='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
@@ -10328,7 +10330,7 @@ window.haMktX=(function(){
     for(var w=7;w>=0;w--){ var a=new Date(d0); a.setDate(a.getDate()-7*w); var b=new Date(a); b.setDate(b.getDate()+6), ai=isoLocal(a), bi=isoLocal(b);
       sem.push(L.filter(function(l){var c=(l.createdAt||'').slice(0,10); return c>=ai&&c<=bi;}).length); lab.push(String(a.getDate()).padStart(2,'0')+'/'+String(a.getMonth()+1).padStart(2,'0')); }
     // forma de pagamento (mês a mês: últimos 6)
-    var FM={'Stripe':'var(--acc)','Revolut':'#3B6FD4','Transferência Bancária':'#D9A441','PayPal':'#7C5CBF','Dinheiro':'#9CA3AF'}, fp={}, i6=M[0].k;
+    var FM={'Stripe':'var(--acc)','Revolut':'#3B6FD4','Transferência Bancária':'#D9A441','PayPal':'#7C5CBF','Dinheiro':'#9CA3AF','Hotmart':'#E8590C'}, fp={}, i6=M[0].k;
     pago.forEach(function(p){ if((p.data||'').slice(0,7)<i6) return; var f=p.formaPagamento||'Outro'; f=({'Outro':'Stripe','Cartão de Débito':'Stripe','Cartão de Crédito':'Stripe','MB Way':'Revolut'})[f]||f; fp[f]=(fp[f]||0)+(+p.valor||0); });
     var dn=Object.keys(fp).map(function(k){return {n:k,v:fp[k],c:FM[k]||'#9CA3AF'};}).sort(function(a,b){return b.v-a.v;});
     // insight
